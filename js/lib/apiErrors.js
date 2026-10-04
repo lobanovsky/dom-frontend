@@ -15,6 +15,10 @@ const REASONS = [
   [/^exactly one of person_id and legal_entity_id must be set$/, 'Укажите физлицо или юрлицо'],
   [/^share_num and share_den must be positive$/, 'Доля должна быть больше нуля'],
   [/^share must not exceed 1$/, 'Доля не может быть больше 1'],
+  [/^"(.*)": must contain at least 5 digits$/, (m) => `«${m[1]}»: в номере должно быть не меньше 5 цифр`],
+  [/^"(.*)": is not a valid email$/, (m) => `«${m[1]}»: некорректный адрес`],
+  [/^must contain at most (\d+) items$/, (m) => `Не больше ${m[1]} значений`],
+  [/^item is too long/, 'Слишком длинное значение'],
 ];
 
 // Понятные сообщения для уникальных ограничений БД (имя ограничения из миграции).

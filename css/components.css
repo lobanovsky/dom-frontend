@@ -838,3 +838,55 @@ a.btn-primary {
     flex: 1;
   }
 }
+
+/* Список контактов (телефоны, email) */
+
+.list-input-rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.list-input-row {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.list-input-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.list-input-remove {
+  flex: 0 0 auto;
+  font-size: var(--font-size-lg);
+  line-height: 1;
+}
+
+.list-input > .btn {
+  margin-top: var(--space-2);
+}
+
+.list-input-rows:empty + .btn {
+  margin-top: 0;
+}
+
+.contact-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.contact-primary {
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .list-input-remove {
+    min-width: 44px;
+  }
+
+  .contact-list {
+    align-items: flex-end;
+  }
+}

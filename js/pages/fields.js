@@ -3,6 +3,7 @@ import {
   options, organizationKinds, buildingKinds, premisesKinds, relations, accountPurposes, accountStatuses, ownerKinds,
 } from '../lib/labels.js';
 import { entityPicker } from '../ui/picker.js';
+import { listInput } from '../ui/listInput.js';
 
 // Описание полей форм для каждой сущности. Имена совпадают с JSON-полями API.
 
@@ -26,8 +27,10 @@ export const personFields = [
   textField('first_name', 'Имя', { required: true }),
   textField('middle_name', 'Отчество'),
   dateField('birth_date', 'Дата рождения'),
-  textField('phone', 'Телефон', { type: 'tel', inputmode: 'tel' }),
-  textField('email', 'Email', { type: 'email' }),
+  { type: 'list', name: 'phones', label: 'Телефоны', help: 'Первый — основной',
+    component: listInput({ inputType: 'tel', inputmode: 'tel', placeholder: '+7 900 123-45-67', addLabel: '+ Добавить телефон', autocomplete: 'off' }) },
+  { type: 'list', name: 'emails', label: 'Email', help: 'Первый — основной',
+    component: listInput({ inputType: 'email', inputmode: 'email', placeholder: 'name@example.com', addLabel: '+ Добавить email', autocomplete: 'off' }) },
 ];
 
 export function buildingFields(organizations) {

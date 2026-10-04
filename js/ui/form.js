@@ -65,9 +65,9 @@ export function createForm({ fields, initialValues = {}, submitLabel = 'Сохр
     } else if (def.type === 'checkbox') {
       input = el('input', { type: 'checkbox', id: inputId, name: def.name, checked: !!values[def.name] });
       input.addEventListener('change', () => setValue(def.name, input.checked));
-    } else if (def.type === 'picker') {
-      // Поле со своим компонентом (поиск физлица/юрлица): компонент сам рисует
-      // ввод и сообщает выбранное значение через onChange.
+    } else if (def.type === 'picker' || def.type === 'list') {
+      // Поле со своим компонентом (поиск физлица/юрлица, список телефонов):
+      // компонент сам рисует ввод и сообщает значение через onChange.
       input = def.component({ id: inputId, value: values[def.name], onChange: (value) => setValue(def.name, value) });
     } else if (def.type === 'textarea') {
       input = el('textarea', { id: inputId, name: def.name, required: !!def.required, rows: def.rows || 3, maxlength: def.maxLength });

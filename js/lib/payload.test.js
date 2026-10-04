@@ -2,6 +2,11 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { toPayload, toFormValues } from './payload.js';
 
+const contactDefs = [
+  { name: 'phones', type: 'list' },
+  { name: 'emails', type: 'list' },
+];
+
 const defs = [
   { name: 'name', type: 'text' },
   { name: 'floors', type: 'number' },
@@ -41,4 +46,23 @@ test('toFormValues maps nulls to empty strings and numbers to strings', () => {
   assert.equal(values.valid_to, '');
   assert.equal(values.person_id, 7);
   assert.equal(values.legal_entity_id, null);
+});
+
+test('toPayload: list fields are trimmed, blanks dropped, empty is [] not null', () => {
+  const body = toPayload(contactDefs, { phones: [' +7 900 111 22 33 ', '', '  '], emails: [] });
+  assert.deepEqual(body, { phones: ['+7 900 111 22 33'], emails: [] });
+  assert.deepEqual(toPayload(contactDefs, {}), { phones: [], emails: [] });
+});
+
+test('toFormValues: list fields are copied, missing becomes []', () => {
+  const source = { phones: ['+7 900 111 22 33'] };
+  const values = toFormValues(contactDefs, source);
+  assert.deepEqual(values, { phones: ['+7 900 111 22 33'], emails: [] });
+  values.phones.push('x');
+  assert.equal(source.phones.length, 1, 'form values must not alias the entity');
+});
+
+test('toPayload: hidden list field is []', () => {
+  const body = toPayload([{ name: 'phones', type: 'list', visible: () => false }], { phones: ['1'] });
+  assert.deepEqual(body, { phones: [] });
 });

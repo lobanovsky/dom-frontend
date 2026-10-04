@@ -10,8 +10,8 @@ const KINDS = {
   person: {
     api: personsApi,
     title: (p) => personName(p),
-    hint: (p) => [p.birth_date ? p.birth_date.split('-').reverse().join('.') : null, p.phone].filter(Boolean).join(', '),
-    placeholder: 'Фамилия, имя или телефон',
+    hint: (p) => [p.birth_date ? p.birth_date.split('-').reverse().join('.') : null, (p.phones || [])[0]].filter(Boolean).join(', '),
+    placeholder: 'Фамилия, имя, телефон или email',
   },
   legal_entity: {
     api: legalEntitiesApi,
@@ -96,7 +96,14 @@ export function entityPicker(kind, { allowCreate = false } = {}) {
         const error = el('div', { class: 'field-error' });
 
         async function create() {
-          const body = Object.fromEntries(Object.entries(inputs).map(([k, i]) => [k, i.value.trim() || null]));
+          const value = (k) => inputs[k].value.trim();
+          const body = {
+            last_name: value('last_name'),
+            first_name: value('first_name'),
+            middle_name: value('middle_name') || null,
+            phones: value('phone') ? [value('phone')] : [],
+            emails: [],
+          };
           try {
             select(await personsApi.create(body));
           } catch (err) {
