@@ -629,20 +629,47 @@ a.btn-primary {
   padding: var(--space-2) var(--space-3);
 }
 
-.picker-create {
-  margin-top: var(--space-2);
+.picker-modes {
+  display: flex;
+  margin-bottom: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.picker-mode {
+  flex: 1;
+  padding: var(--space-2) var(--space-3);
+  border: none;
+  background: var(--color-surface);
+  cursor: pointer;
+}
+
+.picker-mode + .picker-mode {
+  border-left: 1px solid var(--color-border);
+}
+
+.picker-mode--active {
+  background: var(--color-accent);
+  color: #fff;
+  font-weight: 600;
 }
 
 .picker-create-form {
   padding: var(--space-3);
-  border: 1px dashed var(--color-border);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
+  background: var(--color-bg);
 }
 
 .picker-create-fields {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: var(--space-2);
+  gap: 0 var(--space-3);
+}
+
+.picker-create-fields .field {
+  margin-bottom: var(--space-3);
 }
 
 .picker-selected {

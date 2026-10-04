@@ -1,10 +1,11 @@
 import { el } from '../lib/dom.js';
 import { personsApi, legalEntitiesApi } from '../api/resources.js';
 import { personName } from '../lib/format.js';
-import { describeApiError } from '../lib/apiErrors.js';
+import { createPersonForm } from './personCreate.js';
 
-// Поле выбора физлица или юрлица с поиском по подстроке (q) и, для физлиц,
-// созданием нового человека прямо из формы.
+// Поле выбора физлица или юрлица. Поиск по подстроке (q); для физлиц при
+// allowCreate сверху переключатель «Найти в базе / Новое физлицо» — новое
+// физлицо вводится раздельными полями (ФИО, телефоны, email).
 
 const KINDS = {
   person: {
@@ -27,6 +28,7 @@ export function entityPicker(kind, { allowCreate = false } = {}) {
   return function createPicker({ id, value, onChange }) {
     let timer = null;
     let requestSeq = 0;
+    let lastSearchText = '';
 
     const root = el('div', { class: 'picker' });
 
@@ -46,95 +48,67 @@ export function entityPicker(kind, { allowCreate = false } = {}) {
         ]));
         return;
       }
-      renderSearch('');
+      showMode('search');
     }
 
-    function renderSearch(initialText) {
+    function modeBar(active) {
+      const button = (mode, text) => el('button', {
+        type: 'button', class: mode === active ? 'picker-mode picker-mode--active' : 'picker-mode',
+        'aria-pressed': String(mode === active), onclick: () => showMode(mode),
+      }, text);
+      return el('div', { class: 'picker-modes', role: 'group', 'aria-label': 'Способ выбора' }, [
+        button('search', 'Найти в базе'),
+        button('new', 'Новое физлицо'),
+      ]);
+    }
+
+    function showMode(mode) {
+      const bar = allowCreate ? modeBar(mode) : null;
+      if (mode === 'new') {
+        const form = createPersonForm({ prefill: lastSearchText, onCreated: select, onCancel: () => showMode('search') });
+        root.replaceChildren(bar, form.element);
+        form.focus();
+        return;
+      }
+      const search = renderSearch();
+      root.replaceChildren(bar, ...search.nodes);
+    }
+
+    function renderSearch() {
       const input = el('input', { type: 'search', id, placeholder: spec.placeholder, autocomplete: 'off' });
-      input.value = initialText;
+      input.value = lastSearchText;
       const results = el('ul', { class: 'picker-results', role: 'listbox' });
-      const createBox = el('div', { class: 'picker-create' });
 
       async function search() {
         const text = input.value.trim();
+        lastSearchText = text;
         const seq = ++requestSeq;
         if (text.length < 2) {
           results.replaceChildren();
-          renderCreateLink(text);
           return;
         }
         try {
           const { items } = await spec.api.list({ q: text, limit: 10 });
           if (seq !== requestSeq) return;
-          results.replaceChildren(...(items.length ? items.map((item) => el('li', {}, el('button', {
-            type: 'button', class: 'picker-option', onclick: () => select(item),
-          }, [el('span', {}, spec.title(item)), el('span', { class: 'picker-hint' }, spec.hint(item))]))) : [el('li', { class: 'picker-empty' }, 'Не найдено')]));
+          results.replaceChildren(...(items.length
+            ? items.map((item) => el('li', {}, el('button', {
+              type: 'button', class: 'picker-option', onclick: () => select(item),
+            }, [el('span', {}, spec.title(item)), el('span', { class: 'picker-hint' }, spec.hint(item))])))
+            : [el('li', { class: 'picker-empty' }, allowCreate ? 'Не найдено — добавьте во вкладке «Новое физлицо»' : 'Не найдено')]));
         } catch {
           if (seq === requestSeq) results.replaceChildren(el('li', { class: 'picker-empty' }, 'Не удалось выполнить поиск'));
         }
-        renderCreateLink(text);
-      }
-
-      function renderCreateLink(text) {
-        if (!allowCreate) return;
-        createBox.replaceChildren(el('button', {
-          type: 'button', class: 'btn btn-ghost btn-sm', onclick: () => renderCreateForm(text),
-        }, '+ Новое физлицо'));
-      }
-
-      function renderCreateForm(text) {
-        const [lastName = '', firstName = '', middleName = ''] = text.split(/\s+/);
-        const inputs = {
-          last_name: el('input', { type: 'text', placeholder: 'Фамилия' }),
-          first_name: el('input', { type: 'text', placeholder: 'Имя' }),
-          middle_name: el('input', { type: 'text', placeholder: 'Отчество' }),
-          phone: el('input', { type: 'tel', placeholder: 'Телефон', inputmode: 'tel' }),
-        };
-        inputs.last_name.value = lastName;
-        inputs.first_name.value = firstName;
-        inputs.middle_name.value = middleName;
-        const error = el('div', { class: 'field-error' });
-
-        async function create() {
-          const value = (k) => inputs[k].value.trim();
-          const body = {
-            last_name: value('last_name'),
-            first_name: value('first_name'),
-            middle_name: value('middle_name') || null,
-            phones: value('phone') ? [value('phone')] : [],
-            emails: [],
-          };
-          try {
-            select(await personsApi.create(body));
-          } catch (err) {
-            error.textContent = describeApiError(err).message;
-          }
-        }
-
-        for (const i of Object.values(inputs)) {
-          // Enter внутри мини-формы не должен отправлять внешнюю форму.
-          i.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); create(); } });
-        }
-        createBox.replaceChildren(el('div', { class: 'picker-create-form' }, [
-          el('div', { class: 'picker-create-fields' }, Object.values(inputs)),
-          error,
-          el('div', { class: 'form-actions' }, [
-            el('button', { type: 'button', class: 'btn btn-secondary btn-sm', onclick: create }, 'Создать и выбрать'),
-            el('button', { type: 'button', class: 'btn btn-ghost btn-sm', onclick: () => renderCreateLink(input.value.trim()) }, 'Отмена'),
-          ]),
-        ]));
-        inputs.last_name.focus();
       }
 
       input.addEventListener('input', () => {
+        lastSearchText = input.value.trim(); // запоминаем сразу: он попадёт в поля ФИО нового физлица
         clearTimeout(timer);
         timer = setTimeout(search, 250);
       });
       input.addEventListener('keydown', (e) => { if (e.key === 'Enter') e.preventDefault(); });
+      if (lastSearchText) search();
 
-      root.replaceChildren(input, results, createBox);
-      renderCreateLink(initialText);
-      return input;
+      return { nodes: [input, results] };
     }
 
     if (value) {
