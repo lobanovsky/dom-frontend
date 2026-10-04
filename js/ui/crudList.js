@@ -7,7 +7,8 @@ import { describeApiError } from '../lib/apiErrors.js';
 import { config } from '../config.js';
 
 // Список записей одной сущности: фильтры, таблица, пагинация, добавление,
-// редактирование и удаление через модальную форму.
+// редактирование и удаление через модальную форму. Удаление мягкое: переключатель
+// «Удалённые» показывает корзину, где записи можно восстановить.
 //
 // filters: [{name, label, type: 'search'|'select', options?}] — значения уходят в query.
 // fixedQuery — всегда добавляется к запросу списка (например building_id).
@@ -19,6 +20,7 @@ export function createCrudList({
   canEdit = true,
 }) {
   let offset = 0;
+  let showDeleted = false;
   const filterValues = {};
   let searchTimer = null;
   let seq = 0;
@@ -29,10 +31,17 @@ export function createCrudList({
   const pageInfo = el('span', { class: 'pager-info' });
   const pager = el('div', { class: 'pager' }, [prevButton, pageInfo, nextButton]);
 
+  const addButton = canEdit ? el('button', { type: 'button', class: 'btn btn-primary btn-add', onclick: () => openForm(null) }, addLabel) : null;
   const toolbar = el('div', { class: 'table-toolbar' }, [
     ...filters.map(renderFilter),
     el('div', { class: 'table-toolbar-spacer' }),
-    canEdit ? el('button', { type: 'button', class: 'btn btn-primary btn-add', onclick: () => openForm(null) }, addLabel) : null,
+    canEdit ? deletedToggle((checked) => {
+      showDeleted = checked;
+      offset = 0;
+      addButton.hidden = checked;
+      load();
+    }) : null,
+    addButton,
   ]);
 
   function renderFilter(f) {
@@ -64,30 +73,48 @@ export function createCrudList({
   }
 
   async function remove(row) {
-    const ok = await confirmDialog({ title: 'Удаление', message: deleteMessage(row), confirmLabel: 'Удалить', danger: true });
+    const ok = await confirmDialog({
+      title: 'Удаление',
+      message: `${deleteMessage(row)} Запись попадёт в «Удалённые», её можно будет восстановить.`,
+      confirmLabel: 'Удалить',
+      danger: true,
+    });
     if (!ok) return;
     try {
       await api.remove(row.id);
-      toast.success('Удалено');
+      toast.success('Удалено. Восстановить можно в «Удалённые»');
       load();
     } catch (err) {
       if (err.status !== 0 && err.status < 500) toast.error(describeApiError(err, { action: 'delete' }).message);
     }
   }
 
+  async function restore(row) {
+    try {
+      await api.restore(row.id);
+      toast.success('Восстановлено');
+      load();
+    } catch (err) {
+      if (err.status !== 0 && err.status < 500) toast.error(describeApiError(err).message);
+    }
+  }
+
   async function load() {
     const current = ++seq;
     try {
-      const { items } = await api.list({ ...fixedQuery, ...filterValues, limit: config.pageSize, offset });
+      const { items } = await api.list({ ...fixedQuery, ...filterValues, deleted: showDeleted ? 'only' : undefined, limit: config.pageSize, offset });
       if (current !== seq) return;
+      tableHost.classList.toggle('crud-table--deleted', showDeleted);
       tableHost.replaceChildren(renderTable({
         columns,
         rows: items,
-        emptyMessage,
-        rowActions: canEdit ? (row) => [
-          el('button', { type: 'button', class: 'btn btn-ghost btn-sm', onclick: () => openForm(row) }, 'Изменить'),
-          el('button', { type: 'button', class: 'btn btn-ghost btn-sm btn-danger-text', onclick: () => remove(row) }, 'Удалить'),
-        ] : null,
+        emptyMessage: showDeleted ? 'Удалённых записей нет' : emptyMessage,
+        rowActions: !canEdit ? null : showDeleted
+          ? (row) => [el('button', { type: 'button', class: 'btn btn-sm', onclick: () => restore(row) }, 'Восстановить')]
+          : (row) => [
+            el('button', { type: 'button', class: 'btn btn-ghost btn-sm', onclick: () => openForm(row) }, 'Изменить'),
+            el('button', { type: 'button', class: 'btn btn-ghost btn-sm btn-danger-text', onclick: () => remove(row) }, 'Удалить'),
+          ],
       }));
       prevButton.disabled = offset === 0;
       nextButton.disabled = items.length < config.pageSize;
@@ -112,4 +139,11 @@ export function crudPage({ title, ...listOptions }) {
       list.element,
     ]));
   };
+}
+
+// Переключатель «Удалённые» для списков и блоков карточки.
+export function deletedToggle(onChange) {
+  const input = el('input', { type: 'checkbox' });
+  input.addEventListener('change', () => onChange(input.checked));
+  return el('label', { class: 'deleted-toggle' }, [input, ' Удалённые']);
 }

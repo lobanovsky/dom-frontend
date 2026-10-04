@@ -1,4 +1,5 @@
 import { el } from '../lib/dom.js';
+import { formatDate } from '../lib/format.js';
 
 // Список «подпись — значение»; пустые значения пропускаются.
 export function definitionList(pairs) {
@@ -13,5 +14,13 @@ export function notFoundView(message, backHref, backLabel) {
       el('p', {}, message),
       el('a', { href: backHref }, backLabel),
     ]),
+  ]);
+}
+
+// Баннер на странице удалённой записи: когда удалена и кнопка восстановления.
+export function deletedBanner({ deletedAt, onRestore }) {
+  return el('div', { class: 'deleted-banner', role: 'status' }, [
+    el('span', {}, `Запись удалена ${formatDate(deletedAt)}. Она не отображается в списках.`),
+    el('button', { type: 'button', class: 'btn btn-sm', onclick: onRestore }, 'Восстановить'),
   ]);
 }

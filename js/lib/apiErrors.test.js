@@ -51,3 +51,22 @@ test('contact validation errors are translated and attached to the list field', 
   );
   assert.deepEqual(describeApiError(err('phones: must contain at most 10 items')), { field: 'phones', message: 'Не больше 10 значений' });
 });
+
+test('soft-delete guards are translated', () => {
+  assert.equal(
+    describeApiError(err('cannot delete: has active premises')).message,
+    'Нельзя удалить: есть действующие помещения. Сначала удалите их.',
+  );
+  assert.equal(
+    describeApiError(err('cannot delete: has active account holders')).message,
+    'Нельзя удалить: есть действующие плательщики. Сначала удалите их.',
+  );
+  assert.equal(
+    describeApiError(err('cannot save: building is deleted')).message,
+    'Связанная запись удалена: дом. Сначала восстановите её.',
+  );
+  assert.equal(
+    describeApiError(err('cannot save: legal entity is deleted')).message,
+    'Связанная запись удалена: юрлицо. Сначала восстановите её.',
+  );
+});

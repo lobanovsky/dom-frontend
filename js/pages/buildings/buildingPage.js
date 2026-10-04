@@ -9,7 +9,7 @@ import { buildingFields, premisesFields } from '../fields.js';
 import { buildingKinds, premisesKinds, label, options } from '../../lib/labels.js';
 import { formatArea } from '../../lib/format.js';
 import { describeApiError } from '../../lib/apiErrors.js';
-import { notFoundView, definitionList } from '../common.js';
+import { notFoundView, definitionList, deletedBanner } from '../common.js';
 
 export async function buildingPage(container, { id }) {
   container.replaceChildren(el('div', { class: 'table-status' }, 'Загрузка…'));
@@ -39,6 +39,28 @@ export async function buildingPage(container, { id }) {
     ]));
   }
 
+  if (building.deleted_at) {
+    renderInfo();
+    container.replaceChildren(el('div', { class: 'page' }, [
+      el('nav', { class: 'breadcrumbs' }, [el('a', { href: '/buildings' }, 'Дома'), ' / ']),
+      el('div', { class: 'section-header' }, title),
+      deletedBanner({
+        deletedAt: building.deleted_at,
+        onRestore: async () => {
+          try {
+            await buildingsApi.restore(building.id);
+            toast.success('Восстановлено');
+            buildingPage(container, { id });
+          } catch (err) {
+            if (err.status !== 0 && err.status < 500) toast.error(describeApiError(err).message);
+          }
+        },
+      }),
+      info,
+    ]));
+    return;
+  }
+
   function edit() {
     openEntityForm({
       title: 'Дом: редактирование',
@@ -50,11 +72,11 @@ export async function buildingPage(container, { id }) {
   }
 
   async function remove() {
-    const ok = await confirmDialog({ title: 'Удаление', message: `Удалить дом «${building.address}»? Удалить можно только дом без помещений.`, confirmLabel: 'Удалить', danger: true });
+    const ok = await confirmDialog({ title: 'Удаление', message: `Удалить дом «${building.address}»? Удалить можно только дом без помещений. Дом попадёт в «Удалённые», его можно будет восстановить.`, confirmLabel: 'Удалить', danger: true });
     if (!ok) return;
     try {
       await buildingsApi.remove(building.id);
-      toast.success('Дом удалён');
+      toast.success('Дом удалён. Восстановить можно в списке домов («Удалённые»)');
       goTo('/buildings');
     } catch (err) {
       if (err.status !== 0 && err.status < 500) toast.error(describeApiError(err, { action: 'delete' }).message);

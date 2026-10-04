@@ -8,7 +8,9 @@ function resource(name) {
     get: (id) => client.get(`${base}/${id}`),
     create: (body) => client.post(base, body),
     update: (id, body) => client.put(`${base}/${id}`, body),
+    // Удаление мягкое: запись уходит в «удалённые» и её можно восстановить.
     remove: (id) => client.delete(`${base}/${id}`),
+    restore: (id) => client.post(`${base}/${id}/restore`),
   };
 }
 
@@ -16,8 +18,8 @@ export const organizationsApi = resource('organizations');
 export const buildingsApi = resource('buildings');
 export const premisesApi = {
   ...resource('premises'),
-  ownerships: (id) => client.get(`/api/v1/premises/${id}/ownerships`),
-  accounts: (id) => client.get(`/api/v1/premises/${id}/accounts`),
+  ownerships: (id, query) => client.get(`/api/v1/premises/${id}/ownerships`, { query }),
+  accounts: (id, query) => client.get(`/api/v1/premises/${id}/accounts`, { query }),
 };
 export const personsApi = resource('persons');
 export const legalEntitiesApi = resource('legal-entities');

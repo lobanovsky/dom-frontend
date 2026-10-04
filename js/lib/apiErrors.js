@@ -30,6 +30,27 @@ const CONFLICTS = {
   legal_entities_inn_kpp_uq: 'Юрлицо с таким ИНН и КПП уже есть',
 };
 
+// Что мешает удалить запись: ключ из ответа бэкенда («has active premises») -> по-русски.
+const ACTIVE_CHILDREN = {
+  buildings: 'дома',
+  premises: 'помещения',
+  ownerships: 'записи о собственности',
+  residencies: 'записи о проживании',
+  accounts: 'лицевые счета',
+  'account holders': 'плательщики',
+};
+
+// На какую удалённую запись ссылаются при сохранении или восстановлении.
+const DELETED_PARENTS = {
+  organization: 'организация',
+  building: 'дом',
+  premises: 'помещение',
+  person: 'физлицо',
+  'legal entity': 'юрлицо',
+  account: 'лицевой счёт',
+  'related owner': 'собственник (родство)',
+};
+
 function translateReason(reason) {
   for (const [re, text] of REASONS) {
     const m = reason.match(re);
@@ -54,13 +75,21 @@ export function describeApiError(err, { action = 'save' } = {}) {
         : 'Связанная запись не найдена',
     };
   }
+  let m = raw.match(/^cannot delete: has active (.+)$/);
+  if (m) {
+    return { field: null, message: `Нельзя удалить: есть действующие ${ACTIVE_CHILDREN[m[1]] || m[1]}. Сначала удалите их.` };
+  }
+  m = raw.match(/^cannot save: (.+) is deleted$/);
+  if (m) {
+    return { field: null, message: `Связанная запись удалена: ${DELETED_PARENTS[m[1]] || m[1]}. Сначала восстановите её.` };
+  }
   if (raw === 'sum of ownership shares for the premises exceeds 1') {
     return { field: 'share_num', message: 'Сумма долей собственников превысит 1' };
   }
   if (raw === 'not found') return { field: null, message: 'Запись не найдена' };
 
-  const m = raw.match(/^([a-z_]+): (.+)$/);
-  if (m) return { field: m[1], message: translateReason(m[2]) };
+  const fieldError = raw.match(/^([a-z_]+): (.+)$/);
+  if (fieldError) return { field: fieldError[1], message: translateReason(fieldError[2]) };
   return { field: null, message: raw || 'Не удалось выполнить запрос' };
 }
 

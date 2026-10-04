@@ -1,5 +1,6 @@
 import { el } from '../../lib/dom.js';
 import { renderTable } from '../../ui/table.js';
+import { deletedToggle } from '../../ui/crudList.js';
 import { openEntityForm } from '../../ui/entityForm.js';
 import { confirmDialog } from '../../ui/confirmDialog.js';
 import { toast } from '../../ui/toast.js';
@@ -14,7 +15,7 @@ import { premisesKinds, relations, accountPurposes, accountStatuses, label } fro
 import { formatArea, formatDate, formatPeriod, formatShare, personName, isActiveOn, todayIso } from '../../lib/format.js';
 import { activeShareSum, describeShareSum } from '../../lib/shares.js';
 import { describeApiError } from '../../lib/apiErrors.js';
-import { notFoundView, definitionList } from '../common.js';
+import { notFoundView, definitionList, deletedBanner } from '../common.js';
 
 // Карточка помещения: сведения, собственники с долями, жители, лицевые счета
 // с плательщиками. Каждый блок перезагружается сам после изменений.
@@ -32,6 +33,8 @@ export async function premisesPage(container, { id }) {
 
   const today = todayIso();
   const names = createNameCache();
+  // Какие блоки сейчас показывают удалённые записи («корзину»).
+  const showDeleted = { owners: false, residents: false, accounts: false };
 
   const title = el('h1', {});
   const info = el('div', { class: 'card' });
@@ -52,6 +55,22 @@ export async function premisesPage(container, { id }) {
     ]));
   }
 
+  if (premises.deleted_at) {
+    renderInfo();
+    container.replaceChildren(el('div', { class: 'page' }, [
+      el('nav', { class: 'breadcrumbs' }, [el('a', { href: '/buildings' }, 'Дома'), ' / ', el('a', { href: `/buildings/${building.id}` }, building.address), ' /']),
+      el('div', { class: 'section-header' }, title),
+      deletedBanner({
+        deletedAt: premises.deleted_at,
+        onRestore: async () => {
+          if (await restoreWithToast(() => premisesApi.restore(premises.id))) premisesPage(container, { id });
+        },
+      }),
+      info,
+    ]));
+    return;
+  }
+
   function editPremises() {
     openEntityForm({
       title: 'Помещение: редактирование',
@@ -64,19 +83,21 @@ export async function premisesPage(container, { id }) {
   }
 
   async function removePremises() {
-    const ok = await confirmDialog({ title: 'Удаление', message: `Удалить помещение № ${premises.number}? Удалить можно только помещение без собственников, жителей и счетов.`, confirmLabel: 'Удалить', danger: true });
+    const ok = await confirmDialog({ title: 'Удаление', message: `Удалить помещение № ${premises.number}? Удалить можно только помещение без собственников, жителей и счетов. Помещение попадёт в «Удалённые», его можно будет восстановить.`, confirmLabel: 'Удалить', danger: true });
     if (!ok) return;
-    if (await removeWithToast(() => premisesApi.remove(premises.id), 'Помещение удалено')) goTo(`/buildings/${building.id}`);
+    if (await removeWithToast(() => premisesApi.remove(premises.id), 'Помещение удалено. Восстановить можно в списке помещений дома')) goTo(`/buildings/${building.id}`);
   }
 
   // --- Собственники ---
 
   async function loadOwners() {
+    const deleted = showDeleted.owners;
     try {
-      const { items } = await premisesApi.ownerships(premises.id);
+      const { items } = await premisesApi.ownerships(premises.id, deleted ? { deleted: 'only' } : undefined);
       const sum = activeShareSum(items, today);
-      ownersBody.replaceChildren(
-        el('p', { class: sum.num > sum.den ? 'section-note section-note--warning' : 'section-note' }, `Доли на сегодня: ${describeShareSum(sum)}`),
+      // replaceChildren превращает null в текст «null», поэтому пустые узлы отфильтровываем.
+      ownersBody.replaceChildren(...[
+        deleted ? null : el('p', { class: sum.num > sum.den ? 'section-note section-note--warning' : 'section-note' }, `Доли на сегодня: ${describeShareSum(sum)}`),
         renderTable({
           columns: [
             { key: 'owner', label: 'Собственник', primary: true, render: (r) => [r.owner_name, r.owner_kind === 'legal_entity' ? el('span', { class: 'badge badge-neutral' }, 'юрлицо') : null] },
@@ -85,13 +106,16 @@ export async function premisesPage(container, { id }) {
             { key: 'basis', label: 'Основание' },
           ],
           rows: items,
-          emptyMessage: 'Собственники не указаны',
-          rowActions: (r) => [
-            editButton(() => ownershipForm(r)),
-            deleteButton(() => removeRow(`Удалить запись о собственности «${r.owner_name}»?`, () => ownershipsApi.remove(r.id), loadOwners)),
-          ],
+          emptyMessage: deleted ? 'Удалённых записей нет' : 'Собственники не указаны',
+          rowActions: deleted
+            ? (r) => [restoreButton(() => restoreRow(() => ownershipsApi.restore(r.id), loadOwners))]
+            : (r) => [
+              editButton(() => ownershipForm(r)),
+              deleteButton(() => removeRow(`Удалить запись о собственности «${r.owner_name}»?`, () => ownershipsApi.remove(r.id), loadOwners)),
+            ],
         }),
-      );
+      ].filter(Boolean));
+      ownersBody.classList.toggle('crud-table--deleted', deleted);
     } catch (err) {
       ownersBody.replaceChildren(errorStatus(err));
     }
@@ -113,8 +137,9 @@ export async function premisesPage(container, { id }) {
   // --- Жители ---
 
   async function loadResidents() {
+    const deleted = showDeleted.residents;
     try {
-      const { items } = await residenciesApi.list({ premises_id: premises.id, limit: 200 });
+      const { items } = await residenciesApi.list({ premises_id: premises.id, deleted: deleted ? 'only' : undefined, limit: 200 });
       await names.preload(items.flatMap((r) => [['person', r.person_id], ['person', r.related_owner_id]]));
       residentsBody.replaceChildren(renderTable({
         columns: [
@@ -124,12 +149,15 @@ export async function premisesPage(container, { id }) {
           { key: 'period', label: 'Период', render: (r) => periodCell(r.valid_from, r.valid_to) },
         ],
         rows: items,
-        emptyMessage: 'Жители не указаны',
-        rowActions: (r) => [
-          editButton(() => residencyForm(r)),
-          deleteButton(() => removeRow(`Удалить запись о проживании «${names.get('person', r.person_id)}»?`, () => residenciesApi.remove(r.id), loadResidents)),
-        ],
+        emptyMessage: deleted ? 'Удалённых записей нет' : 'Жители не указаны',
+        rowActions: deleted
+          ? (r) => [restoreButton(() => restoreRow(() => residenciesApi.restore(r.id), loadResidents))]
+          : (r) => [
+            editButton(() => residencyForm(r)),
+            deleteButton(() => removeRow(`Удалить запись о проживании «${names.get('person', r.person_id)}»?`, () => residenciesApi.remove(r.id), loadResidents)),
+          ],
       }));
+      residentsBody.classList.toggle('crud-table--deleted', deleted);
     } catch (err) {
       residentsBody.replaceChildren(errorStatus(err));
     }
@@ -155,14 +183,25 @@ export async function premisesPage(container, { id }) {
   // --- Лицевые счета и плательщики ---
 
   async function loadAccounts() {
+    const deleted = showDeleted.accounts;
     try {
-      const { items } = await premisesApi.accounts(premises.id);
+      const { items } = await premisesApi.accounts(premises.id, deleted ? { deleted: 'only' } : undefined);
       accountsBody.replaceChildren(items.length
-        ? el('div', { class: 'account-list' }, items.map(renderAccount))
-        : el('div', { class: 'data-table-wrap' }, el('div', { class: 'table-status' }, 'Лицевых счетов нет')));
+        ? el('div', { class: 'account-list' }, items.map(deleted ? renderDeletedAccount : renderAccount))
+        : el('div', { class: 'data-table-wrap' }, el('div', { class: 'table-status' }, deleted ? 'Удалённых счетов нет' : 'Лицевых счетов нет')));
     } catch (err) {
       accountsBody.replaceChildren(errorStatus(err));
     }
+  }
+
+  function renderDeletedAccount(account) {
+    return el('div', { class: 'card account-card crud-table--deleted' }, el('div', { class: 'account-card-header' }, [
+      el('div', {}, [
+        el('div', { class: 'account-number' }, `№ ${account.number}`),
+        el('div', { class: 'account-meta' }, `${label(accountPurposes, account.purpose)} · удалён ${formatDate(account.deleted_at)}`),
+      ]),
+      el('div', { class: 'row-actions' }, restoreButton(() => restoreRow(() => accountsApi.restore(account.id), loadAccounts))),
+    ]));
   }
 
   function renderAccount(account) {
@@ -201,25 +240,34 @@ export async function premisesPage(container, { id }) {
 
   async function loadHolders(account, host) {
     host.replaceChildren(el('div', { class: 'table-status' }, 'Загрузка…'));
+    const deleted = host.dataset.deleted === 'true';
     const reload = () => { loadHolders(account, host); loadAccounts(); };
     try {
-      const { items } = await accountHoldersApi.list({ account_id: account.id, limit: 200 });
+      const { items } = await accountHoldersApi.list({ account_id: account.id, deleted: deleted ? 'only' : undefined, limit: 200 });
       await names.preload(items.map((h) => (h.person_id ? ['person', h.person_id] : ['legal_entity', h.legal_entity_id])));
-      host.replaceChildren(
-        renderTable({
+      const toggle = deletedToggle((checked) => {
+        host.dataset.deleted = String(checked);
+        loadHolders(account, host);
+      });
+      toggle.querySelector('input').checked = deleted;
+      host.replaceChildren(...[
+        el('div', { class: 'holders-tools' }, toggle),
+        el('div', { class: deleted ? 'crud-table--deleted' : null }, renderTable({
           columns: [
             { key: 'holder', label: 'Плательщик', primary: true, render: (h) => holderName(h) },
             { key: 'period', label: 'Период', render: (h) => periodCell(h.valid_from, h.valid_to) },
           ],
           rows: items,
-          emptyMessage: 'Плательщики не указаны',
-          rowActions: (h) => [
-            editButton(() => holderForm(account, h, reload)),
-            deleteButton(() => removeRow(`Удалить плательщика «${holderName(h)}»?`, () => accountHoldersApi.remove(h.id), reload)),
-          ],
-        }),
-        el('div', { class: 'form-actions' }, el('button', { type: 'button', class: 'btn btn-sm', onclick: () => holderForm(account, null, reload) }, '+ Добавить плательщика')),
-      );
+          emptyMessage: deleted ? 'Удалённых записей нет' : 'Плательщики не указаны',
+          rowActions: deleted
+            ? (h) => [restoreButton(() => restoreRow(() => accountHoldersApi.restore(h.id), reload))]
+            : (h) => [
+              editButton(() => holderForm(account, h, reload)),
+              deleteButton(() => removeRow(`Удалить плательщика «${holderName(h)}»?`, () => accountHoldersApi.remove(h.id), reload)),
+            ],
+        })),
+        deleted ? null : el('div', { class: 'form-actions' }, el('button', { type: 'button', class: 'btn btn-sm', onclick: () => holderForm(account, null, reload) }, '+ Добавить плательщика')),
+      ].filter(Boolean));
     } catch (err) {
       host.replaceChildren(errorStatus(err));
     }
@@ -275,9 +323,9 @@ export async function premisesPage(container, { id }) {
       ]),
     ]),
     info,
-    section('Собственники', 'Добавить собственника', () => ownershipForm(null), ownersBody),
-    section('Жители', 'Добавить жителя', () => residencyForm(null), residentsBody),
-    section('Лицевые счета', 'Открыть счёт', () => accountForm(null), accountsBody),
+    section('Собственники', 'Добавить собственника', () => ownershipForm(null), ownersBody, (on) => { showDeleted.owners = on; loadOwners(); }),
+    section('Жители', 'Добавить жителя', () => residencyForm(null), residentsBody, (on) => { showDeleted.residents = on; loadResidents(); }),
+    section('Лицевые счета', 'Открыть счёт', () => accountForm(null), accountsBody, (on) => { showDeleted.accounts = on; loadAccounts(); }),
   ]));
 
   loadOwners();
@@ -285,11 +333,16 @@ export async function premisesPage(container, { id }) {
   loadAccounts();
 }
 
-function section(titleText, addLabel, onAdd, body) {
+function section(titleText, addLabel, onAdd, body, onDeletedChange) {
+  const addButton = el('button', { type: 'button', class: 'btn btn-primary btn-add', onclick: onAdd }, addLabel);
+  const toggle = deletedToggle((checked) => {
+    addButton.hidden = checked;
+    onDeletedChange(checked);
+  });
   return el('section', { class: 'page-section' }, [
     el('div', { class: 'section-header section-header--sub' }, [
       el('h2', {}, titleText),
-      el('button', { type: 'button', class: 'btn btn-primary btn-add', onclick: onAdd }, addLabel),
+      el('div', { class: 'section-tools' }, [toggle, addButton]),
     ]),
     body,
   ]);
@@ -297,6 +350,10 @@ function section(titleText, addLabel, onAdd, body) {
 
 function editButton(onclick) {
   return el('button', { type: 'button', class: 'btn btn-ghost btn-sm', onclick }, 'Изменить');
+}
+
+function restoreButton(onclick) {
+  return el('button', { type: 'button', class: 'btn btn-sm', onclick }, 'Восстановить');
 }
 
 function deleteButton(onclick) {
@@ -319,8 +376,23 @@ async function removeWithToast(call, message) {
 }
 
 async function removeRow(message, call, reload) {
-  const ok = await confirmDialog({ title: 'Удаление', message, confirmLabel: 'Удалить', danger: true });
-  if (ok && (await removeWithToast(call, 'Удалено'))) reload();
+  const ok = await confirmDialog({ title: 'Удаление', message: `${message} Запись попадёт в «Удалённые», её можно будет восстановить.`, confirmLabel: 'Удалить', danger: true });
+  if (ok && (await removeWithToast(call, 'Удалено. Восстановить можно в «Удалённые»'))) reload();
+}
+
+async function restoreWithToast(call) {
+  try {
+    await call();
+    toast.success('Восстановлено');
+    return true;
+  } catch (err) {
+    if (err.status !== 0 && err.status < 500) toast.error(describeApiError(err).message);
+    return false;
+  }
+}
+
+async function restoreRow(call, reload) {
+  if (await restoreWithToast(call)) reload();
 }
 
 // Кэш имён физлиц и юрлиц на время жизни страницы: жители и плательщики

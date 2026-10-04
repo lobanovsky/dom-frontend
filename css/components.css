@@ -917,3 +917,58 @@ a.btn-primary {
     align-items: flex-end;
   }
 }
+
+/* Удалённые записи (корзина) */
+
+.deleted-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 35px;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.crud-table--deleted .data-table td,
+.crud-table--deleted .data-table td a {
+  color: var(--color-text-muted);
+}
+
+.deleted-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-warning);
+  border-radius: var(--radius-md);
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+}
+
+.section-header--sub .section-tools {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+@media (max-width: 768px) {
+  .deleted-banner {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .section-header--sub .section-tools {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+}
+
+.holders-tools {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: var(--space-2);
+}
