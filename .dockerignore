@@ -1,0 +1,11 @@
+.git
+.github
+.idea
+.vscode
+.claude
+.env
+.env.*
+private/
+node_modules/
+README.md
+CLAUDE.md

@@ -1,0 +1,115 @@
+import { el } from '../lib/dom.js';
+import { renderTable } from './table.js';
+import { confirmDialog } from './confirmDialog.js';
+import { openEntityForm } from './entityForm.js';
+import { toast } from './toast.js';
+import { describeApiError } from '../lib/apiErrors.js';
+import { config } from '../config.js';
+
+// Список записей одной сущности: фильтры, таблица, пагинация, добавление,
+// редактирование и удаление через модальную форму.
+//
+// filters: [{name, label, type: 'search'|'select', options?}] — значения уходят в query.
+// fixedQuery — всегда добавляется к запросу списка (например building_id).
+// fixed — всегда добавляется к телу при создании/сохранении.
+// Возвращает {element, reload}.
+export function createCrudList({
+  api, columns, fields, watch, filters = [], fixedQuery = {}, fixed = {},
+  entityTitle, addLabel = 'Добавить', emptyMessage, deleteMessage = (row) => 'Удалить запись?',
+  canEdit = true,
+}) {
+  let offset = 0;
+  const filterValues = {};
+  let searchTimer = null;
+  let seq = 0;
+
+  const tableHost = el('div', { class: 'crud-table' }, el('div', { class: 'table-status' }, 'Загрузка…'));
+  const prevButton = el('button', { type: 'button', class: 'btn btn-ghost', onclick: () => { offset = Math.max(0, offset - config.pageSize); load(); } }, '← Назад');
+  const nextButton = el('button', { type: 'button', class: 'btn btn-ghost', onclick: () => { offset += config.pageSize; load(); } }, 'Вперёд →');
+  const pageInfo = el('span', { class: 'pager-info' });
+  const pager = el('div', { class: 'pager' }, [prevButton, pageInfo, nextButton]);
+
+  const toolbar = el('div', { class: 'table-toolbar' }, [
+    ...filters.map(renderFilter),
+    el('div', { class: 'table-toolbar-spacer' }),
+    canEdit ? el('button', { type: 'button', class: 'btn btn-primary btn-add', onclick: () => openForm(null) }, addLabel) : null,
+  ]);
+
+  function renderFilter(f) {
+    const id = `filter-${f.name}`;
+    let input;
+    if (f.type === 'select') {
+      input = el('select', { id }, [el('option', { value: '' }, 'Все'), ...f.options.map((o) => el('option', { value: o.value }, o.label))]);
+      input.addEventListener('change', () => { filterValues[f.name] = input.value; offset = 0; load(); });
+    } else {
+      input = el('input', { type: 'search', id, placeholder: f.placeholder || 'Поиск', autocomplete: 'off' });
+      input.addEventListener('input', () => {
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(() => { filterValues[f.name] = input.value.trim(); offset = 0; load(); }, 300);
+      });
+    }
+    return el('div', { class: f.type === 'select' ? 'field' : 'field field--search' }, [el('label', { for: id }, f.label), input]);
+  }
+
+  function openForm(row) {
+    openEntityForm({
+      title: row ? `${entityTitle}: редактирование` : `${entityTitle}: новая запись`,
+      fields,
+      watch,
+      entity: row,
+      fixed,
+      save: (body) => (row ? api.update(row.id, body) : api.create(body)),
+      onSaved: () => load(),
+    });
+  }
+
+  async function remove(row) {
+    const ok = await confirmDialog({ title: 'Удаление', message: deleteMessage(row), confirmLabel: 'Удалить', danger: true });
+    if (!ok) return;
+    try {
+      await api.remove(row.id);
+      toast.success('Удалено');
+      load();
+    } catch (err) {
+      if (err.status !== 0 && err.status < 500) toast.error(describeApiError(err, { action: 'delete' }).message);
+    }
+  }
+
+  async function load() {
+    const current = ++seq;
+    try {
+      const { items } = await api.list({ ...fixedQuery, ...filterValues, limit: config.pageSize, offset });
+      if (current !== seq) return;
+      tableHost.replaceChildren(renderTable({
+        columns,
+        rows: items,
+        emptyMessage,
+        rowActions: canEdit ? (row) => [
+          el('button', { type: 'button', class: 'btn btn-ghost btn-sm', onclick: () => openForm(row) }, 'Изменить'),
+          el('button', { type: 'button', class: 'btn btn-ghost btn-sm btn-danger-text', onclick: () => remove(row) }, 'Удалить'),
+        ] : null,
+      }));
+      prevButton.disabled = offset === 0;
+      nextButton.disabled = items.length < config.pageSize;
+      pager.hidden = offset === 0 && items.length < config.pageSize;
+      pageInfo.textContent = `${offset + 1}–${offset + items.length}`;
+    } catch (err) {
+      if (current !== seq) return;
+      tableHost.replaceChildren(el('div', { class: 'table-status table-status-error' }, describeApiError(err).message));
+    }
+  }
+
+  load();
+  return { element: el('div', { class: 'crud-list' }, [toolbar, tableHost, pager]), reload: load };
+}
+
+// Страница-справочник: заголовок + список.
+export function crudPage({ title, ...listOptions }) {
+  return (container) => {
+    const list = createCrudList(listOptions);
+    container.replaceChildren(el('div', { class: 'page' }, [
+      el('div', { class: 'section-header' }, el('h1', {}, title)),
+      list.element,
+    ]));
+  };
+}

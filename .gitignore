@@ -1,0 +1,20 @@
+# Секреты и локальное окружение
+.env
+.env.*
+!.env.example
+private/
+
+# Файлы деплоя, которые CI создаёт на лету
+docker-compose.yml.deploy
+*.rollback
+
+# IDE, ОС, логи
+.idea/
+.vscode/
+*.iml
+.DS_Store
+*.log
+node_modules/
+
+# Локальные настройки Claude Code
+.claude/settings.local.json

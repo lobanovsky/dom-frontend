@@ -1,0 +1,43 @@
+:root {
+  /* Цвета */
+  --color-bg: #f5f6f8;
+  --color-surface: #ffffff;
+  --color-border: #dde1e6;
+  --color-text: #1b1f24;
+  --color-text-muted: #5b6470;
+  --color-accent: #2b6cb0;
+  --color-accent-hover: #235a92;
+  --color-danger: #c53030;
+  --color-danger-bg: #fdecec;
+  --color-success: #2f855a;
+  --color-success-bg: #e9f7ef;
+  --color-warning: #b7791f;
+  --color-warning-bg: #fdf3df;
+
+  /* Отступы */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+
+  /* Типографика */
+  --font-sans: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-size-sm: 13px;
+  --font-size-base: 14px;
+  --font-size-lg: 16px;
+  --font-size-xl: 20px;
+  --font-size-xxl: 24px;
+
+  /* Прочее */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.08);
+  --shadow-md: 0 4px 16px rgba(16, 24, 40, 0.16);
+  --sidebar-width: 220px;
+  --z-modal: 100;
+  --z-toast: 200;
+}

@@ -1,0 +1,20 @@
+# Локальная разработка: caddy run --config dev/Caddyfile (из корня репозитория),
+# затем http://localhost:3000. Бэкенд — go run ./cmd/server на :8080.
+{
+	admin off
+}
+
+:3000 {
+	@backend path /api/* /healthz
+	handle @backend {
+		reverse_proxy 127.0.0.1:8080
+	}
+
+	handle {
+		# root — относительно рабочей директории caddy (корень репозитория).
+		root * .
+		try_files {path} /index.html
+		file_server
+		header Cache-Control "no-store"
+	}
+}

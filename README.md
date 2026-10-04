@@ -1,0 +1,70 @@
+# dom-frontend
+
+Веб-интерфейс администратора для [dom-backend](../dom-backend): дома, помещения, собственники с долями, жители, лицевые счета и плательщики. Работает и на компьютере, и на телефоне.
+
+Прод: https://dom.lobanovsky.ru
+
+## Стек
+
+- Чистый JavaScript (ES-модули), без сборки и без зависимостей. Стиль и структура как в `dr-notif-frontend`.
+- CSS без препроцессора: `tokens.css` (переменные), `base`, `layout` (каркас, мобильное меню), `components`.
+- Caddy в Docker: отдаёт статику и проксирует `/api/*` и `/healthz` на `dom-backend:8080`.
+- Тесты: встроенный `node --test`, только логика без DOM и сети.
+
+## Структура
+
+```
+index.html
+css/                     tokens, base, layout, components
+js/app.js                вход: проверка сессии (GET /api/v1/auth/me), маршруты
+js/router.js             History API, маршруты вида /premises/:id
+js/api/client.js         единственный fetch: cookie-сессия, ApiError, 401 → вход, 5xx → тост
+js/api/resources.js      CRUD-обёртки по ресурсам бэкенда
+js/lib/                  логика без DOM: подписи перечислений, форматирование, доли, перевод ошибок API, тело запроса из формы
+js/ui/                   форма, модалка, таблица, тосты, поле поиска физлица/юрлица, универсальный список
+js/pages/fields.js       поля форм каждой сущности
+js/pages/*/              страницы: обзор, организации, дома, дом, помещение, физлица, юрлица
+deploy/Caddyfile         прод: статика + прокси на dom-backend
+dev/Caddyfile            локально: :3000, прокси на 127.0.0.1:8080
+```
+
+Основной рабочий экран — карточка помещения `/premises/:id`: собственники (доли, периоды, сумма долей на сегодня), жители (родство, регистрация), лицевые счета с плательщиками.
+
+На телефоне (ширина до 768px) меню выезжает сбоку, таблицы показываются карточками, а формы открываются шторкой снизу.
+
+## Локальный запуск
+
+```bash
+# бэкенд (в ../dom-backend)
+set -a; . ./.env; set +a; go run ./cmd/server
+
+# фронтенд (в корне этого репозитория)
+caddy run --config dev/Caddyfile     # http://localhost:3000
+npm test
+```
+
+## Как устроен прод
+
+- Фронтенд и API на одном origin: cookie `dom_session` HttpOnly, CORS у бэкенда нет.
+- Цепочка: Traefik (TLS, Let's Encrypt) → Caddy в контейнере `dom-frontend` → `dom-backend:8080`.
+- Контейнер подключён к двум сетям: `housekpr-network` (Traefik) и `dom-network` (бэкенд). Обе создаются вне этого проекта.
+- `trusted_proxies private_ranges` в `deploy/Caddyfile` пропускает `X-Forwarded-Proto: https` от Traefik, поэтому бэкенд ставит cookie флаг `Secure`.
+- Сертификат выпускает Traefik (резолвер `letsEncrypt`, HTTP-01) по labels в `docker-compose.yml`. Имя роутера `dom-frontend` и хост не меняйте: сертификат хранится в `acme.json` Traefik, а лишние выпуски упираются в лимиты Let's Encrypt.
+- DNS: A-запись `dom.lobanovsky.ru` в Cloudflare в режиме DNS only (без проксирования).
+
+## CI/CD
+
+Workflow `.github/workflows/build-and-deploy-frontend.yml` запускается при PR и push в `master` и вручную:
+1. `test`: `npm test`.
+2. `publish`: образ `${DOCKER_USERNAME}/dom-frontend` с тегами `sha-<commit>` и `latest` в Docker Hub.
+3. `deploy`: по SSH копирует `.env` и `docker-compose.yml` в `DEPLOY_HOST_PROJECT_PATH`, проверяет, что сети `dom-network` и `housekpr-network` существуют, делает `docker compose pull && up -d`, ждёт `/healthz` через Caddy (тем самым проверяется и связь с бэкендом), при неудаче откатывает прошлую версию.
+
+Секреты GitHub Actions:
+
+| Секрет | Назначение |
+|---|---|
+| `DOCKER_USERNAME`, `DOCKER_TOKEN` | Docker Hub |
+| `DEPLOY_HOST_IP`, `DEPLOY_HOST_PORT`, `DEPLOY_HOST_USERNAME`, `DEPLOY_HOST_KEY` | SSH-доступ к серверу |
+| `DEPLOY_HOST_PROJECT_PATH` | каталог проекта на сервере |
+
+Бэкенд должен быть задеплоен раньше фронтенда: фронтенду нужен `GET /api/v1/auth/me`.

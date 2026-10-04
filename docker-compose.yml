@@ -1,0 +1,35 @@
+name: dom-frontend
+
+services:
+  frontend:
+    image: ${DOCKER_USERNAME}/dom-frontend:${TAG}
+    container_name: dom-frontend
+    restart: unless-stopped
+    networks:
+      - dom-network
+      - proxy
+    labels:
+      traefik.enable: "true"
+      # Контейнер в двух сетях — явно указываем ту, через которую ходит Traefik.
+      traefik.docker.network: housekpr-network
+      # Имя роутера и хост не менять: сертификат Let's Encrypt выпущен на них
+      # и хранится в acme.json Traefik.
+      traefik.http.routers.dom-frontend.rule: Host(`dom.lobanovsky.ru`)
+      traefik.http.routers.dom-frontend.entrypoints: https
+      traefik.http.routers.dom-frontend.tls.certresolver: letsEncrypt
+      traefik.http.routers.dom-frontend.service: dom-frontend
+      traefik.http.services.dom-frontend.loadbalancer.server.port: "80"
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "1"
+
+# Обе сети создаются вне этого проекта: dom-network — вместе с бэкендом и БД,
+# housekpr-network — сеть Traefik.
+networks:
+  proxy:
+    external: true
+    name: housekpr-network
+  dom-network:
+    external: true
