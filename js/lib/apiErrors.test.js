@@ -70,3 +70,20 @@ test('soft-delete guards are translated', () => {
     'Связанная запись удалена: юрлицо. Сначала восстановите её.',
   );
 });
+
+test('import row errors', async () => {
+  const { describeImportRowError } = await import('./apiErrors.js');
+  assert.equal(describeImportRowError('last_name is required'), 'не заполнено: фамилия');
+  assert.equal(describeImportRowError('area: "abc" is not a positive number'), 'площадь «abc» — нужно число больше нуля');
+  assert.equal(describeImportRowError('duplicate account "0001" (already in row 4)'), 'повтор: лицевой счёт «0001» уже в строке 4');
+  assert.equal(describeImportRowError('something new'), 'something new');
+});
+
+test('import errors: row prefix from DB conflicts and file errors', () => {
+  assert.equal(
+    describeApiError(err('row 7: already exists: personal_accounts_number_key', 409)).message,
+    'Строка 7: Лицевой счёт с таким номером уже есть',
+  );
+  assert.equal(describeApiError(err('not a valid xlsx file: zip: not a valid zip file')).message, 'Не удалось прочитать файл: нужен xlsx (Excel)');
+  assert.equal(describeApiError(err('building not found', 404)).message, 'Дом не найден');
+});

@@ -5,10 +5,12 @@ import { config } from '../config.js';
 // и разбор «поле: причина» — в lib/apiErrors.js.
 
 export class ApiError extends Error {
-  constructor({ status, message }) {
+  // rows — построчные ошибки импорта [{row, error}], если бэкенд их вернул.
+  constructor({ status, message, rows = null }) {
     super(message || 'Ошибка запроса');
     this.name = 'ApiError';
     this.status = status;
+    this.rows = rows;
   }
 }
 
@@ -41,7 +43,11 @@ async function toApiError(response) {
   } catch {
     // тело не JSON или пустое
   }
-  return new ApiError({ status: response.status, message: (data && data.error) || response.statusText });
+  return new ApiError({
+    status: response.status,
+    message: (data && data.error) || response.statusText,
+    rows: data && Array.isArray(data.rows) ? data.rows : null,
+  });
 }
 
 function isGlobalError(error) {
@@ -53,7 +59,10 @@ export async function request(method, path, { query, body, signal } = {}) {
   const headers = {};
   let payload;
 
-  if (body !== undefined) {
+  if (body instanceof FormData) {
+    // Content-Type с boundary выставит браузер.
+    payload = body;
+  } else if (body !== undefined) {
     headers['Content-Type'] = 'application/json';
     payload = JSON.stringify(body);
   }

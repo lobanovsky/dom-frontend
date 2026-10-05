@@ -1,6 +1,7 @@
 import { el } from '../../lib/dom.js';
 import { createCrudList } from '../../ui/crudList.js';
 import { openEntityForm } from '../../ui/entityForm.js';
+import { openImportDialog } from '../../ui/importDialog.js';
 import { confirmDialog } from '../../ui/confirmDialog.js';
 import { toast } from '../../ui/toast.js';
 import { goTo } from '../../state/nav.js';
@@ -71,6 +72,11 @@ export async function buildingPage(container, { id }) {
     });
   }
 
+  function importData() {
+    // Страница перерисовывается сразу после загрузки; окно с итогом остаётся поверх.
+    openImportDialog({ buildingId: building.id, onImported: () => buildingPage(container, { id }) });
+  }
+
   async function remove() {
     const ok = await confirmDialog({ title: 'Удаление', message: `Удалить дом «${building.address}»? Удалить можно только дом без помещений. Дом попадёт в «Удалённые», его можно будет восстановить.`, confirmLabel: 'Удалить', danger: true });
     if (!ok) return;
@@ -111,6 +117,7 @@ export async function buildingPage(container, { id }) {
     el('div', { class: 'section-header' }, [
       title,
       el('div', { class: 'header-actions' }, [
+        el('button', { type: 'button', class: 'btn', onclick: importData }, 'Импорт из Excel'),
         el('button', { type: 'button', class: 'btn', onclick: edit }, 'Изменить'),
         el('button', { type: 'button', class: 'btn btn-ghost btn-danger-text', onclick: remove }, 'Удалить'),
       ]),

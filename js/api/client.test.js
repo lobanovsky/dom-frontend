@@ -127,3 +127,21 @@ describe('client requests', () => {
     assert.equal(seenUrl, '/api/v1/persons?q=%D0%98%D0%B2&limit=50');
   });
 });
+
+describe('multipart upload', () => {
+  test('sends FormData without a JSON Content-Type and exposes row errors', async () => {
+    let seen;
+    mockFetch(async (url, init) => {
+      seen = init;
+      return jsonResponse(422, { error: 'file contains invalid rows, nothing was imported', rows: [{ row: 3, error: 'area: "x" is not a positive number' }] });
+    });
+    const body = new FormData();
+    body.set('kind', 'apartment');
+    await assert.rejects(
+      () => client.post('/api/v1/buildings/1/import', body),
+      (err) => err.status === 422 && err.rows.length === 1 && err.rows[0].row === 3,
+    );
+    assert.ok(seen.body instanceof FormData);
+    assert.equal(seen.headers['Content-Type'], undefined);
+  });
+});

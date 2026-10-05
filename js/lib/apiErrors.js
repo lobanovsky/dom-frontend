@@ -86,6 +86,13 @@ export function describeApiError(err, { action = 'save' } = {}) {
   if (raw === 'sum of ownership shares for the premises exceeds 1') {
     return { field: 'share_num', message: 'Сумма долей собственников превысит 1' };
   }
+  if (raw === 'building not found') return { field: null, message: 'Дом не найден' };
+  if (raw === 'file has no data rows') return { field: null, message: 'В файле нет строк с данными' };
+  if (raw.startsWith('not a valid xlsx file')) return { field: null, message: 'Не удалось прочитать файл: нужен xlsx (Excel)' };
+  if (raw.startsWith('file contains invalid rows')) return { field: null, message: 'В файле есть ошибки, ничего не загружено' };
+  // Ошибка БД при импорте: бэкенд добавляет номер строки файла.
+  m = raw.match(/^row (\d+): (.+)$/);
+  if (m) return { field: null, message: `Строка ${m[1]}: ${describeApiError(new Error(m[2])).message}` };
   if (raw === 'not found') return { field: null, message: 'Запись не найдена' };
 
   const fieldError = raw.match(/^([a-z_]+): (.+)$/);
@@ -98,4 +105,26 @@ export function applyFormApiError(form, err) {
   const { field, message } = describeApiError(err);
   if (field) form.setFieldErrors({ [field]: message });
   else form.setGeneralError(message);
+}
+
+const ROW_FIELDS = {
+  number: 'номер помещения',
+  last_name: 'фамилия',
+  first_name: 'имя',
+  utilities_account: 'лицевой счёт ЖКУ',
+  capital_repair_account: 'лицевой счёт капремонта',
+};
+
+const DUPLICATES = { number: 'номер помещения', 'cadastral number': 'кадастровый номер', account: 'лицевой счёт' };
+
+// Перевод ошибки одной строки файла импорта (message из rows[].error бэкенда).
+export function describeImportRowError(message) {
+  let m = message.match(/^([a-z_]+) is required$/);
+  if (m) return `не заполнено: ${ROW_FIELDS[m[1]] || m[1]}`;
+  m = message.match(/^area: "(.*)" is not a positive number$/);
+  if (m) return `площадь «${m[1]}» — нужно число больше нуля`;
+  m = message.match(/^duplicate (.+) "(.*)" \(already in row (\d+)\)$/);
+  if (m) return `повтор: ${DUPLICATES[m[1]] || m[1]} «${m[2]}» уже в строке ${m[3]}`;
+  if (message === 'utilities and capital repair accounts must differ') return 'лицевые счета ЖКУ и капремонта совпадают';
+  return message;
 }

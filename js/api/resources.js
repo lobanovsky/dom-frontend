@@ -15,7 +15,16 @@ function resource(name) {
 }
 
 export const organizationsApi = resource('organizations');
-export const buildingsApi = resource('buildings');
+export const buildingsApi = {
+  ...resource('buildings'),
+  // Импорт помещений, собственников и счетов из xlsx; kind — вид помещений файла.
+  importFile: (id, kind, file) => {
+    const body = new FormData();
+    body.set('kind', kind);
+    body.set('file', file);
+    return client.post(`/api/v1/buildings/${id}/import`, body);
+  },
+};
 export const premisesApi = {
   ...resource('premises'),
   ownerships: (id, query) => client.get(`/api/v1/premises/${id}/ownerships`, { query }),
