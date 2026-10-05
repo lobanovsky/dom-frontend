@@ -1,6 +1,6 @@
 import { textField, numberField, dateField, selectField, checkboxField } from '../lib/fields.js';
 import {
-  options, organizationKinds, buildingKinds, premisesKinds, relations, accountPurposes, accountStatuses, ownerKinds,
+  options, paymentDirections, bankLabel, organizationKinds, buildingKinds, premisesKinds, relations, accountPurposes, accountStatuses, ownerKinds,
 } from '../lib/labels.js';
 import { entityPicker } from '../ui/picker.js';
 import { listInput } from '../ui/listInput.js';
@@ -103,4 +103,62 @@ export const accountHolderFields = (values) => [
   ...ownerFields(values),
   dateField('valid_from', 'Плательщик с', { required: true }),
   dateField('valid_to', 'Плательщик по', { help: 'Пусто — платит сейчас' }),
+];
+
+// --- Платежи ---
+
+export const bankAccountFields = (organizations) => [
+  selectField('organization_id', 'Организация', organizations.map((o) => ({ value: String(o.id), label: o.name })), { required: true, numeric: true, placeholder: 'Выберите' }),
+  textField('number', 'Номер счёта', { required: true, inputmode: 'numeric', maxLength: 20, help: '20 цифр' }),
+  textField('bik', 'БИК', { inputmode: 'numeric', maxLength: 9 }),
+  textField('bank_name', 'Банк'),
+  checkboxField('is_special', 'Специальный счёт (капремонт)'),
+  dateField('valid_from', 'Действует с', { required: true }),
+  dateField('valid_to', 'Действует по', { help: 'Пусто — действует сейчас. Счёт активен, пока сегодняшняя дата внутри периода' }),
+  textField('description', 'Описание', { full: true }),
+];
+
+export const paymentCategoryFields = [
+  textField('name', 'Название', { required: true, full: true }),
+  selectField('direction', 'Направление', options(paymentDirections), { required: true, placeholder: 'Выберите' }),
+];
+
+const bankOptions = (banks) => banks.map((b) => ({ value: String(b.id), label: bankLabel(b) }));
+const categoryOptions = (categories) => categories.map((c) => ({ value: String(c.id), label: c.name }));
+
+// Входящий платёж: либо привязка к лицевому счёту, либо категория (поле категории скрывается, когда выбран счёт).
+export const incomingPaymentFields = ({ banks, categories }) => (values) => [
+  selectField('bank_account_id', 'На какой счёт', bankOptions(banks), { required: true, numeric: true, placeholder: 'Выберите', full: true }),
+  dateField('payment_date', 'Дата', { required: true }),
+  { type: 'time', name: 'payment_time', label: 'Время', step: 1 },
+  numberField('amount', 'Сумма, ₽', { required: true, min: 0.01, step: 0.01, inputmode: 'decimal' }),
+  textField('payer_name', 'От кого (имя или название)', { required: true, full: true }),
+  textField('payer_inn', 'ИНН плательщика', { inputmode: 'numeric' }),
+  textField('payer_account', 'Счёт плательщика', { inputmode: 'numeric' }),
+  textField('payer_bik', 'БИК банка плательщика', { inputmode: 'numeric', maxLength: 9 }),
+  textField('payer_bank_name', 'Банк плательщика'),
+  textField('doc_number', 'Номер документа'),
+  textField('operation_type', 'ВО (вид операции)'),
+  textField('purpose', 'Назначение платежа', { full: true }),
+  { type: 'picker', name: 'personal_account_id', label: 'Лицевой счёт', full: true, component: entityPicker('personal_account'),
+    help: 'Например, Иванов заплатил за ЖКУ. Для платежей, которые не относятся к лицевому счёту, оставьте пустым и выберите категорию' },
+  { ...selectField('category_id', 'Категория', categoryOptions(categories), { numeric: true, placeholder: 'Без категории' }),
+    visible: (v) => !v.personal_account_id },
+  textField('comment', 'Комментарий', { full: true }),
+];
+
+export const outgoingPaymentFields = ({ banks, categories }) => [
+  selectField('bank_account_id', 'С какого счёта', bankOptions(banks), { required: true, numeric: true, placeholder: 'Выберите', full: true }),
+  dateField('payment_date', 'Дата', { required: true }),
+  numberField('amount', 'Сумма, ₽', { required: true, min: 0.01, step: 0.01, inputmode: 'decimal' }),
+  textField('recipient_name', 'Кому (имя или название)', { required: true, full: true }),
+  textField('recipient_inn', 'ИНН получателя', { inputmode: 'numeric' }),
+  textField('recipient_account', 'Счёт получателя', { inputmode: 'numeric' }),
+  textField('recipient_bik', 'БИК банка получателя', { inputmode: 'numeric', maxLength: 9 }),
+  textField('recipient_bank_name', 'Банк получателя'),
+  textField('doc_number', 'Номер документа'),
+  textField('operation_type', 'ВО (вид операции)'),
+  textField('purpose', 'Назначение платежа', { full: true }),
+  selectField('category_id', 'Категория', categoryOptions(categories), { numeric: true, placeholder: 'Без категории' }),
+  textField('comment', 'Комментарий', { full: true }),
 ];

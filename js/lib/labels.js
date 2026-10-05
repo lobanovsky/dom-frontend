@@ -44,3 +44,11 @@ export function label(dict, value) {
 export function options(dict) {
   return Object.entries(dict).map(([value, text]) => ({ value, label: text }));
 }
+
+export const paymentDirections = { incoming: 'Входящие', outgoing: 'Исходящие' };
+
+// Банковский счёт в списках выбора: «40703810…4376 · спецсчёт · описание».
+export function bankLabel(bank) {
+  const n = String(bank.number || '');
+  return [n.length > 8 ? `${n.slice(0, 8)}…${n.slice(-4)}` : n, bank.is_special ? 'спецсчёт' : null, bank.description].filter(Boolean).join(' · ');
+}

@@ -40,3 +40,12 @@ test('isActiveOn', () => {
   assert.equal(isActiveOn('2025-01-01', null, '2024-05-01'), false);
   assert.equal(isActiveOn('2020-01-01', '2024-05-01', '2024-05-01'), true);
 });
+
+test('formatMoney and formatTime', async () => {
+  const { formatMoney, formatTime } = await import('./format.js');
+  assert.equal(formatMoney(8575.3).replace(/\s/g, ' '), '8 575,30 ₽');
+  assert.equal(formatMoney(0).replace(/\s/g, ' '), '0,00 ₽');
+  assert.equal(formatMoney(null), '');
+  assert.equal(formatTime('09:32:33'), '09:32');
+  assert.equal(formatTime(null), '');
+});

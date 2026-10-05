@@ -87,3 +87,21 @@ test('import errors: row prefix from DB conflicts and file errors', () => {
   assert.equal(describeApiError(err('not a valid xlsx file: zip: not a valid zip file')).message, 'Не удалось прочитать файл: нужен xlsx (Excel)');
   assert.equal(describeApiError(err('building not found', 404)).message, 'Дом не найден');
 });
+
+test('payments and registry errors', () => {
+  assert.deepEqual(describeApiError(err('amount: must have at most 2 decimal places')), { field: 'amount', message: 'Не больше двух знаков после запятой' });
+  assert.deepEqual(describeApiError(err('number: must contain exactly 20 digits')), { field: 'number', message: 'Должно быть ровно 20 цифр' });
+  const dup = describeApiError(err('registry file already loaded: registry 7', 409));
+  assert.equal(dup.registryId, 7);
+  assert.equal(dup.message, 'Этот файл уже загружен: реестр № 7');
+  assert.equal(describeApiError(err('all 10 payments of the file are already loaded', 409)).message, 'Все платежи файла (10) уже загружены раньше');
+  assert.equal(describeApiError(err('already exists: incoming_payments_external_id_key', 409)).message, 'Платёж с таким номером операции уже есть на этом счёте');
+  assert.equal(describeApiError(err('cannot delete: has active incoming payments')).message, 'Нельзя удалить: есть действующие входящие платежи. Сначала удалите их.');
+  assert.equal(describeApiError(err('row 3: already exists: incoming_payments_external_id_key', 409)).message, 'Строка 3: Платёж с таким номером операции уже есть на этом счёте');
+});
+
+test('registry row errors are translated', async () => {
+  const { describeImportRowError } = await import('./apiErrors.js');
+  assert.equal(describeImportRowError('date "2026-01-03": expected dd-mm-yyyy'), 'дата «2026-01-03»: нужен формат дд-мм-гггг');
+  assert.equal(describeImportRowError('expected 13 fields, got 5'), 'ожидалось полей: 13, а в строке 5');
+});

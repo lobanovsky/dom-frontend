@@ -39,3 +39,14 @@ export function personName(person) {
 export function isActiveOn(from, to, day) {
   return (!from || from <= day) && (!to || to >= day);
 }
+
+// 8575.3 -> «8 575,30 ₽»; пустое значение -> ''.
+export function formatMoney(value) {
+  if (value === null || value === undefined || value === '') return '';
+  return `${Number(value).toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₽`;
+}
+
+// "09:32:33" -> "09:32"; пустое значение -> ''.
+export function formatTime(value) {
+  return value ? String(value).slice(0, 5) : '';
+}

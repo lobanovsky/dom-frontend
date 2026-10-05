@@ -1,5 +1,6 @@
 import { el } from '../lib/dom.js';
-import { personsApi, legalEntitiesApi } from '../api/resources.js';
+import { personsApi, legalEntitiesApi, accountsApi } from '../api/resources.js';
+import { accountPurposes, label } from '../lib/labels.js';
 import { personName } from '../lib/format.js';
 import { createPersonForm } from './personCreate.js';
 
@@ -13,6 +14,13 @@ const KINDS = {
     title: (p) => personName(p),
     hint: (p) => [p.birth_date ? p.birth_date.split('-').reverse().join('.') : null, (p.phones || [])[0]].filter(Boolean).join(', '),
     placeholder: 'Фамилия, имя, телефон или email',
+  },
+  // Лицевой счёт помещения: поиск по началу номера.
+  personal_account: {
+    api: accountsApi,
+    title: (a) => `№ ${a.number}`,
+    hint: (a) => label(accountPurposes, a.purpose),
+    placeholder: 'Номер лицевого счёта',
   },
   legal_entity: {
     api: legalEntitiesApi,

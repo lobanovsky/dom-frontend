@@ -14,6 +14,12 @@ import { personsPage } from './pages/persons/personsPage.js';
 import { buildingsPage } from './pages/buildings/buildingsPage.js';
 import { buildingPage } from './pages/buildings/buildingPage.js';
 import { premisesPage } from './pages/premises/premisesPage.js';
+import { bankAccountsPage } from './pages/payments/bankAccountsPage.js';
+import { paymentCategoriesPage } from './pages/payments/paymentCategoriesPage.js';
+import { incomingPaymentsPage } from './pages/payments/incomingPaymentsPage.js';
+import { outgoingPaymentsPage } from './pages/payments/outgoingPaymentsPage.js';
+import { paymentRegistriesPage } from './pages/payments/paymentRegistriesPage.js';
+import { paymentRegistryPage } from './pages/payments/paymentRegistryPage.js';
 
 const appRoot = document.getElementById('app');
 
@@ -25,6 +31,12 @@ const routes = [
   { pattern: '/buildings', mount: buildingsPage },
   { pattern: '/buildings/:id', mount: buildingPage },
   { pattern: '/premises/:id', mount: premisesPage },
+  { pattern: '/bank-accounts', mount: bankAccountsPage },
+  { pattern: '/payments/incoming', mount: incomingPaymentsPage },
+  { pattern: '/payment-registries', mount: paymentRegistriesPage },
+  { pattern: '/payment-registries/:id', mount: paymentRegistryPage },
+  { pattern: '/payments/outgoing', mount: outgoingPaymentsPage },
+  { pattern: '/payment-categories', mount: paymentCategoriesPage },
 ];
 
 let router = null;

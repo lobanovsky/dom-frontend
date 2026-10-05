@@ -43,3 +43,21 @@ export const ownershipsApi = resource('ownerships');
 export const residenciesApi = resource('residencies');
 export const accountsApi = resource('accounts');
 export const accountHoldersApi = resource('account-holders');
+
+// Платежи. Банковский счёт организации (bank-accounts) — не лицевой счёт помещения (accounts).
+export const bankAccountsApi = resource('bank-accounts');
+export const paymentCategoriesApi = resource('payment-categories');
+export const incomingPaymentsApi = resource('incoming-payments');
+export const outgoingPaymentsApi = resource('outgoing-payments');
+export const paymentRegistriesApi = {
+  list: (query) => client.get('/api/v1/payment-registries', { query }),
+  get: (id) => client.get(`/api/v1/payment-registries/${id}`),
+  // Ссылка на исходный файл реестра (cookie-сессия, тот же origin).
+  fileUrl: (id) => `/api/v1/payment-registries/${id}/file`,
+  importFile: (bankAccountId, file) => {
+    const body = new FormData();
+    body.set('bank_account_id', String(bankAccountId));
+    body.set('file', file);
+    return client.post('/api/v1/payment-registries/import', body);
+  },
+};

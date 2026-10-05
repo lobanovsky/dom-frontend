@@ -10,7 +10,7 @@ import { config } from '../config.js';
 // редактирование и удаление через модальную форму. Удаление мягкое: переключатель
 // «Удалённые» показывает корзину, где записи можно восстановить.
 //
-// filters: [{name, label, type: 'search'|'select', options?}] — значения уходят в query.
+// filters: [{name, label, type: 'search'|'select'|'date', options?}] — значения уходят в query.
 // fixedQuery — всегда добавляется к запросу списка (например building_id).
 // fixed — всегда добавляется к телу при создании/сохранении.
 // extraActions(row) -> [Node] — дополнительные кнопки в строках действующих записей.
@@ -51,6 +51,9 @@ export function createCrudList({
     if (f.type === 'select') {
       input = el('select', { id }, [el('option', { value: '' }, 'Все'), ...f.options.map((o) => el('option', { value: o.value }, o.label))]);
       input.addEventListener('change', () => { filterValues[f.name] = input.value; offset = 0; load(); });
+    } else if (f.type === 'date') {
+      input = el('input', { type: 'date', id });
+      input.addEventListener('change', () => { filterValues[f.name] = input.value; offset = 0; load(); });
     } else {
       input = el('input', { type: 'search', id, placeholder: f.placeholder || 'Поиск', autocomplete: 'off' });
       input.addEventListener('input', () => {
@@ -58,7 +61,7 @@ export function createCrudList({
         searchTimer = setTimeout(() => { filterValues[f.name] = input.value.trim(); offset = 0; load(); }, 300);
       });
     }
-    return el('div', { class: f.type === 'select' ? 'field' : 'field field--search' }, [el('label', { for: id }, f.label), input]);
+    return el('div', { class: f.type === 'select' || f.type === 'date' ? 'field' : 'field field--search' }, [el('label', { for: id }, f.label), input]);
   }
 
   function openForm(row) {
