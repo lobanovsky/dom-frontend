@@ -1,4 +1,5 @@
 import { crudPage } from '../../ui/crudList.js';
+import { openPropertiesDialog } from '../../ui/propertiesDialog.js';
 import { personsApi } from '../../api/resources.js';
 import { personFields } from '../fields.js';
 import { el } from '../../lib/dom.js';
@@ -22,6 +23,11 @@ export const personsPage = crudPage({
     { key: 'phones', label: 'Телефоны', render: (r) => contactList(r.phones) },
     { key: 'emails', label: 'Email', render: (r) => contactList(r.emails) },
   ],
+  extraActions: (r) => [el('button', {
+    type: 'button',
+    class: 'btn btn-ghost btn-sm',
+    onclick: () => openPropertiesDialog({ title: `Недвижимость: ${personName(r)}`, load: () => personsApi.properties(r.id) }),
+  }, 'Недвижимость')],
   emptyMessage: 'Физлиц не найдено',
   deleteMessage: (r) => `Удалить «${personName(r)}»?`,
 });

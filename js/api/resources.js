@@ -30,8 +30,15 @@ export const premisesApi = {
   ownerships: (id, query) => client.get(`/api/v1/premises/${id}/ownerships`, { query }),
   accounts: (id, query) => client.get(`/api/v1/premises/${id}/accounts`, { query }),
 };
-export const personsApi = resource('persons');
-export const legalEntitiesApi = resource('legal-entities');
+// Помещения, которыми владелец владеет сегодня.
+export const personsApi = {
+  ...resource('persons'),
+  properties: (id) => client.get(`/api/v1/persons/${id}/properties`),
+};
+export const legalEntitiesApi = {
+  ...resource('legal-entities'),
+  properties: (id) => client.get(`/api/v1/legal-entities/${id}/properties`),
+};
 export const ownershipsApi = resource('ownerships');
 export const residenciesApi = resource('residencies');
 export const accountsApi = resource('accounts');

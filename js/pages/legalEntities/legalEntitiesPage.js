@@ -1,4 +1,6 @@
 import { crudPage } from '../../ui/crudList.js';
+import { el } from '../../lib/dom.js';
+import { openPropertiesDialog } from '../../ui/propertiesDialog.js';
 import { legalEntitiesApi } from '../../api/resources.js';
 import { legalEntityFields } from '../fields.js';
 
@@ -13,6 +15,11 @@ export const legalEntitiesPage = crudPage({
     { key: 'inn', label: 'ИНН' },
     { key: 'kpp', label: 'КПП' },
   ],
+  extraActions: (r) => [el('button', {
+    type: 'button',
+    class: 'btn btn-ghost btn-sm',
+    onclick: () => openPropertiesDialog({ title: `Недвижимость: ${r.name}`, load: () => legalEntitiesApi.properties(r.id) }),
+  }, 'Недвижимость')],
   emptyMessage: 'Юрлиц не найдено',
   deleteMessage: (r) => `Удалить юрлицо «${r.name}»?`,
 });

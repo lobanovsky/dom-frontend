@@ -13,11 +13,12 @@ import { config } from '../config.js';
 // filters: [{name, label, type: 'search'|'select', options?}] — значения уходят в query.
 // fixedQuery — всегда добавляется к запросу списка (например building_id).
 // fixed — всегда добавляется к телу при создании/сохранении.
+// extraActions(row) -> [Node] — дополнительные кнопки в строках действующих записей.
 // Возвращает {element, reload}.
 export function createCrudList({
   api, columns, fields, watch, filters = [], fixedQuery = {}, fixed = {},
   entityTitle, addLabel = 'Добавить', emptyMessage, deleteMessage = (row) => 'Удалить запись?',
-  canEdit = true,
+  canEdit = true, extraActions,
 }) {
   let offset = 0;
   let showDeleted = false;
@@ -112,6 +113,7 @@ export function createCrudList({
         rowActions: !canEdit ? null : showDeleted
           ? (row) => [el('button', { type: 'button', class: 'btn btn-sm', onclick: () => restore(row) }, 'Восстановить')]
           : (row) => [
+            ...(extraActions ? extraActions(row) : []),
             el('button', { type: 'button', class: 'btn btn-ghost btn-sm', onclick: () => openForm(row) }, 'Изменить'),
             el('button', { type: 'button', class: 'btn btn-ghost btn-sm btn-danger-text', onclick: () => remove(row) }, 'Удалить'),
           ],
