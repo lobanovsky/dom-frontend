@@ -66,12 +66,12 @@ export function entityPicker(kind, { allowCreate = false } = {}) {
       const bar = allowCreate ? modeBar(mode) : null;
       if (mode === 'new') {
         const form = createPersonForm({ prefill: lastSearchText, onCreated: select, onCancel: () => showMode('search') });
-        root.replaceChildren(bar, form.element);
+        root.replaceChildren(...[bar, form.element].filter(Boolean));
         form.focus();
         return;
       }
       const search = renderSearch();
-      root.replaceChildren(bar, ...search.nodes);
+      root.replaceChildren(...[bar, ...search.nodes].filter(Boolean)); // replaceChildren(null) рисует текст «null»
     }
 
     function renderSearch() {
