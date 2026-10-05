@@ -7,12 +7,13 @@ import { toast } from '../../ui/toast.js';
 import { goTo } from '../../state/nav.js';
 import {
   premisesApi, buildingsApi, ownershipsApi, residenciesApi, accountsApi, accountHoldersApi, personsApi, legalEntitiesApi,
+  incomingPaymentsApi,
 } from '../../api/resources.js';
 import {
   premisesFields, ownershipFields, residencyFields, accountFields, accountHolderFields, ownerKindOf,
 } from '../fields.js';
 import { premisesKinds, relations, accountPurposes, accountStatuses, label } from '../../lib/labels.js';
-import { formatArea, formatDate, formatPeriod, formatShare, personName, isActiveOn, todayIso } from '../../lib/format.js';
+import { formatArea, formatDate, formatMoney, formatPeriod, formatShare, formatTime, personName, isActiveOn, todayIso } from '../../lib/format.js';
 import { activeShareSum, describeShareSum } from '../../lib/shares.js';
 import { describeApiError } from '../../lib/apiErrors.js';
 import { notFoundView, definitionList, deletedBanner } from '../common.js';
@@ -217,6 +218,19 @@ export async function premisesPage(container, { id }) {
       },
     }, 'Плательщики');
 
+    // Все оплаты по лицевому счёту: платежи из реестров и введённые вручную.
+    const paymentsBody = el('div', { class: 'account-payments' });
+    paymentsBody.hidden = true;
+    const paymentsToggle = el('button', {
+      type: 'button', class: 'btn btn-ghost btn-sm', 'aria-expanded': 'false',
+      onclick: () => {
+        paymentsBody.hidden = !paymentsBody.hidden;
+        paymentsToggle.setAttribute('aria-expanded', String(!paymentsBody.hidden));
+        paymentsToggle.textContent = paymentsBody.hidden ? 'Оплаты' : 'Скрыть оплаты';
+        if (!paymentsBody.hidden) loadPayments(account, paymentsBody);
+      },
+    }, 'Оплаты');
+
     return el('div', { class: 'card account-card' }, [
       el('div', { class: 'account-card-header' }, [
         el('div', {}, [
@@ -229,13 +243,44 @@ export async function premisesPage(container, { id }) {
           el('div', { class: 'account-holder' }, holdersLine(account.holder_names)),
         ]),
         el('div', { class: 'row-actions' }, [
+          paymentsToggle,
           toggle,
           editButton(() => accountForm(account)),
           deleteButton(() => removeRow(`Удалить лицевой счёт № ${account.number}? Удалить можно только счёт без плательщиков.`, () => accountsApi.remove(account.id), loadAccounts)),
         ]),
       ]),
+      paymentsBody,
       holdersBody,
     ]);
+  }
+
+  const PAYMENTS_LIMIT = 200;
+
+  async function loadPayments(account, host) {
+    host.replaceChildren(el('div', { class: 'table-status' }, 'Загрузка…'));
+    try {
+      const { items } = await incomingPaymentsApi.list({ personal_account_id: account.id, limit: PAYMENTS_LIMIT });
+      const total = Math.round(items.reduce((sum, p) => sum + p.amount, 0) * 100) / 100;
+      host.replaceChildren(
+        el('p', { class: 'field-help' }, items.length === 0
+          ? 'Оплат по этому лицевому счёту нет'
+          : `Оплат: ${items.length}${items.length === PAYMENTS_LIMIT ? '+ (показаны последние)' : ''}, на сумму ${formatMoney(total)}`),
+        items.length === 0 ? null : renderTable({
+          columns: [
+            { key: 'date', label: 'Дата', primary: true, render: (p) => [formatDate(p.payment_date), p.payment_time ? ` ${formatTime(p.payment_time)}` : ''].join('') },
+            { key: 'amount', label: 'Сумма', render: (p) => formatMoney(p.amount) },
+            { key: 'payer_name', label: 'Оплатил' },
+            { key: 'source', label: 'Источник', render: (p) => (p.registry_id
+              ? el('a', { href: `/payment-registries/${p.registry_id}` }, `Реестр${p.registry_number ? ` ${p.registry_number}` : ''}`)
+              : 'Вручную') },
+            { key: 'purpose', label: 'Назначение' },
+          ],
+          rows: items,
+        }),
+      );
+    } catch (err) {
+      host.replaceChildren(errorStatus(err));
+    }
   }
 
   async function loadHolders(account, host) {
