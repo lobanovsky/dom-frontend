@@ -534,8 +534,14 @@ a.btn-primary {
   font-size: var(--font-size-sm);
 }
 
+.def-list-row {
+  min-width: 0;
+}
+
+/* Длинные значения без пробелов (имена файлов) переносятся внутри своей ячейки, а не заезжают на соседнюю. */
 .def-list dd {
   margin: 0;
+  overflow-wrap: anywhere;
 }
 
 /* Формы: две колонки на широком экране */
