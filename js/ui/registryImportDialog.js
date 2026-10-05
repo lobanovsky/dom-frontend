@@ -2,103 +2,85 @@ import { el } from '../lib/dom.js';
 import { openModal } from './modal.js';
 import { paymentRegistriesApi } from '../api/resources.js';
 import { describeApiError, describeImportRowError } from '../lib/apiErrors.js';
-import { bankLabel } from '../lib/labels.js';
+import { statusInfo, summaryText, summaryTone } from '../lib/registryImport.js';
 import { formatDate, formatMoney } from '../lib/format.js';
-import { goTo } from '../state/nav.js';
 
 const MAX_SHOWN = 50;
 
-// Окно «Загрузить реестр»: банковский счёт-получатель + файл реестра Сбера (.txt).
-// Повторная загрузка безопасна: тот же файл отклоняется, уже известные платежи пропускаются.
-export function openRegistryImportDialog({ banks, onImported }) {
-  let modal;
-  let submitting = false;
+const TONE_CLASS = { success: 'badge badge-success', error: 'badge badge-danger', neutral: 'badge badge-neutral' };
 
-  const activeFirst = [...banks].sort((a, b) => Number(b.active) - Number(a.active));
-  const bankSelect = el('select', { id: 'registry-bank', required: true },
-    activeFirst.map((b) => el('option', { value: String(b.id) }, `${bankLabel(b)}${b.active ? '' : ' (закрыт)'}`)));
-  const fileInput = el('input', { id: 'registry-file', type: 'file', accept: '.txt,text/plain', required: true });
-  const message = el('div', { role: 'alert' });
-  message.hidden = true;
-  const details = el('div', {});
-  const submitButton = el('button', { type: 'submit', class: 'btn btn-primary' }, 'Загрузить');
-  const cancelButton = el('button', { type: 'button', class: 'btn btn-ghost', onclick: () => modal.close() }, 'Отмена');
+function shortList(items, render) {
+  const rows = items.slice(0, MAX_SHOWN).map((item) => el('li', {}, render(item)));
+  if (items.length > MAX_SHOWN) rows.push(el('li', {}, `…и ещё ${items.length - MAX_SHOWN}`));
+  return el('ul', { class: 'import-errors' }, rows);
+}
 
-  function showMessage(text, variant) {
-    message.className = variant === 'success' ? 'form-success' : 'form-error';
-    message.textContent = text;
-    message.hidden = false;
-  }
+function skippedBlock(skipped) {
+  if (!skipped?.length) return null;
+  return el('details', {}, [
+    el('summary', {}, `Пропущено платежей, которые уже есть в базе: ${skipped.length}`),
+    el('p', { class: 'field-help' }, 'Один и тот же платёж не должен попадать в разные реестры. Если это неожиданно, проверьте, что файлы выгружены за разные периоды.'),
+    shortList(skipped, (s) => `${formatDate(s.payment_date)} · ${s.payer_name} · ${formatMoney(s.amount)} · операция ${s.external_id}`),
+  ]);
+}
 
-  function list(items) {
-    return el('ul', { class: 'import-errors' }, items);
-  }
-
-  function showResult(r) {
-    const parts = [`Загружено платежей: ${r.created}. Привязано к лицевым счетам: ${r.linked}, без привязки: ${r.unlinked}.`];
-    if (r.skipped_duplicates) parts.push(`Пропущено уже загруженных: ${r.skipped_duplicates}.`);
-    showMessage(parts.join(' '), 'success');
-    const blocks = [];
-    if (r.unlinked) blocks.push(el('p', { class: 'field-help' }, 'Платежи без привязки найдутся в «Входящих платежах» по фильтру «Не привязанные».'));
-    if (r.warnings?.length) blocks.push(list(r.warnings.map((w) => el('li', {}, w))));
-    if (r.skipped?.length) {
-      blocks.push(el('p', {}, 'Пропущены (уже есть в базе):'));
-      blocks.push(list(r.skipped.slice(0, MAX_SHOWN).map((s) => el('li', {}, `${formatDate(s.payment_date)} · ${s.payer_name} · ${formatMoney(s.amount)} · операция ${s.external_id}`))));
+// Подробности по файлу в зависимости от статуса.
+function fileDetails(f) {
+  switch (f.status) {
+    case 'imported': {
+      const r = f.result;
+      return [
+        el('div', {}, `Платежей: ${r.created}. Привязано к лицевым счетам: ${r.linked}, без привязки: ${r.unlinked}.`),
+        r.warnings?.length ? shortList(r.warnings, (w) => w) : null,
+        skippedBlock(r.skipped),
+        el('a', { href: `/payment-registries/${r.registry_id}` }, 'Открыть реестр'),
+      ];
     }
-    blocks.push(el('div', { class: 'form-actions' }, [
-      el('button', { type: 'button', class: 'btn btn-primary', onclick: () => { modal.close(); goTo(`/payment-registries/${r.registry_id}`); } }, 'Открыть реестр'),
-    ]));
-    details.replaceChildren(...blocks);
-    submitButton.hidden = true;
-    cancelButton.textContent = 'Закрыть';
+    case 'duplicate_file':
+      return [el('div', {}, 'Этот файл уже был загружен ранее. '), el('a', { href: `/payment-registries/${f.registry_id}` }, 'Открыть реестр')];
+    case 'all_duplicates':
+      return [el('div', {}, 'Все платежи файла уже есть в базе, реестр не создан.'), skippedBlock(f.skipped)];
+    case 'unknown_account':
+      return [el('div', {}, ['В имени файла есть номер счёта, которого нет в системе. Добавьте счёт на странице ', el('a', { href: '/bank-accounts' }, 'Банковские счета'), ' и загрузите файл ещё раз.'])];
+    default:
+      return [
+        el('div', {}, describeApiError(new Error(f.error)).message),
+        f.rows?.length ? shortList(f.rows, (r) => `Строка ${r.row}: ${describeImportRowError(r.error)}`) : null,
+      ];
   }
+}
 
-  async function submit(event) {
-    event.preventDefault();
-    if (submitting) return;
-    const file = fileInput.files[0];
-    if (!file) {
-      showMessage('Выберите файл', 'error');
+function fileCard(f) {
+  const info = statusInfo(f.status);
+  return el('div', { class: 'import-file' }, [
+    el('div', { class: 'import-file-head' }, [el('span', { class: 'import-file-name' }, f.file_name), el('span', { class: TONE_CLASS[info.tone] }, info.label)]),
+    ...fileDetails(f).filter(Boolean),
+  ]);
+}
+
+// Загружает выбранные файлы (реестры .txt и/или zip-архивы) одним запросом и показывает отчёт по каждому файлу.
+// Счёт для каждого файла бэкенд определяет по номеру в его имени. onImported вызывается, если хоть что-то загружено.
+export function startRegistryUpload(files, { onImported } = {}) {
+  const body = el('div', {}, el('div', { class: 'table-status' }, `Загрузка файлов: ${files.length}…`));
+  const modal = openModal({ title: 'Загрузка реестров', content: body, wide: true });
+
+  paymentRegistriesApi.importFiles(files).then(({ files: results, summary }) => {
+    const tone = summaryTone(summary);
+    body.replaceChildren(
+      el('div', { class: tone === 'success' ? 'form-success' : 'form-error', role: 'status' }, summaryText(summary)),
+      ...results.map(fileCard),
+      el('div', { class: 'form-actions' }, el('button', { type: 'button', class: 'btn btn-primary', onclick: () => modal.close() }, 'Закрыть')),
+    );
+    if (summary.files_imported) onImported?.(summary);
+  }, (err) => {
+    if (err.status === 0 || err.status >= 500) {
+      modal.close(); // глобальный тост уже показан клиентом
       return;
     }
-    submitting = true;
-    submitButton.disabled = true;
-    message.hidden = true;
-    details.replaceChildren();
-    try {
-      const result = await paymentRegistriesApi.importFile(bankSelect.value, file);
-      showResult(result);
-      onImported?.(result);
-    } catch (err) {
-      if (err.status === 0 || err.status >= 500) return;
-      const info = describeApiError(err);
-      showMessage(info.message, 'error');
-      if (info.registryId) {
-        details.replaceChildren(el('a', { href: `/payment-registries/${info.registryId}`, onclick: () => modal.close() }, 'Открыть загруженный реестр'));
-      } else if (err.rows?.length) {
-        const rows = err.rows.slice(0, MAX_SHOWN).map((r) => el('li', {}, `Строка ${r.row}: ${describeImportRowError(r.error)}`));
-        if (err.rows.length > MAX_SHOWN) rows.push(el('li', {}, `…и ещё ${err.rows.length - MAX_SHOWN}`));
-        details.replaceChildren(list(rows));
-      }
-    } finally {
-      submitting = false;
-      submitButton.disabled = false;
-    }
-  }
-
-  const form = el('form', { class: 'entity-form', onsubmit: submit }, [
-    el('p', { class: 'field-help' }, [
-      'Реестр платежей Сбера (текстовый файл .txt). Выберите банковский счёт, на который поступили платежи (в имени файла он указан после ИНН). ',
-      'Номера лицевых счетов берутся из файла; платежи привязываются к ним автоматически. ',
-      'Файл можно загружать повторно: тот же файл не загрузится, а платежи, которые уже есть в базе, будут пропущены. Если в файле ошибка, не загружается ничего.',
-    ]),
-    message,
-    details,
-    el('div', { class: 'field' }, [el('label', { for: 'registry-bank' }, 'Банковский счёт-получатель'), bankSelect]),
-    el('div', { class: 'field' }, [el('label', { for: 'registry-file' }, 'Файл реестра'), fileInput]),
-    el('div', { class: 'form-actions' }, [submitButton, cancelButton]),
-  ]);
-
-  modal = openModal({ title: 'Загрузить реестр', content: form, wide: true });
+    body.replaceChildren(
+      el('div', { class: 'form-error', role: 'alert' }, err.status === 413 ? 'Слишком большой запрос: загрузите меньше файлов или архив поменьше' : describeApiError(err).message),
+      el('div', { class: 'form-actions' }, el('button', { type: 'button', class: 'btn', onclick: () => modal.close() }, 'Закрыть')),
+    );
+  });
   return modal;
 }

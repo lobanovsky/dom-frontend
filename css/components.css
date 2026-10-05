@@ -983,3 +983,28 @@ a.btn-primary {
   color: var(--color-danger);
   font-size: var(--font-size-sm);
 }
+
+.import-file {
+  margin-bottom: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+}
+
+.import-file > * + * {
+  margin-top: var(--space-2);
+}
+
+.import-file-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.import-file-name {
+  font-weight: 600;
+  word-break: break-all;
+}

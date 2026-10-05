@@ -144,7 +144,7 @@ const ROW_FIELDS = {
 };
 
 const REGISTRY_ROW = [
-  [/^expected (\d+) fields, got (\d+)$/, (m) => `ожидалось полей: ${m[1]}, а в строке ${m[2]}`],
+  [/^expected (\d+) fields, got (\d+)$/, (m) => `ожидалось полей: ${m[1]}, найдено: ${m[2]}`],
   [/^date "(.*)": expected dd-mm-yyyy$/, (m) => `дата «${m[1]}»: нужен формат дд-мм-гггг`],
   [/^time "(.*)": expected hh-mm-ss$/, (m) => `время «${m[1]}»: нужен формат чч-мм-сс`],
   [/^operation number is empty$/, 'нет номера операции'],

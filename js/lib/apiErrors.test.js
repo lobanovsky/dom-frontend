@@ -103,5 +103,5 @@ test('payments and registry errors', () => {
 test('registry row errors are translated', async () => {
   const { describeImportRowError } = await import('./apiErrors.js');
   assert.equal(describeImportRowError('date "2026-01-03": expected dd-mm-yyyy'), 'дата «2026-01-03»: нужен формат дд-мм-гггг');
-  assert.equal(describeImportRowError('expected 13 fields, got 5'), 'ожидалось полей: 13, а в строке 5');
+  assert.equal(describeImportRowError('expected 13 fields, got 5'), 'ожидалось полей: 13, найдено: 5');
 });

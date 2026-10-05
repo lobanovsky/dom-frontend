@@ -1,7 +1,7 @@
 import { el } from '../../lib/dom.js';
 import { createCrudList } from '../../ui/crudList.js';
 import { paymentRegistriesApi } from '../../api/resources.js';
-import { openRegistryImportDialog } from '../../ui/registryImportDialog.js';
+import { startRegistryUpload } from '../../ui/registryImportDialog.js';
 import { formatDate, formatMoney } from '../../lib/format.js';
 import { describeApiError } from '../../lib/apiErrors.js';
 import { loadPaymentRefs, bankFilterOptions, dateFilters } from './common.js';
@@ -37,14 +37,28 @@ export async function paymentRegistriesPage(container) {
     emptyMessage: 'Реестров пока нет. Загрузите файл реестра Сбера',
   });
 
+  // Выбор файла сразу запускает загрузку; счёт определяется по номеру в имени файла.
+  function uploadButton(label, { accept, multiple, primary }) {
+    const input = el('input', { type: 'file', accept, multiple, hidden: true });
+    input.addEventListener('change', () => {
+      if (input.files.length) startRegistryUpload([...input.files], { onImported: () => list.reload() });
+      input.value = '';
+    });
+    const button = el('button', {
+      type: 'button', class: primary ? 'btn btn-primary' : 'btn', disabled: refs.banks.length === 0, onclick: () => input.click(),
+    }, label);
+    return [button, input];
+  }
+
   container.replaceChildren(el('div', { class: 'page' }, [
     el('div', { class: 'section-header' }, [
       el('h1', {}, 'Реестры платежей'),
-      el('div', { class: 'header-actions' }, el('button', {
-        type: 'button', class: 'btn btn-primary', disabled: refs.banks.length === 0,
-        onclick: () => openRegistryImportDialog({ banks: refs.banks, onImported: () => list.reload() }),
-      }, 'Загрузить реестр')),
+      el('div', { class: 'header-actions' }, [
+        ...uploadButton('Загрузить ZIP', { accept: '.zip,application/zip', multiple: false, primary: true }),
+        ...uploadButton('Загрузить файлы', { accept: '.txt,text/plain', multiple: true, primary: false }),
+      ]),
     ]),
+    el('p', { class: 'field-help' }, 'Счёт определяется по номеру в имени файла (например, 900005_9715357654_40703810338000004376_640.txt), поэтому он должен быть добавлен в «Банковские счета». В ZIP реестры ищутся во всех вложенных папках, остальные файлы игнорируются.'),
     refs.banks.length ? null : el('div', { class: 'form-error' }, ['Сначала добавьте ', el('a', { href: '/bank-accounts' }, 'банковский счёт'), '.']),
     list.element,
   ]));

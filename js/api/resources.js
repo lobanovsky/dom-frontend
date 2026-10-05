@@ -54,10 +54,10 @@ export const paymentRegistriesApi = {
   get: (id) => client.get(`/api/v1/payment-registries/${id}`),
   // Ссылка на исходный файл реестра (cookie-сессия, тот же origin).
   fileUrl: (id) => `/api/v1/payment-registries/${id}/file`,
-  importFile: (bankAccountId, file) => {
+  // Один запрос: реестры .txt и/или zip-архивы; счёт бэкенд определяет по номеру в имени файла.
+  importFiles: (files) => {
     const body = new FormData();
-    body.set('bank_account_id', String(bankAccountId));
-    body.set('file', file);
+    for (const file of files) body.append('file', file);
     return client.post('/api/v1/payment-registries/import', body);
   },
 };
