@@ -226,7 +226,7 @@ export async function premisesPage(container, { id }) {
             el('span', { class: account.status === 'active' ? 'badge badge-success' : 'badge badge-neutral' }, label(accountStatuses, account.status)), ' · ',
             account.closed_at ? `${formatDate(account.opened_at)} — ${formatDate(account.closed_at)}` : `открыт ${formatDate(account.opened_at)}`,
           ]),
-          el('div', { class: 'account-holder' }, account.holder_name ? `Плательщик: ${account.holder_name}` : 'Плательщик не указан'),
+          el('div', { class: 'account-holder' }, holdersLine(account.holder_names)),
         ]),
         el('div', { class: 'row-actions' }, [
           toggle,
@@ -271,6 +271,11 @@ export async function premisesPage(container, { id }) {
     } catch (err) {
       host.replaceChildren(errorStatus(err));
     }
+  }
+
+  function holdersLine(names = []) {
+    if (names.length === 0) return 'Плательщик не указан';
+    return `${names.length > 1 ? 'Плательщики' : 'Плательщик'}: ${names.join(', ')}`;
   }
 
   function holderName(h) {
