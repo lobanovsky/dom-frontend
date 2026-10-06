@@ -50,3 +50,12 @@ export function formatMoney(value) {
 export function formatTime(value) {
   return value ? String(value).slice(0, 5) : '';
 }
+
+const MONTHS = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+
+// "2026-10-05" -> «Октябрь 2026»; пустое или неверное значение -> ''.
+export function monthLabel(iso) {
+  const [y, m] = String(iso || '').slice(0, 7).split('-');
+  const name = MONTHS[Number(m) - 1];
+  return y && name ? `${name} ${y}` : '';
+}

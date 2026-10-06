@@ -2,7 +2,7 @@ import { el } from '../../lib/dom.js';
 import { createCrudList } from '../../ui/crudList.js';
 import { outgoingPaymentsApi } from '../../api/resources.js';
 import { outgoingPaymentFields } from '../fields.js';
-import { formatDate, formatMoney } from '../../lib/format.js';
+import { formatDate, formatMoney, monthLabel } from '../../lib/format.js';
 import { describeApiError } from '../../lib/apiErrors.js';
 import { loadPaymentRefs, bankFilterOptions, categoryFilterOptions, dateFilters } from './common.js';
 
@@ -19,6 +19,7 @@ export async function outgoingPaymentsPage(container) {
     entityTitle: 'Платёж',
     addLabel: 'Добавить платёж',
     api: outgoingPaymentsApi,
+    groupBy: (r) => monthLabel(r.payment_date),
     fields: outgoingPaymentFields({ banks: refs.banks, categories: refs.outgoingCategories }),
     filters: [
       { name: 'bank_account_id', label: 'Со счёта', type: 'select', options: bankFilterOptions(refs.banks) },
@@ -29,7 +30,7 @@ export async function outgoingPaymentsPage(container) {
     columns: [
       { key: 'payment_date', label: 'Дата', primary: true, render: (r) => formatDate(r.payment_date) },
       { key: 'recipient_name', label: 'Кому' },
-      { key: 'amount', label: 'Сумма', render: (r) => formatMoney(r.amount) },
+      { key: 'amount', label: 'Сумма', render: (r) => el('span', { class: 'nowrap' }, formatMoney(r.amount)) },
       { key: 'category_id', label: 'Категория', render: (r) => refs.categoryName(r.category_id) },
       { key: 'bank_account_id', label: 'Со счёта', render: (r) => refs.bankName(r.bank_account_id) },
       { key: 'purpose', label: 'Назначение' },

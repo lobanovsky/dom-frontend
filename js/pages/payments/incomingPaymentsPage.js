@@ -2,7 +2,7 @@ import { el } from '../../lib/dom.js';
 import { createCrudList } from '../../ui/crudList.js';
 import { incomingPaymentsApi } from '../../api/resources.js';
 import { incomingPaymentFields } from '../fields.js';
-import { formatDate, formatMoney, formatTime } from '../../lib/format.js';
+import { formatDate, formatMoney, formatTime, monthLabel } from '../../lib/format.js';
 import { describeApiError } from '../../lib/apiErrors.js';
 import { loadPaymentRefs, bankFilterOptions, categoryFilterOptions, dateFilters } from './common.js';
 
@@ -17,21 +17,23 @@ export function createIncomingList(refs, { fixedQuery = {}, showRegistry = true 
     fields,
     watch: ['personal_account_id'],
     fixedQuery,
+    groupBy: (r) => monthLabel(r.payment_date),
     filters: [
       { name: 'bank_account_id', label: 'Счёт', type: 'select', options: bankFilterOptions(refs.banks) },
       ...dateFilters,
-      { name: 'q', label: 'Поиск', type: 'search', placeholder: 'Плательщик, назначение, документ' },
+      { name: 'q', label: 'Поиск', type: 'search', placeholder: 'Плательщик, лицевой счёт, назначение' },
       { name: 'category_id', label: 'Категория', type: 'select', options: categoryFilterOptions(refs.incomingCategories) },
       { name: 'unlinked', label: 'Привязка', type: 'select', options: [{ value: 'true', label: 'Не привязанные' }] },
     ],
     columns: [
       { key: 'payment_date', label: 'Дата', primary: true, render: (r) => [formatDate(r.payment_date), r.payment_time ? ` ${formatTime(r.payment_time)}` : ''].join('') },
       { key: 'payer_name', label: 'От кого' },
-      { key: 'amount', label: 'Сумма', render: (r) => formatMoney(r.amount) },
+      { key: 'amount', label: 'Сумма', render: (r) => el('span', { class: 'nowrap' }, formatMoney(r.amount)) },
       { key: 'link', label: 'Лицевой счёт / категория', render: (r) => linkCell(r, refs) },
       { key: 'bank_account_id', label: 'Счёт', render: (r) => refs.bankName(r.bank_account_id) },
       showRegistry ? { key: 'registry_id', label: 'Источник', render: (r) => sourceCell(r) } : null,
       { key: 'purpose', label: 'Назначение' },
+      { key: 'comment', label: 'Комментарий' },
     ].filter(Boolean),
     emptyMessage: 'Платежей не найдено',
     deleteMessage: (r) => `Удалить платёж ${formatMoney(r.amount)}${r.payer_name ? ` от «${r.payer_name}»` : ''}?`,

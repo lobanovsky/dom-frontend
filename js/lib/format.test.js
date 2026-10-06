@@ -49,3 +49,12 @@ test('formatMoney and formatTime', async () => {
   assert.equal(formatTime('09:32:33'), '09:32');
   assert.equal(formatTime(null), '');
 });
+
+test('monthLabel', async () => {
+  const { monthLabel } = await import('./format.js');
+  assert.equal(monthLabel('2026-10-05'), 'Октябрь 2026');
+  assert.equal(monthLabel('2025-01-31'), 'Январь 2025');
+  assert.equal(monthLabel('2025-12-01T10:00:00Z'), 'Декабрь 2025');
+  assert.equal(monthLabel(null), '');
+  assert.equal(monthLabel('2025-13-01'), '');
+});
