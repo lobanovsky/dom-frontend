@@ -34,7 +34,7 @@ export function createIncomingList(refs, { fixedQuery = {}, showRegistry = true 
       { key: 'purpose', label: 'Назначение' },
     ].filter(Boolean),
     emptyMessage: 'Платежей не найдено',
-    deleteMessage: (r) => `Удалить платёж ${formatMoney(r.amount)} от «${r.payer_name}»?`,
+    deleteMessage: (r) => `Удалить платёж ${formatMoney(r.amount)}${r.payer_name ? ` от «${r.payer_name}»` : ''}?`,
   });
 }
 

@@ -132,7 +132,7 @@ export const incomingPaymentFields = ({ banks, categories }) => (values) => [
   dateField('payment_date', 'Дата', { required: true }),
   { type: 'time', name: 'payment_time', label: 'Время', step: 1 },
   numberField('amount', 'Сумма, ₽', { required: true, min: 0.01, step: 0.01, inputmode: 'decimal' }),
-  textField('payer_name', 'От кого (имя или название)', { required: true, full: true }),
+  textField('payer_name', 'От кого (имя или название)', { full: true, help: 'Можно не указывать' }),
   textField('payer_inn', 'ИНН плательщика', { inputmode: 'numeric' }),
   textField('payer_account', 'Счёт плательщика', { inputmode: 'numeric' }),
   textField('payer_bik', 'БИК банка плательщика', { inputmode: 'numeric', maxLength: 9 }),
