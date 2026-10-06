@@ -1,6 +1,6 @@
 import { el } from '../lib/dom.js';
-import { personsApi, legalEntitiesApi, accountsApi } from '../api/resources.js';
-import { accountPurposes, label } from '../lib/labels.js';
+import { personsApi, legalEntitiesApi, accountsApi, premisesApi, buildingsApi } from '../api/resources.js';
+import { accountPurposes, premisesKinds, label } from '../lib/labels.js';
 import { personName } from '../lib/format.js';
 import { createPersonForm } from './personCreate.js';
 
@@ -8,7 +8,31 @@ import { createPersonForm } from './personCreate.js';
 // allowCreate сверху переключатель «Найти в базе / Новое физлицо» — новое
 // физлицо вводится раздельными полями (ФИО, телефоны, email).
 
+// Помещение: поиск по началу номера; в подсказке адрес дома (дома загружаются один раз).
+let buildingAddresses = null;
+async function addresses() {
+  if (!buildingAddresses) {
+    const { items } = await buildingsApi.list({ limit: 200 });
+    buildingAddresses = new Map(items.map((b) => [b.id, b.address]));
+  }
+  return buildingAddresses;
+}
+const withAddress = async (p) => ({ ...p, _address: (await addresses()).get(p.building_id) || '' });
+const premisesPickerApi = {
+  list: async (query) => {
+    const { items } = await premisesApi.list(query);
+    return { items: await Promise.all(items.map(withAddress)) };
+  },
+  get: async (id) => withAddress(await premisesApi.get(id)),
+};
+
 const KINDS = {
+  premises: {
+    api: premisesPickerApi,
+    title: (p) => `${label(premisesKinds, p.kind)} № ${p.number}`,
+    hint: (p) => p._address,
+    placeholder: 'Номер помещения',
+  },
   person: {
     api: personsApi,
     title: (p) => personName(p),

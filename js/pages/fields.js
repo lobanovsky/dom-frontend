@@ -4,6 +4,8 @@ import {
 } from '../lib/labels.js';
 import { entityPicker } from '../ui/picker.js';
 import { listInput } from '../ui/listInput.js';
+import { conditionsEditor, actionEditor } from '../ui/ruleEditors.js';
+import { MATCH_MODES } from '../lib/rules.js';
 
 // Описание полей форм для каждой сущности. Имена совпадают с JSON-полями API.
 
@@ -161,4 +163,14 @@ export const outgoingPaymentFields = ({ banks, categories }) => [
   textField('purpose', 'Назначение платежа', { full: true }),
   selectField('category_id', 'Категория', categoryOptions(categories), { numeric: true, placeholder: 'Без категории' }),
   textField('comment', 'Комментарий', { full: true }),
+];
+
+// Правило определения лицевых счетов: условия и действие — составные поля со своими редакторами.
+export const paymentRuleFields = ({ banks, categories }) => [
+  textField('name', 'Название', { required: true, full: true }),
+  checkboxField('enabled', 'Правило включено'),
+  selectField('match_mode', 'Когда срабатывает', options(MATCH_MODES), { required: true }),
+  { type: 'picker', name: 'conditions', label: 'Условия', full: true, component: conditionsEditor({ banks }),
+    help: 'Все условия (или любое) должны подойти платежу. Несколько значений у одного условия означают «или».' },
+  { type: 'picker', name: 'action', label: 'Действие', full: true, required: true, component: actionEditor({ categories }) },
 ];

@@ -13,6 +13,7 @@ import { config } from '../config.js';
 // filters: [{name, label, type: 'search'|'select'|'date', options?}] — значения уходят в query.
 // fixedQuery — всегда добавляется к запросу списка (например building_id).
 // fixed — всегда добавляется к телу при создании/сохранении.
+// newDefaults — начальные значения формы новой записи.
 // rowClass(row) -> CSS-класс строки, см. ui/table.js.
 // groupBy(row) -> строка: метка группы (например месяц), см. ui/table.js.
 // extraActions(row) -> [Node] — дополнительные кнопки в строках действующих записей.
@@ -20,7 +21,7 @@ import { config } from '../config.js';
 export function createCrudList({
   api, columns, fields, watch, filters = [], fixedQuery = {}, fixed = {},
   entityTitle, addLabel = 'Добавить', emptyMessage, deleteMessage = (row) => 'Удалить запись?',
-  canEdit = true, extraActions, groupBy, rowClass,
+  canEdit = true, extraActions, groupBy, rowClass, newDefaults = {},
 }) {
   let offset = 0;
   let showDeleted = false;
@@ -72,6 +73,7 @@ export function createCrudList({
       fields,
       watch,
       entity: row,
+      initialValues: row ? {} : newDefaults,
       fixed,
       save: (body) => (row ? api.update(row.id, body) : api.create(body)),
       onSaved: () => load(),
@@ -136,7 +138,9 @@ export function createCrudList({
   }
 
   load();
-  return { element: el('div', { class: 'crud-list' }, [toolbar, tableHost, pager]), reload: load };
+  // Текущие фильтры списка (для действий над выборкой: определение лицевых счетов и т.п.).
+  const getQuery = () => ({ ...fixedQuery, ...filterValues });
+  return { element: el('div', { class: 'crud-list' }, [toolbar, tableHost, pager]), reload: load, getQuery };
 }
 
 // Страница-справочник: заголовок + список.

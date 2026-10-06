@@ -4,7 +4,7 @@ import { formatDate, formatMoney } from '../../lib/format.js';
 import { describeApiError } from '../../lib/apiErrors.js';
 import { notFoundView, definitionList } from '../common.js';
 import { loadPaymentRefs } from './common.js';
-import { createIncomingList } from './incomingPaymentsPage.js';
+import { createIncomingList, assignActions } from './incomingPaymentsPage.js';
 import { createOutgoingList } from './outgoingPaymentsPage.js';
 
 // Выписка: сводка по файлу и её платежи (поступления и списания).
@@ -39,7 +39,7 @@ export async function bankStatementPage(container, { id }) {
       ['Списаний', `${statement.debit_count} на ${formatMoney(statement.debit_total)}`],
       ['Загружена', formatDate(statement.created_at)],
     ])),
-    el('h2', { class: 'section-title' }, 'Поступления'),
+    el('div', { class: 'section-header section-header--sub' }, [el('h2', { class: 'section-title' }, 'Поступления'), assignActions(incoming)]),
     incoming.element,
     el('h2', { class: 'section-title' }, 'Списания'),
     outgoing.element,

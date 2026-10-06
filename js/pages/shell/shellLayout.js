@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { href: '/payment-registries', label: 'Реестры', icon: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8zM14 3v5h5M9 13h6M9 17h6"/>' },
   { href: '/bank-statements', label: 'Выписки', icon: '<path d="M6 2h9l5 5v15H6zM14 2v6h6M9 13h8M9 17h8M9 9h3"/>' },
   { href: '/payments/outgoing', label: 'Исходящие платежи', icon: '<path d="M12 21V9M7 14l5-5 5 5M4 3h16"/>' },
+  { href: '/payment-rules', label: 'Правила', icon: '<path d="M4 6h16M7 12h10M10 18h4"/>' },
   { href: '/bank-accounts', label: 'Банковские счета', icon: '<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/>' },
   { href: '/payment-categories', label: 'Категории платежей', icon: '<path d="M20.6 13.4l-7.2 7.2a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8zM7.5 7.5h.01"/>' },
   { href: '/organizations', label: 'Организации', icon: '<path d="M3 21h18M6 21V10M10 21V10M14 21V10M18 21V10M12 3l9 5H3z"/>' },

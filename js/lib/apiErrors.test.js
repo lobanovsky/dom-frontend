@@ -116,3 +116,10 @@ test('statement errors', async () => {
   assert.equal(describeImportRowError('both debit and credit amounts are set'), 'заполнены и дебет, и кредит');
   assert.equal(describeApiError(err('row 4: already exists: incoming_payments_dedup_key_key', 409)).message, 'Строка 4: Такая операция из выписки уже есть на этом счёте');
 });
+
+test('rule errors map to the action/conditions fields', () => {
+  assert.deepEqual(describeApiError(err('action.pattern: must contain a capture group')), { field: 'action', message: 'в выражении нужна группа захвата в скобках, например (\\d+)' });
+  assert.deepEqual(describeApiError(err('action.premises_id: is required')), { field: 'action', message: 'Обязательное поле' });
+  assert.deepEqual(describeApiError(err('conditions: condition 2: amount "x" is not a number')), { field: 'conditions', message: 'Условие 2: сумма «x» — не число' });
+  assert.equal(describeApiError(err('assignment run is already rolled back', 409)).message, 'Этот запуск уже откатан');
+});

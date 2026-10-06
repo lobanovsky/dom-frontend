@@ -22,6 +22,7 @@ import { paymentRegistriesPage } from './pages/payments/paymentRegistriesPage.js
 import { paymentRegistryPage } from './pages/payments/paymentRegistryPage.js';
 import { bankStatementsPage } from './pages/payments/bankStatementsPage.js';
 import { bankStatementPage } from './pages/payments/bankStatementPage.js';
+import { paymentRulesPage } from './pages/payments/paymentRulesPage.js';
 
 const appRoot = document.getElementById('app');
 
@@ -41,6 +42,7 @@ const routes = [
   { pattern: '/bank-statements/:id', mount: bankStatementPage },
   { pattern: '/payments/outgoing', mount: outgoingPaymentsPage },
   { pattern: '/payment-categories', mount: paymentCategoriesPage },
+  { pattern: '/payment-rules', mount: paymentRulesPage },
 ];
 
 let router = null;

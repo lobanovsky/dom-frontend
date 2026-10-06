@@ -4,7 +4,7 @@ import { formatDate, formatMoney } from '../../lib/format.js';
 import { describeApiError } from '../../lib/apiErrors.js';
 import { notFoundView, definitionList } from '../common.js';
 import { loadPaymentRefs } from './common.js';
-import { createIncomingList } from './incomingPaymentsPage.js';
+import { createIncomingList, assignActions } from './incomingPaymentsPage.js';
 
 // Реестр: сводка по файлу и таблица его платежей.
 export async function paymentRegistryPage(container, { id }) {
@@ -35,7 +35,7 @@ export async function paymentRegistryPage(container, { id }) {
       ['Комиссия', formatMoney(registry.total_commission)],
       ['Загружен', formatDate(registry.created_at)],
     ])),
-    el('h2', { class: 'section-title' }, 'Платежи реестра'),
+    el('div', { class: 'section-header section-header--sub' }, [el('h2', { class: 'section-title' }, 'Платежи реестра'), assignActions(list)]),
     list.element,
   ]));
 }

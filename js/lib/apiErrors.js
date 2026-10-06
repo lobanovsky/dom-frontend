@@ -72,6 +72,27 @@ const DELETED_PARENTS = {
   'payment category': 'категория платежа',
 };
 
+const RULE_REASONS = [
+  [/^condition (\d+): (.+)$/, (m) => `Условие ${m[1]}: ${translateRuleReason(m[2])}`],
+  [/^values: from 1 to (\d+) required$/, 'Укажите значение'],
+  [/^values: must be non-empty and shorter than (\d+) characters$/, (m) => `Значения не пустые и короче ${m[1]} символов`],
+  [/^regex "(.*)": (.*)$/, (m) => `выражение «${m[1]}» неверно: ${m[2]}`],
+  [/^amount "(.*)" is not a number$/, (m) => `сумма «${m[1]}» — не число`],
+  [/^op (\w+) needs (\d+) value\(s\)$/, (m) => `для операции нужно значений: ${m[2]}`],
+  [/^op must be one of: .*$/, 'недопустимая операция'],
+  [/^field must be one of: .*$/, 'недопустимое поле'],
+  [/^must contain a capture group$/, 'в выражении нужна группа захвата в скобках, например (\\d+)'],
+  [/^not found or deleted$/, 'не найдено или удалено'],
+];
+
+function translateRuleReason(reason) {
+  for (const [re, text] of RULE_REASONS) {
+    const m = reason.match(re);
+    if (m) return typeof text === 'function' ? text(m) : text;
+  }
+  return translateReason(reason);
+}
+
 function translateReason(reason) {
   for (const [re, text] of REASONS) {
     const m = reason.match(re);
@@ -137,6 +158,9 @@ export function describeApiError(err, { action = 'save' } = {}) {
   if (raw.startsWith('summary says ')) return { field: null, message: 'Число операций в итоге выписки не совпадает с числом строк' };
   if (raw === 'summary turnover does not match the sum of operations') return { field: null, message: 'Итоговые обороты выписки не совпадают с суммой операций' };
   if (raw === 'not a valid xlsx file') return { field: null, message: 'Не удалось прочитать файл: нужен xlsx (Excel)' };
+  if (raw === 'assignment run not found') return { field: null, message: 'Запуск не найден' };
+  if (raw === 'assignment run is already rolled back') return { field: null, message: 'Этот запуск уже откатан' };
+  if (raw === 'rule not found') return { field: null, message: 'Правило не найдено' };
   if (raw === 'building not found') return { field: null, message: 'Дом не найден' };
   if (raw === 'file has no data rows') return { field: null, message: 'В файле нет строк с данными' };
   if (raw.startsWith('not a valid xlsx file')) return { field: null, message: 'Не удалось прочитать файл: нужен xlsx (Excel)' };
@@ -146,8 +170,12 @@ export function describeApiError(err, { action = 'save' } = {}) {
   if (m) return { field: null, message: `Строка ${m[1]}: ${describeApiError(new Error(m[2])).message}` };
   if (raw === 'not found') return { field: null, message: 'Запись не найдена' };
 
-  const fieldError = raw.match(/^([a-z_]+): (.+)$/);
-  if (fieldError) return { field: fieldError[1], message: translateReason(fieldError[2]) };
+  const fieldError = raw.match(/^([a-z_.]+): (.+)$/);
+  if (fieldError) {
+    // action.pattern, action.premises_id -> поле формы «action»
+    const field = fieldError[1].split('.')[0];
+    return { field, message: translateRuleReason(fieldError[2]) };
+  }
   return { field: null, message: raw || 'Не удалось выполнить запрос' };
 }
 

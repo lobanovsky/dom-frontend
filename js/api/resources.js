@@ -73,3 +73,15 @@ export const bankStatementsApi = {
     return client.post('/api/v1/bank-statements/import', body);
   },
 };
+
+// Правила определения лицевых счетов и запуски определения (предпросмотр, применение, откат).
+export const paymentRulesApi = {
+  ...resource('payment-rules'),
+  reorder: (ids) => client.post('/api/v1/payment-rules/reorder', { ids }),
+};
+export const paymentAssignmentsApi = {
+  preview: (body) => client.post('/api/v1/payment-assignments/preview', body),
+  apply: (body) => client.post('/api/v1/payment-assignments', body),
+  runs: (query) => client.get('/api/v1/payment-assignments', { query }),
+  rollback: (id) => client.post(`/api/v1/payment-assignments/${id}/rollback`),
+};

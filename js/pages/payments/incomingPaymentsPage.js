@@ -5,6 +5,8 @@ import { incomingPaymentFields } from '../fields.js';
 import { formatMoney, formatTime, monthLabel } from '../../lib/format.js';
 import { describeApiError } from '../../lib/apiErrors.js';
 import { loadPaymentRefs, bankFilterOptions, categoryFilterOptions, dateFilters, seasonRowClass, dateWithSeason } from './common.js';
+import { openAssignDialog, openAssignHistory } from '../../ui/assignDialog.js';
+import { scopeFromQuery, originLabel } from '../../lib/rules.js';
 
 // Список входящих платежей. Используется и на странице «Входящие платежи», и на странице реестра
 // (fixedQuery: {registry_id}, showRegistry: false) и на странице выписки (fixedQuery: {statement_id}).
@@ -42,9 +44,23 @@ export function createIncomingList(refs, { fixedQuery = {}, showRegistry = true 
 }
 
 function linkCell(r, refs) {
-  if (r.personal_account_number) return `ЛС ${r.personal_account_number}`;
-  if (r.category_id) return refs.categoryName(r.category_id);
-  return el('span', { class: 'badge badge-neutral' }, 'Не привязан');
+  if (!r.personal_account_number && !r.category_id) return el('span', { class: 'badge badge-neutral' }, 'Не привязан');
+  const origin = originLabel(r);
+  return el('div', {}, [
+    r.personal_account_number ? `ЛС ${r.personal_account_number}` : refs.categoryName(r.category_id),
+    origin ? el('div', { class: 'assigned-by' }, origin) : null,
+  ]);
+}
+
+// Кнопки «Определить лицевые счета» и «История определений» для списка платежей: правила применяются по его текущим фильтрам.
+export function assignActions(list) {
+  return el('div', { class: 'header-actions' }, [
+    el('button', {
+      type: 'button', class: 'btn btn-primary',
+      onclick: () => openAssignDialog({ scope: scopeFromQuery(list.getQuery()), onApplied: () => list.reload() }),
+    }, 'Определить лицевые счета'),
+    el('button', { type: 'button', class: 'btn', onclick: () => openAssignHistory({ onChanged: () => list.reload() }) }, 'История определений'),
+  ]);
 }
 
 export function sourceCell(r) {
@@ -64,7 +80,7 @@ export async function incomingPaymentsPage(container) {
   }
   const list = createIncomingList(refs);
   container.replaceChildren(el('div', { class: 'page' }, [
-    el('div', { class: 'section-header' }, el('h1', {}, 'Входящие платежи')),
+    el('div', { class: 'section-header' }, [el('h1', {}, 'Входящие платежи'), assignActions(list)]),
     refs.banks.length ? null : el('div', { class: 'form-error' }, ['Сначала добавьте ', el('a', { href: '/bank-accounts' }, 'банковский счёт'), '.']),
     list.element,
   ]));
