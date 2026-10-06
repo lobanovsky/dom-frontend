@@ -2,9 +2,9 @@ import { el } from '../../lib/dom.js';
 import { createCrudList } from '../../ui/crudList.js';
 import { incomingPaymentsApi } from '../../api/resources.js';
 import { incomingPaymentFields } from '../fields.js';
-import { formatDate, formatMoney, formatTime, monthLabel } from '../../lib/format.js';
+import { formatMoney, formatTime, monthLabel } from '../../lib/format.js';
 import { describeApiError } from '../../lib/apiErrors.js';
-import { loadPaymentRefs, bankFilterOptions, categoryFilterOptions, dateFilters } from './common.js';
+import { loadPaymentRefs, bankFilterOptions, categoryFilterOptions, dateFilters, seasonRowClass, dateWithSeason } from './common.js';
 
 // Список входящих платежей. Используется и на странице «Входящие платежи», и на странице реестра
 // (fixedQuery: {registry_id}, showRegistry: false).
@@ -18,6 +18,7 @@ export function createIncomingList(refs, { fixedQuery = {}, showRegistry = true 
     watch: ['personal_account_id'],
     fixedQuery,
     groupBy: (r) => monthLabel(r.payment_date),
+    rowClass: seasonRowClass,
     filters: [
       { name: 'bank_account_id', label: 'Счёт', type: 'select', options: bankFilterOptions(refs.banks) },
       ...dateFilters,
@@ -26,7 +27,7 @@ export function createIncomingList(refs, { fixedQuery = {}, showRegistry = true 
       { name: 'unlinked', label: 'Привязка', type: 'select', options: [{ value: 'true', label: 'Не привязанные' }] },
     ],
     columns: [
-      { key: 'payment_date', label: 'Дата', primary: true, render: (r) => [formatDate(r.payment_date), r.payment_time ? ` ${formatTime(r.payment_time)}` : ''].join('') },
+      { key: 'payment_date', label: 'Дата', primary: true, render: (r) => dateWithSeason(r, r.payment_time ? ` ${formatTime(r.payment_time)}` : '') },
       { key: 'payer_name', label: 'От кого' },
       { key: 'amount', label: 'Сумма', render: (r) => el('span', { class: 'nowrap' }, formatMoney(r.amount)) },
       { key: 'link', label: 'Лицевой счёт / категория', render: (r) => linkCell(r, refs) },

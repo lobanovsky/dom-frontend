@@ -59,3 +59,14 @@ export function monthLabel(iso) {
   const name = MONTHS[Number(m) - 1];
   return y && name ? `${name} ${y}` : '';
 }
+
+// Время года по дате: зима — декабрь–февраль, весна — март–май, лето — июнь–август, осень — сентябрь–ноябрь.
+// Пустое или неверное значение -> ''.
+export function seasonOf(iso) {
+  const m = Number(String(iso || '').slice(5, 7));
+  if (!(m >= 1 && m <= 12)) return '';
+  if (m === 12 || m <= 2) return 'winter';
+  if (m <= 5) return 'spring';
+  if (m <= 8) return 'summer';
+  return 'autumn';
+}

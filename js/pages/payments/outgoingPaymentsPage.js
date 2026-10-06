@@ -2,9 +2,9 @@ import { el } from '../../lib/dom.js';
 import { createCrudList } from '../../ui/crudList.js';
 import { outgoingPaymentsApi } from '../../api/resources.js';
 import { outgoingPaymentFields } from '../fields.js';
-import { formatDate, formatMoney, monthLabel } from '../../lib/format.js';
+import { formatMoney, monthLabel } from '../../lib/format.js';
 import { describeApiError } from '../../lib/apiErrors.js';
-import { loadPaymentRefs, bankFilterOptions, categoryFilterOptions, dateFilters } from './common.js';
+import { loadPaymentRefs, bankFilterOptions, categoryFilterOptions, dateFilters, seasonRowClass, dateWithSeason } from './common.js';
 
 export async function outgoingPaymentsPage(container) {
   container.replaceChildren(el('div', { class: 'table-status' }, 'Загрузка…'));
@@ -20,6 +20,7 @@ export async function outgoingPaymentsPage(container) {
     addLabel: 'Добавить платёж',
     api: outgoingPaymentsApi,
     groupBy: (r) => monthLabel(r.payment_date),
+    rowClass: seasonRowClass,
     fields: outgoingPaymentFields({ banks: refs.banks, categories: refs.outgoingCategories }),
     filters: [
       { name: 'bank_account_id', label: 'Со счёта', type: 'select', options: bankFilterOptions(refs.banks) },
@@ -28,7 +29,7 @@ export async function outgoingPaymentsPage(container) {
       { name: 'category_id', label: 'Категория', type: 'select', options: categoryFilterOptions(refs.outgoingCategories) },
     ],
     columns: [
-      { key: 'payment_date', label: 'Дата', primary: true, render: (r) => formatDate(r.payment_date) },
+      { key: 'payment_date', label: 'Дата', primary: true, render: (r) => dateWithSeason(r) },
       { key: 'recipient_name', label: 'Кому' },
       { key: 'amount', label: 'Сумма', render: (r) => el('span', { class: 'nowrap' }, formatMoney(r.amount)) },
       { key: 'category_id', label: 'Категория', render: (r) => refs.categoryName(r.category_id) },

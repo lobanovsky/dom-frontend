@@ -7,7 +7,8 @@ import { el } from '../lib/dom.js';
 // primary-колонка на телефоне идёт заголовком карточки без подписи.
 // groupBy(row) -> строка: перед первой строкой каждой группы (подряд идущих строк с одним значением)
 // добавляется строка-заголовок с меткой, например месяц. Порядок строк задаёт вызывающий.
-export function renderTable({ columns, rows, rowActions, getRowKey = (row) => row.id, emptyMessage = 'Ничего не найдено', groupBy }) {
+// rowClass(row) -> строка: дополнительный CSS-класс строки (например, цвет по времени года).
+export function renderTable({ columns, rows, rowActions, getRowKey = (row) => row.id, emptyMessage = 'Ничего не найдено', groupBy, rowClass }) {
   if (!rows || rows.length === 0) {
     return el('div', { class: 'data-table-wrap' }, el('div', { class: 'table-status' }, emptyMessage));
   }
@@ -25,7 +26,7 @@ export function renderTable({ columns, rows, rowActions, getRowKey = (row) => ro
       trs.push(el('tr', { class: 'group-row' }, el('th', { colspan: String(span), scope: 'colgroup' }, el('span', { class: 'group-tag' }, group))));
     }
     currentGroup = group;
-    trs.push(el('tr', { 'data-row-key': String(getRowKey(row)) }, [
+    trs.push(el('tr', { 'data-row-key': String(getRowKey(row)), class: rowClass ? rowClass(row) || null : null }, [
       ...columns.map((c) => {
         const value = c.render ? c.render(row) : row[c.key];
         return el('td', { 'data-label': c.label, class: c.primary ? 'col-primary' : null }, value ?? '');

@@ -1,5 +1,8 @@
 import { bankAccountsApi, paymentCategoriesApi } from '../../api/resources.js';
+import { el } from '../../lib/dom.js';
 import { bankLabel } from '../../lib/labels.js';
+import { seasonOf, formatDate } from '../../lib/format.js';
+import { seasonIcon } from '../../ui/seasonIcon.js';
 
 // Справочники для списков и форм платежей: банковские счета и категории (все, включая закрытые счета:
 // старые платежи ссылаются на них).
@@ -28,3 +31,14 @@ export const dateFilters = [
   { name: 'date_from', label: 'С даты', type: 'date' },
   { name: 'date_to', label: 'По дату', type: 'date' },
 ];
+
+// Строки платежей окрашены по времени года даты платежа и помечены значком слева.
+export const seasonRowClass = (r) => {
+  const season = seasonOf(r.payment_date);
+  return season ? `season-${season}` : null;
+};
+
+// Ячейка даты: значок времени года слева от даты (и времени, если есть).
+export function dateWithSeason(r, time = '') {
+  return el('span', { class: 'season-date' }, [seasonIcon(seasonOf(r.payment_date)), `${formatDate(r.payment_date)}${time}`]);
+}

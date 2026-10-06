@@ -235,7 +235,8 @@ textarea:focus {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  overflow: hidden;
+  /* Широкая таблица прокручивается по горизонтали, а не обрезает кнопки действий справа. */
+  overflow-x: auto;
 }
 
 .data-table {
@@ -1049,4 +1050,26 @@ a.btn-primary {
 
 .nowrap {
   white-space: nowrap;
+}
+
+/* Окраска строк платежей по времени года и значок слева от даты. */
+.data-table tbody tr.season-autumn { background: #fff0dc; }
+.data-table tbody tr.season-winter { background: #e6f2fb; }
+.data-table tbody tr.season-spring { background: #e8f6ea; }
+.data-table tbody tr.season-summer { background: #fffbd6; }
+
+.data-table tbody tr[class*='season-']:hover {
+  filter: brightness(0.97);
+}
+
+.season-date {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  white-space: nowrap;
+}
+
+.season-icon {
+  display: inline-flex;
+  flex: 0 0 auto;
 }

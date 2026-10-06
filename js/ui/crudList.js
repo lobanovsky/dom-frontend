@@ -13,13 +13,14 @@ import { config } from '../config.js';
 // filters: [{name, label, type: 'search'|'select'|'date', options?}] — значения уходят в query.
 // fixedQuery — всегда добавляется к запросу списка (например building_id).
 // fixed — всегда добавляется к телу при создании/сохранении.
+// rowClass(row) -> CSS-класс строки, см. ui/table.js.
 // groupBy(row) -> строка: метка группы (например месяц), см. ui/table.js.
 // extraActions(row) -> [Node] — дополнительные кнопки в строках действующих записей.
 // Возвращает {element, reload}.
 export function createCrudList({
   api, columns, fields, watch, filters = [], fixedQuery = {}, fixed = {},
   entityTitle, addLabel = 'Добавить', emptyMessage, deleteMessage = (row) => 'Удалить запись?',
-  canEdit = true, extraActions, groupBy,
+  canEdit = true, extraActions, groupBy, rowClass,
 }) {
   let offset = 0;
   let showDeleted = false;
@@ -113,6 +114,7 @@ export function createCrudList({
       tableHost.replaceChildren(renderTable({
         columns,
         groupBy,
+        rowClass,
         rows: items,
         emptyMessage: showDeleted ? 'Удалённых записей нет' : emptyMessage,
         rowActions: !canEdit ? null : showDeleted

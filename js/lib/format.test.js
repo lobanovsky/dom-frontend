@@ -58,3 +58,11 @@ test('monthLabel', async () => {
   assert.equal(monthLabel(null), '');
   assert.equal(monthLabel('2025-13-01'), '');
 });
+
+test('seasonOf', async () => {
+  const { seasonOf } = await import('./format.js');
+  const byMonth = ['winter', 'winter', 'spring', 'spring', 'spring', 'summer', 'summer', 'summer', 'autumn', 'autumn', 'autumn', 'winter'];
+  byMonth.forEach((season, i) => assert.equal(seasonOf(`2026-${String(i + 1).padStart(2, '0')}-15`), season));
+  assert.equal(seasonOf(null), '');
+  assert.equal(seasonOf('2026-13-01'), '');
+});
