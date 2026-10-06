@@ -37,7 +37,11 @@ function fileDetails(f) {
       ];
     }
     case 'duplicate_file':
-      return [el('div', {}, 'Этот файл уже был загружен ранее. '), el('a', { href: `/payment-registries/${f.registry_id}` }, 'Открыть реестр')];
+      return [
+        el('div', {}, 'Содержимое файла полностью совпадает с уже загруженным реестром (имя файла не учитывается).'),
+        f.duplicate_of ? el('div', {}, ['Совпадает с файлом: ', el('span', { class: 'import-file-name' }, f.duplicate_of)]) : null,
+        el('a', { href: `/payment-registries/${f.registry_id}` }, 'Открыть реестр'),
+      ];
     case 'all_duplicates':
       return [el('div', {}, 'Все платежи файла уже есть в базе, реестр не создан.'), skippedBlock(f.skipped)];
     case 'unknown_account':
