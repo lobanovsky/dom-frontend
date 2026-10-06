@@ -1,19 +1,8 @@
 import { el } from '../lib/dom.js';
-import { openModal } from './modal.js';
 import { paymentRegistriesApi } from '../api/resources.js';
-import { describeApiError, describeImportRowError } from '../lib/apiErrors.js';
-import { statusInfo, summaryText, summaryTone, problemFiles } from '../lib/registryImport.js';
+import { summaryText, summaryTone, problemFiles } from '../lib/registryImport.js';
 import { formatDate, formatMoney } from '../lib/format.js';
-
-const MAX_SHOWN = 50;
-
-const TONE_CLASS = { success: 'badge badge-success', error: 'badge badge-danger', neutral: 'badge badge-neutral' };
-
-function shortList(items, render) {
-  const rows = items.slice(0, MAX_SHOWN).map((item) => el('li', {}, render(item)));
-  if (items.length > MAX_SHOWN) rows.push(el('li', {}, `…и ещё ${items.length - MAX_SHOWN}`));
-  return el('ul', { class: 'import-errors' }, rows);
-}
+import { startFilesUpload, fileCard, shortList, errorDetails } from './uploadReport.js';
 
 function skippedBlock(skipped) {
   if (!skipped?.length) return null;
@@ -47,66 +36,21 @@ function fileDetails(f) {
     case 'unknown_account':
       return [el('div', {}, ['В имени файла есть номер счёта, которого нет в системе. Добавьте счёт на странице ', el('a', { href: '/bank-accounts' }, 'Банковские счета'), ' и загрузите файл ещё раз.'])];
     default:
-      return [
-        el('div', {}, describeApiError(new Error(f.error)).message),
-        f.rows?.length ? shortList(f.rows, (r) => `Строка ${r.row}: ${describeImportRowError(r.error)}`) : null,
-      ];
+      return errorDetails(f);
   }
-}
-
-function fileCard(f) {
-  const info = statusInfo(f.status);
-  return el('div', { class: 'import-file' }, [
-    el('div', { class: 'import-file-head' }, [el('span', { class: 'import-file-name' }, f.file_name), el('span', { class: TONE_CLASS[info.tone] }, info.label)]),
-    ...fileDetails(f).filter(Boolean),
-  ]);
 }
 
 // Загружает выбранные файлы (реестры .txt и/или zip-архивы) одним запросом и показывает отчёт по каждому файлу.
 // Счёт для каждого файла бэкенд определяет по номеру в его имени. onImported вызывается, если хоть что-то загружено.
 export function startRegistryUpload(files, { onImported } = {}) {
-  const body = el('div', {}, el('div', { class: 'table-status' }, `Загрузка файлов: ${files.length}…`));
-  const modal = openModal({ title: 'Загрузка реестров', content: body, wide: true });
-
-  paymentRegistriesApi.importFiles(files).then(({ files: results, summary }) => {
-    const tone = summaryTone(summary);
-    const problems = problemFiles(results);
-    const clean = results.length - problems.length;
-
-    // Файлы без замечаний скрыты: в архиве их могут быть тысячи, и проблемные тонут. Кнопка показывает все.
-    const allFiles = el('div', {});
-    allFiles.hidden = true;
-    const toggleAll = el('button', {
-      type: 'button', class: 'btn btn-ghost btn-sm',
-      onclick: () => {
-        if (!allFiles.childElementCount) allFiles.replaceChildren(...results.map(fileCard));
-        allFiles.hidden = !allFiles.hidden;
-        problemsBlock.hidden = !allFiles.hidden;
-        toggleAll.textContent = allFiles.hidden ? `Показать все файлы (${results.length})` : 'Показать только проблемные';
-      },
-    }, `Показать все файлы (${results.length})`);
-    const problemsBlock = el('div', {}, problems.map(fileCard));
-
-    body.replaceChildren(...[
-      el('div', { class: tone === 'success' ? 'form-success' : 'form-error', role: 'status' }, summaryText(summary)),
-      problems.length
-        ? el('p', {}, `Файлов с замечаниями: ${problems.length}. Без замечаний: ${clean}.`)
-        : el('p', {}, 'Замечаний нет: все файлы загружены без предупреждений.'),
-      problemsBlock,
-      results.length > problems.length ? toggleAll : null,
-      allFiles,
-      el('div', { class: 'form-actions' }, el('button', { type: 'button', class: 'btn btn-primary', onclick: () => modal.close() }, 'Закрыть')),
-    ].filter(Boolean)); // replaceChildren(null) рисует текст «null»
-    if (summary.files_imported) onImported?.(summary);
-  }, (err) => {
-    if (err.status === 0 || err.status >= 500) {
-      modal.close(); // глобальный тост уже показан клиентом
-      return;
-    }
-    body.replaceChildren(
-      el('div', { class: 'form-error', role: 'alert' }, err.status === 413 ? 'Слишком большой запрос: загрузите меньше файлов или архив поменьше' : describeApiError(err).message),
-      el('div', { class: 'form-actions' }, el('button', { type: 'button', class: 'btn', onclick: () => modal.close() }, 'Закрыть')),
-    );
+  return startFilesUpload({
+    title: 'Загрузка реестров',
+    files,
+    upload: (list) => paymentRegistriesApi.importFiles(list),
+    summaryText,
+    summaryTone,
+    problems: problemFiles,
+    card: (f) => fileCard(f, fileDetails(f)),
+    onImported,
   });
-  return modal;
 }

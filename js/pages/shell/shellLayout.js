@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { href: '/legal-entities', label: 'Юрлица', icon: '<rect x="3" y="7" width="18" height="14" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 13h18"/>' },
   { href: '/payments/incoming', label: 'Входящие платежи', icon: '<path d="M12 3v12M7 10l5 5 5-5M4 21h16"/>' },
   { href: '/payment-registries', label: 'Реестры', icon: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8zM14 3v5h5M9 13h6M9 17h6"/>' },
+  { href: '/bank-statements', label: 'Выписки', icon: '<path d="M6 2h9l5 5v15H6zM14 2v6h6M9 13h8M9 17h8M9 9h3"/>' },
   { href: '/payments/outgoing', label: 'Исходящие платежи', icon: '<path d="M12 21V9M7 14l5-5 5 5M4 3h16"/>' },
   { href: '/bank-accounts', label: 'Банковские счета', icon: '<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/>' },
   { href: '/payment-categories', label: 'Категории платежей', icon: '<path d="M20.6 13.4l-7.2 7.2a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8zM7.5 7.5h.01"/>' },

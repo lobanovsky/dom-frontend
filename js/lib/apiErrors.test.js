@@ -105,3 +105,14 @@ test('registry row errors are translated', async () => {
   assert.equal(describeImportRowError('date "2026-01-03": expected dd-mm-yyyy'), 'дата «2026-01-03»: нужен формат дд-мм-гггг');
   assert.equal(describeImportRowError('expected 13 fields, got 5'), 'ожидалось полей: 13, найдено: 5');
 });
+
+test('statement errors', async () => {
+  const { describeImportRowError } = await import('./apiErrors.js');
+  const dup = describeApiError(err('statement file already loaded: statement 3', 409));
+  assert.equal(dup.statementId, 3);
+  assert.equal(dup.message, 'Эта выписка уже загружена: № 3');
+  assert.equal(describeApiError(err('bank account 40703810338000009999 is not in the system', 404)).message, 'Банковский счёт 40703810338000009999 не найден в системе');
+  assert.equal(describeApiError(err('column "Назначение платежа" not found in the statement header')).message, 'В выписке не найдена колонка «Назначение платежа»');
+  assert.equal(describeImportRowError('both debit and credit amounts are set'), 'заполнены и дебет, и кредит');
+  assert.equal(describeApiError(err('row 4: already exists: incoming_payments_dedup_key_key', 409)).message, 'Строка 4: Такая операция из выписки уже есть на этом счёте');
+});

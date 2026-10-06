@@ -35,6 +35,9 @@ const CONFLICTS = {
   legal_entities_inn_kpp_uq: 'Юрлицо с таким ИНН и КПП уже есть',
   bank_accounts_number_key: 'Банковский счёт с таким номером уже есть',
   payment_categories_name_key: 'Такая категория уже есть',
+  incoming_payments_dedup_key_key: 'Такая операция из выписки уже есть на этом счёте',
+  outgoing_payments_dedup_key_key: 'Такая операция из выписки уже есть на этом счёте',
+  bank_statements_file_sha256_key: 'Эта выписка уже загружена',
   incoming_payments_external_id_key: 'Платёж с таким номером операции уже есть на этом счёте',
   payment_registries_file_sha256_key: 'Этот файл реестра уже загружен',
 };
@@ -48,6 +51,7 @@ const ACTIVE_CHILDREN = {
   accounts: 'лицевые счета',
   'account holders': 'плательщики',
   'bank accounts': 'банковские счета',
+  'bank statements': 'банковские выписки',
   'payment registries': 'реестры платежей',
   'incoming payments': 'входящие платежи',
   'outgoing payments': 'исходящие платежи',
@@ -64,6 +68,7 @@ const DELETED_PARENTS = {
   'related owner': 'собственник (родство)',
   'bank account': 'банковский счёт',
   'payment registry': 'реестр платежей',
+  'bank statement': 'банковская выписка',
   'payment category': 'категория платежа',
 };
 
@@ -114,6 +119,24 @@ export function describeApiError(err, { action = 'save' } = {}) {
   if (m) return { field: null, message: `Итоговая строка: ${m[1]} платежей, а в файле ${m[2]}` };
   if (raw.startsWith('summary line total')) return { field: null, message: 'Итоговая сумма в файле не совпадает с суммой платежей' };
   if (raw === 'file has no payments') return { field: null, message: 'В файле нет платежей' };
+  m = raw.match(/^statement file already loaded: statement (\d+)$/);
+  if (m) return { field: null, message: `Эта выписка уже загружена: № ${m[1]}`, statementId: Number(m[1]) };
+  m = raw.match(/^all (\d+) operations of the statement are already loaded$/);
+  if (m) return { field: null, message: `Все операции выписки (${m[1]}) уже загружены раньше` };
+  m = raw.match(/^bank account (\d+) is not in the system$/);
+  if (m) return { field: null, message: `Банковский счёт ${m[1]} не найден в системе` };
+  m = raw.match(/^file name refers to account (\d+), but the statement is for account (\d+)$/);
+  if (m) return { field: null, message: `В имени файла счёт ${m[1]}, а выписка по счёту ${m[2]}` };
+  m = raw.match(/^statement header "(.*)" not found: not a СберБизнес statement$/);
+  if (m) return { field: null, message: 'Это не выписка СберБизнес: не найден заголовок таблицы «Дата проводки»' };
+  m = raw.match(/^column "(.*)" not found in the statement header$/);
+  if (m) return { field: null, message: `В выписке не найдена колонка «${m[1]}»` };
+  if (raw === 'our account number is not found in the statement header') return { field: null, message: 'В шапке выписки не найден номер счёта' };
+  if (raw === 'statement has no operations') return { field: null, message: 'В выписке нет операций' };
+  if (raw.startsWith('summary block (')) return { field: null, message: 'В выписке нет итогового блока: файл неполный' };
+  if (raw.startsWith('summary says ')) return { field: null, message: 'Число операций в итоге выписки не совпадает с числом строк' };
+  if (raw === 'summary turnover does not match the sum of operations') return { field: null, message: 'Итоговые обороты выписки не совпадают с суммой операций' };
+  if (raw === 'not a valid xlsx file') return { field: null, message: 'Не удалось прочитать файл: нужен xlsx (Excel)' };
   if (raw === 'building not found') return { field: null, message: 'Дом не найден' };
   if (raw === 'file has no data rows') return { field: null, message: 'В файле нет строк с данными' };
   if (raw.startsWith('not a valid xlsx file')) return { field: null, message: 'Не удалось прочитать файл: нужен xlsx (Excel)' };
@@ -143,6 +166,15 @@ const ROW_FIELDS = {
   capital_repair_account: 'лицевой счёт капремонта',
 };
 
+const STATEMENT_ROW = [
+  [/^date is not valid$/, 'неверная дата'],
+  [/^debit amount: .*$/, 'неверная сумма по дебету'],
+  [/^credit amount: .*$/, 'неверная сумма по кредиту'],
+  [/^both debit and credit amounts are set$/, 'заполнены и дебет, и кредит'],
+  [/^no amount$/, 'нет суммы'],
+  [/^account "(.*)" in the row is not the statement account$/, (m) => `счёт «${m[1]}» в строке не совпадает со счётом выписки`],
+];
+
 const REGISTRY_ROW = [
   [/^expected (\d+) fields, got (\d+)$/, (m) => `ожидалось полей: ${m[1]}, найдено: ${m[2]}`],
   [/^date "(.*)": expected dd-mm-yyyy$/, (m) => `дата «${m[1]}»: нужен формат дд-мм-гггг`],
@@ -164,7 +196,7 @@ export function describeImportRowError(message) {
   if (m) return `площадь «${m[1]}» — нужно число больше нуля`;
   m = message.match(/^duplicate (.+) "(.*)" \(already in row (\d+)\)$/);
   if (m) return `повтор: ${DUPLICATES[m[1]] || m[1]} «${m[2]}» уже в строке ${m[3]}`;
-  for (const [re, text] of REGISTRY_ROW) {
+  for (const [re, text] of [...REGISTRY_ROW, ...STATEMENT_ROW]) {
     const rm = message.match(re);
     if (rm) return typeof text === 'function' ? text(rm) : text;
   }

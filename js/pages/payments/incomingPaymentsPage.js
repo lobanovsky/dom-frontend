@@ -7,7 +7,7 @@ import { describeApiError } from '../../lib/apiErrors.js';
 import { loadPaymentRefs, bankFilterOptions, categoryFilterOptions, dateFilters, seasonRowClass, dateWithSeason } from './common.js';
 
 // Список входящих платежей. Используется и на странице «Входящие платежи», и на странице реестра
-// (fixedQuery: {registry_id}, showRegistry: false).
+// (fixedQuery: {registry_id}, showRegistry: false) и на странице выписки (fixedQuery: {statement_id}).
 export function createIncomingList(refs, { fixedQuery = {}, showRegistry = true } = {}) {
   const fields = incomingPaymentFields({ banks: refs.banks, categories: refs.incomingCategories });
   return createCrudList({
@@ -47,9 +47,10 @@ function linkCell(r, refs) {
   return el('span', { class: 'badge badge-neutral' }, 'Не привязан');
 }
 
-function sourceCell(r) {
-  if (!r.registry_id) return 'Вручную';
-  return el('a', { href: `/payment-registries/${r.registry_id}` }, `Реестр${r.registry_number ? ` ${r.registry_number}` : ''}`);
+export function sourceCell(r) {
+  if (r.registry_id) return el('a', { href: `/payment-registries/${r.registry_id}` }, `Реестр${r.registry_number ? ` ${r.registry_number}` : ''}`);
+  if (r.statement_id) return el('a', { href: `/bank-statements/${r.statement_id}` }, `Выписка № ${r.statement_id}`);
+  return 'Вручную';
 }
 
 export async function incomingPaymentsPage(container) {

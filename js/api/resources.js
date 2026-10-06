@@ -61,3 +61,15 @@ export const paymentRegistriesApi = {
     return client.post('/api/v1/payment-registries/import', body);
   },
 };
+
+// Банковские выписки (xlsx). Счёт определяется из шапки файла.
+export const bankStatementsApi = {
+  list: (query) => client.get('/api/v1/bank-statements', { query }),
+  get: (id) => client.get(`/api/v1/bank-statements/${id}`),
+  fileUrl: (id) => `/api/v1/bank-statements/${id}/file`,
+  importFiles: (files) => {
+    const body = new FormData();
+    for (const file of files) body.append('file', file);
+    return client.post('/api/v1/bank-statements/import', body);
+  },
+};
