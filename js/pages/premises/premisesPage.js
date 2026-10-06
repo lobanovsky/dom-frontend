@@ -261,7 +261,8 @@ export async function premisesPage(container, { id }) {
     try {
       const { items } = await incomingPaymentsApi.list({ personal_account_id: account.id, limit: PAYMENTS_LIMIT });
       const total = Math.round(items.reduce((sum, p) => sum + p.amount, 0) * 100) / 100;
-      host.replaceChildren(
+      // el() пропускает null-детей; прямой replaceChildren(null) нарисовал бы текст «null».
+      host.replaceChildren(el('div', {}, [
         el('p', { class: 'field-help' }, items.length === 0
           ? 'Оплат по этому лицевому счёту нет'
           : `Оплат: ${items.length}${items.length === PAYMENTS_LIMIT ? '+ (показаны последние)' : ''}, на сумму ${formatMoney(total)}`),
@@ -277,7 +278,7 @@ export async function premisesPage(container, { id }) {
           ],
           rows: items,
         }),
-      );
+      ]));
     } catch (err) {
       host.replaceChildren(errorStatus(err));
     }
