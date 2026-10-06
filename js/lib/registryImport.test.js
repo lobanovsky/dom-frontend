@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { summaryText, summaryTone, statusInfo } from './registryImport.js';
+import { summaryText, summaryTone, statusInfo, isProblem, problemFiles } from './registryImport.js';
 
 const base = { files_imported: 0, files_failed: 0, files_ignored: 0, payments_created: 0, payments_skipped: 0, linked: 0, unlinked: 0 };
 
@@ -31,4 +31,21 @@ test('status info falls back to the raw status', () => {
   assert.equal(statusInfo('imported').label, 'Загружен');
   assert.equal(statusInfo('unknown_account').tone, 'error');
   assert.deepEqual(statusInfo('weird'), { label: 'weird', tone: 'neutral' });
+});
+
+test('only files with problems are listed, most serious first', () => {
+  const clean = { file_name: 'clean', status: 'imported', result: { warnings: [], skipped: [] } };
+  const warned = { file_name: 'warned', status: 'imported', result: { warnings: ['w'], skipped: [] } };
+  const skipped = { file_name: 'skipped', status: 'imported', result: { warnings: [], skipped: [{}] } };
+  const dup = { file_name: 'dup', status: 'duplicate_file' };
+  const bad = { file_name: 'bad', status: 'invalid' };
+  const unknown = { file_name: 'unknown', status: 'unknown_account' };
+  assert.equal(isProblem(clean), false);
+  assert.equal(isProblem(warned), true);
+  assert.equal(isProblem(dup), true);
+  assert.deepEqual(
+    problemFiles([clean, warned, dup, clean, bad, skipped, unknown]).map((f) => f.file_name),
+    ['bad', 'unknown', 'dup', 'warned', 'skipped'],
+  );
+  assert.deepEqual(problemFiles([clean, clean]), []);
 });

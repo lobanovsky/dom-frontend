@@ -44,3 +44,23 @@ export function summaryTone(summary) {
   if (summary.files_failed || !summary.files_imported) return summary.files_imported ? 'warning' : 'error';
   return 'success';
 }
+
+// Файл с замечаниями: не загружен, либо загружен, но с предупреждениями или пропущенными платежами.
+// Остальные («чистые») в отчёте по умолчанию скрыты: в большом архиве их тысячи.
+export function isProblem(file) {
+  if (file.status !== 'imported') return true;
+  const r = file.result || {};
+  return Boolean(r.warnings?.length || r.skipped?.length);
+}
+
+const SEVERITY = { error: 0, invalid: 0, unknown_account: 0, duplicate_file: 1, all_duplicates: 1, imported: 2 };
+
+// Файлы с замечаниями, самые серьёзные первыми (ошибки, затем повторы, затем загруженные с предупреждениями);
+// внутри группы порядок исходный (по имени).
+export function problemFiles(files) {
+  return files
+    .map((f, i) => ({ f, i }))
+    .filter(({ f }) => isProblem(f))
+    .sort((a, b) => (SEVERITY[a.f.status] ?? 1) - (SEVERITY[b.f.status] ?? 1) || a.i - b.i)
+    .map(({ f }) => f);
+}

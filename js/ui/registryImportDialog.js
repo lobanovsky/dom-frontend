@@ -2,7 +2,7 @@ import { el } from '../lib/dom.js';
 import { openModal } from './modal.js';
 import { paymentRegistriesApi } from '../api/resources.js';
 import { describeApiError, describeImportRowError } from '../lib/apiErrors.js';
-import { statusInfo, summaryText, summaryTone } from '../lib/registryImport.js';
+import { statusInfo, summaryText, summaryTone, problemFiles } from '../lib/registryImport.js';
 import { formatDate, formatMoney } from '../lib/format.js';
 
 const MAX_SHOWN = 50;
@@ -66,11 +66,33 @@ export function startRegistryUpload(files, { onImported } = {}) {
 
   paymentRegistriesApi.importFiles(files).then(({ files: results, summary }) => {
     const tone = summaryTone(summary);
-    body.replaceChildren(
+    const problems = problemFiles(results);
+    const clean = results.length - problems.length;
+
+    // Файлы без замечаний скрыты: в архиве их могут быть тысячи, и проблемные тонут. Кнопка показывает все.
+    const allFiles = el('div', {});
+    allFiles.hidden = true;
+    const toggleAll = el('button', {
+      type: 'button', class: 'btn btn-ghost btn-sm',
+      onclick: () => {
+        if (!allFiles.childElementCount) allFiles.replaceChildren(...results.map(fileCard));
+        allFiles.hidden = !allFiles.hidden;
+        problemsBlock.hidden = !allFiles.hidden;
+        toggleAll.textContent = allFiles.hidden ? `Показать все файлы (${results.length})` : 'Показать только проблемные';
+      },
+    }, `Показать все файлы (${results.length})`);
+    const problemsBlock = el('div', {}, problems.map(fileCard));
+
+    body.replaceChildren(...[
       el('div', { class: tone === 'success' ? 'form-success' : 'form-error', role: 'status' }, summaryText(summary)),
-      ...results.map(fileCard),
+      problems.length
+        ? el('p', {}, `Файлов с замечаниями: ${problems.length}. Без замечаний: ${clean}.`)
+        : el('p', {}, 'Замечаний нет: все файлы загружены без предупреждений.'),
+      problemsBlock,
+      results.length > problems.length ? toggleAll : null,
+      allFiles,
       el('div', { class: 'form-actions' }, el('button', { type: 'button', class: 'btn btn-primary', onclick: () => modal.close() }, 'Закрыть')),
-    );
+    ].filter(Boolean)); // replaceChildren(null) рисует текст «null»
     if (summary.files_imported) onImported?.(summary);
   }, (err) => {
     if (err.status === 0 || err.status >= 500) {
