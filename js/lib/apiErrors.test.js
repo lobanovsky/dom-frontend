@@ -123,3 +123,14 @@ test('rule errors map to the action/conditions fields', () => {
   assert.deepEqual(describeApiError(err('conditions: condition 2: amount "x" is not a number')), { field: 'conditions', message: 'Условие 2: сумма «x» — не число' });
   assert.equal(describeApiError(err('assignment run is already rolled back', 409)).message, 'Этот запуск уже откатан');
 });
+
+test('statement operation count mismatch shows the numbers', () => {
+  assert.equal(
+    describeApiError(err('summary says 23 debit and 54 credit operations, the statement has 20 and 50')).message,
+    'Число операций в итоге выписки не совпадает с файлом: в итоге списаний 23 и поступлений 54, найдено 20 и 50.',
+  );
+  assert.match(
+    describeApiError(err('summary says 1 debit and 2 credit operations, the statement has 1 and 1 (rows with an unreadable date: 1)')).message,
+    /Строк с непонятной датой проводки: 1\./,
+  );
+});

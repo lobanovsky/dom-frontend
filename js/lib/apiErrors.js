@@ -155,6 +155,11 @@ export function describeApiError(err, { action = 'save' } = {}) {
   if (raw === 'our account number is not found in the statement header') return { field: null, message: 'В шапке выписки не найден номер счёта' };
   if (raw === 'statement has no operations') return { field: null, message: 'В выписке нет операций' };
   if (raw.startsWith('summary block (')) return { field: null, message: 'В выписке нет итогового блока: файл неполный' };
+  m = raw.match(/^summary says (.*) debit and (.*) credit operations, the statement has (\d+) and (\d+)(?: \(rows with an unreadable date: (\d+)\))?$/);
+  if (m) {
+    const hint = m[5] ? ` Строк с непонятной датой проводки: ${m[5]}.` : '';
+    return { field: null, message: `Число операций в итоге выписки не совпадает с файлом: в итоге списаний ${m[1]} и поступлений ${m[2]}, найдено ${m[3]} и ${m[4]}.${hint}` };
+  }
   if (raw.startsWith('summary says ')) return { field: null, message: 'Число операций в итоге выписки не совпадает с числом строк' };
   if (raw === 'summary turnover does not match the sum of operations') return { field: null, message: 'Итоговые обороты выписки не совпадают с суммой операций' };
   if (raw === 'not a valid xlsx file') return { field: null, message: 'Не удалось прочитать файл: нужен xlsx (Excel)' };
