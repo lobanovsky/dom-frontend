@@ -134,3 +134,10 @@ test('statement operation count mismatch shows the numbers', () => {
     /Строк с непонятной датой проводки: 1\./,
   );
 });
+
+test('missing statement column message ignores the list of found labels', () => {
+  assert.equal(
+    describeApiError(err('column "Сумма по кредиту" not found in the statement header (found: "Дата проводки", "Приход")')).message,
+    'В выписке не найдена колонка «Сумма по кредиту»',
+  );
+});

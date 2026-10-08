@@ -150,7 +150,7 @@ export function describeApiError(err, { action = 'save' } = {}) {
   if (m) return { field: null, message: `В имени файла счёт ${m[1]}, а выписка по счёту ${m[2]}` };
   m = raw.match(/^statement header "(.*)" not found: not a СберБизнес statement$/);
   if (m) return { field: null, message: 'Это не выписка СберБизнес: не найден заголовок таблицы «Дата проводки»' };
-  m = raw.match(/^column "(.*)" not found in the statement header$/);
+  m = raw.match(/^column "([^"]*)" not found in the statement header(?: \(found: .*\))?$/);
   if (m) return { field: null, message: `В выписке не найдена колонка «${m[1]}»` };
   if (raw === 'our account number is not found in the statement header') return { field: null, message: 'В шапке выписки не найден номер счёта' };
   if (raw === 'statement has no operations') return { field: null, message: 'В выписке нет операций' };
