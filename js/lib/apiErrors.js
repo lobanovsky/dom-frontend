@@ -161,7 +161,15 @@ export function describeApiError(err, { action = 'save' } = {}) {
     return { field: null, message: `Число операций в итоге выписки не совпадает с файлом: в итоге списаний ${m[1]} и поступлений ${m[2]}, найдено ${m[3]} и ${m[4]}.${hint}` };
   }
   if (raw.startsWith('summary says ')) return { field: null, message: 'Число операций в итоге выписки не совпадает с числом строк' };
-  if (raw === 'summary turnover does not match the sum of operations') return { field: null, message: 'Итоговые обороты выписки не совпадают с суммой операций' };
+  m = raw.match(/^summary turnover does not match the sum of operations: debit ([\d.]+) in the summary, ([\d.]+) in rows; credit ([\d.]+) in the summary, ([\d.]+) in rows$/);
+  if (m) {
+    const fmt = (v) => Number(v).toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const diffs = [];
+    if (m[1] !== m[2]) diffs.push(`по дебету в итоге ${fmt(m[1])}, по строкам ${fmt(m[2])}`);
+    if (m[3] !== m[4]) diffs.push(`по кредиту в итоге ${fmt(m[3])}, по строкам ${fmt(m[4])}`);
+    return { field: null, message: `Итоговые обороты выписки не совпадают с суммой операций: ${diffs.join('; ')}. Файл, скорее всего, повреждён: выгрузите период из банка заново.` };
+  }
+  if (raw.startsWith('summary turnover does not match')) return { field: null, message: 'Итоговые обороты выписки не совпадают с суммой операций' };
   if (raw === 'not a valid xlsx file') return { field: null, message: 'Не удалось прочитать файл: нужен xlsx (Excel)' };
   if (raw === 'assignment run not found') return { field: null, message: 'Запуск не найден' };
   if (raw === 'assignment run is already rolled back') return { field: null, message: 'Этот запуск уже откатан' };

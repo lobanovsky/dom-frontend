@@ -141,3 +141,9 @@ test('missing statement column message ignores the list of found labels', () => 
     'В выписке не найдена колонка «Сумма по кредиту»',
   );
 });
+
+test('turnover mismatch shows which side differs and by how much', () => {
+  const msg = describeApiError(err('summary turnover does not match the sum of operations: debit 1702704.62 in the summary, 1702704.62 in rows; credit 1803923.98 in the summary, 1765923.98 in rows')).message;
+  assert.match(msg, /^Итоговые обороты выписки не совпадают с суммой операций: по кредиту в итоге 1\s803\s923,98, по строкам 1\s765\s923,98\./);
+  assert.doesNotMatch(msg, /по дебету/);
+});
