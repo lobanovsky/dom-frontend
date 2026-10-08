@@ -112,8 +112,7 @@ test('statement errors', async () => {
   assert.equal(dup.statementId, 3);
   assert.equal(dup.message, 'Эта выписка уже загружена: № 3');
   assert.equal(describeApiError(err('bank account 40703810338000009999 is not in the system', 404)).message, 'Банковский счёт 40703810338000009999 не найден в системе');
-  assert.equal(describeApiError(err('column "Назначение платежа" not found in the statement header')).message, 'В выписке не найдена колонка «Назначение платежа»');
-  assert.equal(describeImportRowError('both debit and credit amounts are set'), 'заполнены и дебет, и кредит');
+  assert.equal(describeImportRowError('amount "abc" is not valid'), 'сумма «abc» неверна');
   assert.equal(describeApiError(err('row 4: already exists: incoming_payments_dedup_key_key', 409)).message, 'Строка 4: Такая операция из выписки уже есть на этом счёте');
 });
 
@@ -124,26 +123,14 @@ test('rule errors map to the action/conditions fields', () => {
   assert.equal(describeApiError(err('assignment run is already rolled back', 409)).message, 'Этот запуск уже откатан');
 });
 
-test('statement operation count mismatch shows the numbers', () => {
-  assert.equal(
-    describeApiError(err('summary says 23 debit and 54 credit operations, the statement has 20 and 50')).message,
-    'Число операций в итоге выписки не совпадает с файлом: в итоге списаний 23 и поступлений 54, найдено 20 и 50.',
-  );
-  assert.match(
-    describeApiError(err('summary says 1 debit and 2 credit operations, the statement has 1 and 1 (rows with an unreadable date: 1)')).message,
-    /Строк с непонятной датой проводки: 1\./,
-  );
-});
 
-test('missing statement column message ignores the list of found labels', () => {
-  assert.equal(
-    describeApiError(err('column "Сумма по кредиту" not found in the statement header (found: "Дата проводки", "Приход")')).message,
-    'В выписке не найдена колонка «Сумма по кредиту»',
-  );
-});
 
-test('turnover mismatch shows which side differs and by how much', () => {
-  const msg = describeApiError(err('summary turnover does not match the sum of operations: debit 1702704.62 in the summary, 1702704.62 in rows; credit 1803923.98 in the summary, 1765923.98 in rows')).message;
-  assert.match(msg, /^Итоговые обороты выписки не совпадают с суммой операций: по кредиту в итоге 1\s803\s923,98, по строкам 1\s765\s923,98\./);
-  assert.doesNotMatch(msg, /по дебету/);
+
+test('1C statement errors', () => {
+  assert.match(describeApiError(err('not a 1C client-bank exchange file (1CClientBankExchange header is missing)')).message, /нет строки 1CClientBankExchange/);
+  assert.equal(describeApiError(err('unsupported 1C format version "2.0" (supported: 1.xx, usually 1.03)')).message, 'Версия формата 1С «2.0» не поддерживается (нужна 1.03)');
+  const day = describeApiError(err('day totals do not match the documents (2 days): 4070 05.01.2026: debit 0.00 in the section, 0.00 in documents; credit 999.00 in the section, 100.50 in documents')).message;
+  assert.match(day, /Итоги по дням в файле не совпадают с суммой документов \(дней: 2\)/);
+  assert.match(day, /выгрузите период из банка заново/);
+  assert.equal(describeApiError(err('the file has no payment documents')).message, 'В файле нет платёжных документов');
 });

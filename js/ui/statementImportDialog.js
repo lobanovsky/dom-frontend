@@ -31,13 +31,13 @@ function fileDetails(f) {
     case 'all_duplicates':
       return [el('div', {}, 'Все операции файла уже есть в базе из других выписок, выписка не создана.'), skippedBlock(f.skipped, (n) => `Операций: ${n}`)];
     case 'unknown_account':
-      return [el('div', {}, ['Счёта из шапки выписки нет в системе. Добавьте его на странице ', el('a', { href: '/bank-accounts' }, 'Банковские счета'), ' и загрузите файл ещё раз.'])];
+      return [el('div', {}, ['Счёта из файла нет в системе. Добавьте его на странице ', el('a', { href: '/bank-accounts' }, 'Банковские счета'), ' и загрузите файл ещё раз.'])];
     default:
       return errorDetails(f);
   }
 }
 
-// Загружает выписки (.xlsx и/или zip-архивы) одним запросом; счёт бэкенд берёт из шапки каждой выписки.
+// Загружает файлы обмена с 1С (.txt и/или zip-архивы) одним запросом; счета бэкенд берёт из самих файлов.
 export function startStatementUpload(files, { onImported } = {}) {
   return startFilesUpload({
     title: 'Загрузка выписок',

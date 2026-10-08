@@ -8,7 +8,7 @@ import { loadPaymentRefs, bankFilterOptions, dateFilters } from './common.js';
 
 const period = (r) => (r.period_from && r.period_to ? `${formatDate(r.period_from)} — ${formatDate(r.period_to)}` : '');
 
-// Кнопка выбора файлов: выбор сразу запускает загрузку; счёт бэкенд берёт из шапки выписки.
+// Кнопка выбора файлов: выбор сразу запускает загрузку; счета бэкенд берёт из самого файла.
 export function uploadButton(label, { accept, multiple, primary, disabled, onFiles }) {
   const input = el('input', { type: 'file', accept, multiple, hidden: true });
   input.addEventListener('change', () => {
@@ -48,7 +48,7 @@ export async function bankStatementsPage(container) {
       { key: 'debit_count', label: 'Списаний' },
       { key: 'created_at', label: 'Загружена', render: (r) => formatDate(r.created_at) },
     ],
-    emptyMessage: 'Выписок пока нет. Загрузите выписку СберБизнес (xlsx)',
+    emptyMessage: 'Выписок пока нет. Загрузите файл обмена с 1С (.txt)',
   });
 
   const onFiles = (files) => startStatementUpload(files, { onImported: () => list.reload() });
@@ -58,10 +58,10 @@ export async function bankStatementsPage(container) {
       el('h1', {}, 'Банковские выписки'),
       el('div', { class: 'header-actions' }, [
         ...uploadButton('Загрузить ZIP', { accept: '.zip,application/zip', multiple: false, primary: true, disabled, onFiles }),
-        ...uploadButton('Загрузить файлы', { accept: '.xlsx', multiple: true, primary: false, disabled, onFiles }),
+        ...uploadButton('Загрузить файлы', { accept: '.txt,text/plain', multiple: true, primary: false, disabled, onFiles }),
       ]),
     ]),
-    el('p', { class: 'field-help' }, 'Выписки СберБизнес в формате xlsx. Счёт определяется по шапке выписки, поэтому он должен быть добавлен в «Банковские счета». Выписки за пересекающиеся периоды загружать можно: операции, которые уже есть в базе, будут пропущены. В ZIP выписки ищутся во всех вложенных папках.'),
+    el('p', { class: 'field-help' }, 'Выписки в формате обмена с 1С («Клиент-банк — 1С», версия 1.03, файл .txt). Банковские счета берутся из файла, поэтому они должны быть добавлены в «Банковские счета»; если в файле несколько счетов, на каждый создаётся своя выписка. Выписки за пересекающиеся периоды загружать можно: операции, которые уже есть в базе, будут пропущены. В ZIP выписки ищутся во всех вложенных папках.'),
     disabled ? el('div', { class: 'form-error' }, ['Сначала добавьте ', el('a', { href: '/bank-accounts' }, 'банковский счёт'), '.']) : null,
     list.element,
   ]));

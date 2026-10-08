@@ -148,28 +148,14 @@ export function describeApiError(err, { action = 'save' } = {}) {
   if (m) return { field: null, message: `Банковский счёт ${m[1]} не найден в системе` };
   m = raw.match(/^file name refers to account (\d+), but the statement is for account (\d+)$/);
   if (m) return { field: null, message: `В имени файла счёт ${m[1]}, а выписка по счёту ${m[2]}` };
-  m = raw.match(/^statement header "(.*)" not found: not a СберБизнес statement$/);
-  if (m) return { field: null, message: 'Это не выписка СберБизнес: не найден заголовок таблицы «Дата проводки»' };
-  m = raw.match(/^column "([^"]*)" not found in the statement header(?: \(found: .*\))?$/);
-  if (m) return { field: null, message: `В выписке не найдена колонка «${m[1]}»` };
-  if (raw === 'our account number is not found in the statement header') return { field: null, message: 'В шапке выписки не найден номер счёта' };
-  if (raw === 'statement has no operations') return { field: null, message: 'В выписке нет операций' };
-  if (raw.startsWith('summary block (')) return { field: null, message: 'В выписке нет итогового блока: файл неполный' };
-  m = raw.match(/^summary says (.*) debit and (.*) credit operations, the statement has (\d+) and (\d+)(?: \(rows with an unreadable date: (\d+)\))?$/);
-  if (m) {
-    const hint = m[5] ? ` Строк с непонятной датой проводки: ${m[5]}.` : '';
-    return { field: null, message: `Число операций в итоге выписки не совпадает с файлом: в итоге списаний ${m[1]} и поступлений ${m[2]}, найдено ${m[3]} и ${m[4]}.${hint}` };
-  }
-  if (raw.startsWith('summary says ')) return { field: null, message: 'Число операций в итоге выписки не совпадает с числом строк' };
-  m = raw.match(/^summary turnover does not match the sum of operations: debit ([\d.]+) in the summary, ([\d.]+) in rows; credit ([\d.]+) in the summary, ([\d.]+) in rows$/);
-  if (m) {
-    const fmt = (v) => Number(v).toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    const diffs = [];
-    if (m[1] !== m[2]) diffs.push(`по дебету в итоге ${fmt(m[1])}, по строкам ${fmt(m[2])}`);
-    if (m[3] !== m[4]) diffs.push(`по кредиту в итоге ${fmt(m[3])}, по строкам ${fmt(m[4])}`);
-    return { field: null, message: `Итоговые обороты выписки не совпадают с суммой операций: ${diffs.join('; ')}. Файл, скорее всего, повреждён: выгрузите период из банка заново.` };
-  }
-  if (raw.startsWith('summary turnover does not match')) return { field: null, message: 'Итоговые обороты выписки не совпадают с суммой операций' };
+  if (raw.startsWith('not a 1C client-bank exchange file')) return { field: null, message: 'Это не файл обмена с 1С: в начале файла нет строки 1CClientBankExchange' };
+  m = raw.match(/^unsupported 1C format version "(.*)"/);
+  if (m) return { field: null, message: `Версия формата 1С «${m[1]}» не поддерживается (нужна 1.03)` };
+  if (raw.startsWith('unsupported or undeclared encoding') || raw === 'file declares UTF-8 but is not valid UTF-8') return { field: null, message: 'Не удалось определить кодировку файла: нужна UTF-8 (или Windows/DOS, указанная в заголовке)' };
+  if (raw === 'the file has no payment documents') return { field: null, message: 'В файле нет платёжных документов' };
+  if (raw.startsWith('the file lists no settlement accounts')) return { field: null, message: 'В файле не указаны расчётные счета' };
+  m = raw.match(/^day totals do not match the documents \((\d+) days\): (.*)$/);
+  if (m) return { field: null, message: `Итоги по дням в файле не совпадают с суммой документов (дней: ${m[1]}). Например: ${m[2]}. Файл, скорее всего, повреждён: выгрузите период из банка заново.` };
   if (raw === 'not a valid xlsx file') return { field: null, message: 'Не удалось прочитать файл: нужен xlsx (Excel)' };
   if (raw === 'assignment run not found') return { field: null, message: 'Запуск не найден' };
   if (raw === 'assignment run is already rolled back') return { field: null, message: 'Этот запуск уже откатан' };
@@ -208,12 +194,9 @@ const ROW_FIELDS = {
 };
 
 const STATEMENT_ROW = [
-  [/^date is not valid$/, 'неверная дата'],
-  [/^debit amount: .*$/, 'неверная сумма по дебету'],
-  [/^credit amount: .*$/, 'неверная сумма по кредиту'],
-  [/^both debit and credit amounts are set$/, 'заполнены и дебет, и кредит'],
-  [/^no amount$/, 'нет суммы'],
-  [/^account "(.*)" in the row is not the statement account$/, (m) => `счёт «${m[1]}» в строке не совпадает со счётом выписки`],
+  [/^amount "(.*)" is not valid$/, (m) => `сумма «${m[1]}» неверна`],
+  [/^(?:debit|credit) date is not valid$/, 'неверная дата документа'],
+  [/^neither the payer account "(.*)" nor the receiver account "(.*)" is among the file's accounts$/, (m) => `ни счёт плательщика «${m[1]}», ни счёт получателя «${m[2]}» не среди счетов файла`],
 ];
 
 const REGISTRY_ROW = [
