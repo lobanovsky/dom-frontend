@@ -113,6 +113,50 @@ a.shell-brand {
   color: #fff;
 }
 
+.shell-nav-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+button.shell-nav-group {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.shell-nav-group.has-active {
+  font-weight: 600;
+}
+
+.shell-nav-chevron {
+  margin-left: auto;
+  font-size: 18px;
+  line-height: 1;
+  color: var(--color-text-muted);
+  transition: transform 120ms ease;
+}
+
+.shell-nav-group[aria-expanded='true'] .shell-nav-chevron {
+  transform: rotate(90deg);
+}
+
+.shell-nav-sub {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-left: var(--space-4);
+  padding-left: var(--space-2);
+  border-left: 1px solid var(--color-border);
+}
+
+.shell-nav-sub[hidden] {
+  display: none;
+}
+
 .shell-nav-icon {
   display: inline-flex;
   width: 18px;

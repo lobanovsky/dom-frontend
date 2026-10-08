@@ -1,21 +1,7 @@
 import { el } from '../../lib/dom.js';
 import { logout as apiLogout } from '../../api/auth.js';
 import { config } from '../../config.js';
-
-const NAV_ITEMS = [
-  { href: '/', label: 'Обзор', icon: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>' },
-  { href: '/buildings', label: 'Дома', icon: '<path d="M3 21h18M5 21V7l7-4 7 4v14M9 9h1M14 9h1M9 13h1M14 13h1M10 21v-4h4v4"/>' },
-  { href: '/persons', label: 'Физлица', icon: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>' },
-  { href: '/legal-entities', label: 'Юрлица', icon: '<rect x="3" y="7" width="18" height="14" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 13h18"/>' },
-  { href: '/payments/incoming', label: 'Входящие платежи', icon: '<path d="M12 3v12M7 10l5 5 5-5M4 21h16"/>' },
-  { href: '/payment-registries', label: 'Реестры', icon: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8zM14 3v5h5M9 13h6M9 17h6"/>' },
-  { href: '/bank-statements', label: 'Выписки', icon: '<path d="M6 2h9l5 5v15H6zM14 2v6h6M9 13h8M9 17h8M9 9h3"/>' },
-  { href: '/payments/outgoing', label: 'Исходящие платежи', icon: '<path d="M12 21V9M7 14l5-5 5 5M4 3h16"/>' },
-  { href: '/payment-rules', label: 'Правила', icon: '<path d="M4 6h16M7 12h10M10 18h4"/>' },
-  { href: '/bank-accounts', label: 'Банковские счета', icon: '<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/>' },
-  { href: '/payment-categories', label: 'Категории платежей', icon: '<path d="M20.6 13.4l-7.2 7.2a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8zM7.5 7.5h.01"/>' },
-  { href: '/organizations', label: 'Организации', icon: '<path d="M3 21h18M6 21V10M10 21V10M14 21V10M18 21V10M12 3l9 5H3z"/>' },
-];
+import { NAV, isActive, groupIsActive, loadOpenGroups, saveOpenGroups } from '../../lib/nav.js';
 
 // SVG собираем через разметку: document.createElement('svg') создаёт элемент
 // в HTML-пространстве имён, и браузер его не рисует.
@@ -31,11 +17,34 @@ function navIcon(item) {
 // роутер монтирует текущую страницу.
 export function renderShell(container, { onLogout } = {}) {
   const navId = 'main-navigation';
+  // Группы сворачиваются; раскрытые вручную запоминаются, группа с текущей страницей раскрыта всегда.
+  const openGroups = loadOpenGroups();
+  const groups = [];
   const nav = el(
     'nav',
     { class: 'shell-nav', id: navId, 'aria-label': 'Основная навигация' },
-    NAV_ITEMS.map((item) => el('a', { href: item.href, class: 'shell-nav-link' }, [navIcon(item), item.label])),
+    NAV.map((entry) => (entry.group ? navGroup(entry) : el('a', { href: entry.href, class: 'shell-nav-link' }, [navIcon(entry), entry.label]))),
   );
+
+  function navGroup(entry) {
+    const panelId = `${navId}-${groups.length}`;
+    const chevron = el('span', { class: 'shell-nav-chevron', 'aria-hidden': 'true' }, '›');
+    const toggle = el('button', {
+      type: 'button', class: 'shell-nav-link shell-nav-group', 'aria-controls': panelId, 'aria-expanded': 'false',
+      onclick: () => {
+        const open = toggle.getAttribute('aria-expanded') !== 'true';
+        setGroupOpen(group, open);
+        if (open) openGroups.add(entry.group); else openGroups.delete(entry.group);
+        saveOpenGroups(openGroups);
+      },
+    }, [navIcon(entry), entry.group, chevron]);
+    const panel = el('div', { class: 'shell-nav-sub', id: panelId },
+      entry.items.map((item) => el('a', { href: item.href, class: 'shell-nav-link' }, [navIcon(item), item.label])));
+    const group = { entry, toggle, panel };
+    setGroupOpen(group, openGroups.has(entry.group));
+    groups.push(group);
+    return el('div', { class: 'shell-nav-section' }, [toggle, panel]);
+  }
 
   const navBackdrop = el('div', {
     class: 'shell-nav-backdrop',
@@ -101,7 +110,7 @@ export function renderShell(container, { onLogout } = {}) {
   });
 
   container.replaceChildren(shell);
-  updateActiveNav(nav);
+  updateActiveNav(nav, groups);
 
   // Роутер вызывает refreshNav() после каждого перехода (см. app.js), т.к.
   // навигация внутри приложения идёт через pushState, а не popstate.
@@ -109,19 +118,26 @@ export function renderShell(container, { onLogout } = {}) {
     outlet: main,
     refreshNav: () => {
       setNavOpen(false);
-      updateActiveNav(nav);
+      updateActiveNav(nav, groups);
     },
     cleanup: () => {},
   };
 }
 
-function updateActiveNav(nav) {
+function setGroupOpen(group, open) {
+  group.toggle.setAttribute('aria-expanded', String(open));
+  group.panel.hidden = !open;
+}
+
+function updateActiveNav(nav, groups) {
   const path = window.location.pathname;
   for (const link of nav.querySelectorAll('a')) {
-    const href = link.getAttribute('href');
-    // Карточка помещения — часть раздела «Дома».
-    const section = path.startsWith('/premises/') ? '/buildings' : path;
-    const isActive = href === '/' ? section === '/' : section === href || section.startsWith(`${href}/`);
-    link.classList.toggle('active', isActive);
+    link.classList.toggle('active', isActive(link.getAttribute('href'), path));
+  }
+  // Группа с текущей страницей раскрывается и подсвечивается; ручное состояние остальных не трогаем.
+  for (const group of groups) {
+    const active = groupIsActive(group.entry, path);
+    group.toggle.classList.toggle('has-active', active);
+    if (active) setGroupOpen(group, true);
   }
 }
