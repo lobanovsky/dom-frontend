@@ -227,3 +227,12 @@ export function describeImportRowError(message) {
   if (message === 'utilities and capital repair accounts must differ') return 'лицевые счета ЖКУ и капремонта совпадают';
   return message;
 }
+
+// Понятный текст ошибки самой загрузки (до отчёта по файлам).
+export function uploadErrorText(err) {
+  if (err.status === 0) return 'Загрузка прервалась: соединение оборвано. Скорее всего, файлы слишком большие для вашего канала связи и прокси не дождался окончания загрузки. Загрузите файлы по одному или меньшими частями.';
+  if (err.status === 413) return 'Слишком большой запрос: загрузите меньше файлов или архив поменьше.';
+  if (err.status === 408 || err.status === 504) return 'Сервер не дождался окончания загрузки. Загрузите файлы по одному.';
+  if (err.status >= 500) return 'Ошибка сервера при загрузке. Подробности в журнале сервера (logs/dom-backend.log).';
+  return describeApiError(err).message;
+}

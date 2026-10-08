@@ -1,4 +1,5 @@
 import { client } from './client.js';
+import { maybeGzip } from '../lib/gzip.js';
 
 // Тонкая обёртка над CRUD-маршрутами бэкенда: /api/v1/<name>[/<id>].
 function resource(name) {
@@ -55,9 +56,9 @@ export const paymentRegistriesApi = {
   // Ссылка на исходный файл реестра (cookie-сессия, тот же origin).
   fileUrl: (id) => `/api/v1/payment-registries/${id}/file`,
   // Один запрос: реестры .txt и/или zip-архивы; счёт бэкенд определяет по номеру в имени файла.
-  importFiles: (files) => {
+  importFiles: async (files) => {
     const body = new FormData();
-    for (const file of files) body.append('file', file);
+    for (const file of await Promise.all(files.map(maybeGzip))) body.append('file', file);
     return client.post('/api/v1/payment-registries/import', body);
   },
 };
@@ -67,9 +68,10 @@ export const bankStatementsApi = {
   list: (query) => client.get('/api/v1/bank-statements', { query }),
   get: (id) => client.get(`/api/v1/bank-statements/${id}`),
   fileUrl: (id) => `/api/v1/bank-statements/${id}/file`,
-  importFiles: (files) => {
+  importFiles: async (files) => {
     const body = new FormData();
-    for (const file of files) body.append('file', file);
+    // Большие .txt сжимаются в браузере: загрузка укладывается в таймаут прокси даже на медленном канале.
+    for (const file of await Promise.all(files.map(maybeGzip))) body.append('file', file);
     return client.post('/api/v1/bank-statements/import', body);
   },
 };

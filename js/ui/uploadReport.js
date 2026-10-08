@@ -1,6 +1,6 @@
 import { el } from '../lib/dom.js';
 import { openModal } from './modal.js';
-import { describeApiError, describeImportRowError } from '../lib/apiErrors.js';
+import { describeApiError, describeImportRowError, uploadErrorText } from '../lib/apiErrors.js';
 import { statusInfo } from '../lib/registryImport.js';
 
 // Общее окно отчёта о пакетной загрузке файлов (реестры, выписки): индикатор, сводка, карточки файлов с замечаниями,
@@ -37,7 +37,7 @@ export function fileCard(f, details) {
 // upload(files) -> Promise<{files, summary}>; problems(files) -> файлы с замечаниями; card(file) -> узел;
 // summaryText/summaryTone(summary); onImported(summary) вызывается, если хоть что-то загружено.
 export function startFilesUpload({ title, files, upload, summaryText, summaryTone, problems, card, onImported }) {
-  const body = el('div', {}, el('div', { class: 'table-status' }, `Загрузка файлов: ${files.length}…`));
+  const body = el('div', {}, el('div', { class: 'table-status' }, `Подготовка и отправка файлов: ${files.length}…`));
   const modal = openModal({ title, content: body, wide: true });
 
   upload(files).then(({ files: results, summary }) => {
@@ -71,12 +71,9 @@ export function startFilesUpload({ title, files, upload, summaryText, summaryTon
     ].filter(Boolean)); // replaceChildren(null) рисует текст «null»
     if (summary.files_imported) onImported?.(summary);
   }, (err) => {
-    if (err.status === 0 || err.status >= 500) {
-      modal.close(); // глобальный тост уже показан клиентом
-      return;
-    }
+    // Ошибка остаётся в окне (тост исчезает через несколько секунд и легко теряется).
     body.replaceChildren(
-      el('div', { class: 'form-error', role: 'alert' }, err.status === 413 ? 'Слишком большой запрос: загрузите меньше файлов или архив поменьше' : describeApiError(err).message),
+      el('div', { class: 'form-error', role: 'alert' }, uploadErrorText(err)),
       el('div', { class: 'form-actions' }, el('button', { type: 'button', class: 'btn', onclick: () => modal.close() }, 'Закрыть')),
     );
   });

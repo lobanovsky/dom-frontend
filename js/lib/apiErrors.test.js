@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { describeApiError } from './apiErrors.js';
+import { describeApiError, uploadErrorText } from './apiErrors.js';
 import { ApiError } from '../api/client.js';
 
 const err = (message, status = 422) => new ApiError({ status, message });
@@ -133,4 +133,13 @@ test('1C statement errors', () => {
   assert.match(day, /Итоги по дням в файле не совпадают с суммой документов \(дней: 2\)/);
   assert.match(day, /выгрузите период из банка заново/);
   assert.equal(describeApiError(err('the file has no payment documents')).message, 'В файле нет платёжных документов');
+});
+
+
+test('upload errors say what happened and what to do', () => {
+  assert.match(uploadErrorText(err('Не удалось связаться с сервером', 0)), /соединение оборвано.*по одному/s);
+  assert.match(uploadErrorText(err('x', 413)), /Слишком большой запрос/);
+  assert.match(uploadErrorText(err('x', 504)), /не дождался/);
+  assert.match(uploadErrorText(err('x', 500)), /logs\/dom-backend\.log/);
+  assert.equal(uploadErrorText(err('building not found', 404)), 'Дом не найден');
 });
