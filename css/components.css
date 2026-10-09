@@ -619,6 +619,8 @@ a.btn-primary {
 /* Поле выбора физлица/юрлица */
 
 .picker-results {
+  max-height: 260px;
+  overflow-y: auto;
   list-style: none;
   margin: var(--space-1) 0 0;
   padding: 0;

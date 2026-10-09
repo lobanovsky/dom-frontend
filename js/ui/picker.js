@@ -32,6 +32,8 @@ const KINDS = {
     title: (p) => `${label(premisesKinds, p.kind)} № ${p.number}`,
     hint: (p) => p._address,
     placeholder: 'Номер помещения',
+    minChars: 1, // номера короткие: «5» уже осмысленный запрос
+    limit: 30,
   },
   person: {
     api: personsApi,
@@ -55,7 +57,8 @@ const KINDS = {
 };
 
 export function entityPicker(kind, { allowCreate = false } = {}) {
-  const spec = KINDS[kind];
+  // Поиск по ФИО/названию начинается с двух символов (иначе подходит почти всё); для помещений достаточно одного.
+  const spec = { minChars: 2, limit: 10, ...KINDS[kind] };
 
   return function createPicker({ id, value, onChange }) {
     let timer = null;
@@ -115,12 +118,12 @@ export function entityPicker(kind, { allowCreate = false } = {}) {
         const text = input.value.trim();
         lastSearchText = text;
         const seq = ++requestSeq;
-        if (text.length < 2) {
+        if (text.length < spec.minChars) {
           results.replaceChildren();
           return;
         }
         try {
-          const { items } = await spec.api.list({ q: text, limit: 10 });
+          const { items } = await spec.api.list({ q: text, limit: spec.limit });
           if (seq !== requestSeq) return;
           results.replaceChildren(...(items.length
             ? items.map((item) => el('li', {}, el('button', {
