@@ -47,9 +47,16 @@ function linkCell(r, refs) {
   if (!r.personal_account_number && !r.category_id) return el('span', { class: 'badge badge-neutral' }, 'Не привязан');
   const origin = originLabel(r);
   return el('div', {}, [
-    r.personal_account_number ? `ЛС ${r.personal_account_number}` : refs.categoryName(r.category_id),
+    r.personal_account_number ? accountLink(r) : refs.categoryName(r.category_id),
     origin ? el('div', { class: 'assigned-by' }, origin) : null,
   ]);
+}
+
+// Лицевой счёт: цветная метка-ссылка на страницу помещения, к которому он привязан.
+function accountLink(r) {
+  const text = `ЛС ${r.personal_account_number}`;
+  if (!r.premises_id) return el('span', { class: 'account-link' }, text);
+  return el('a', { class: 'account-link', href: `/premises/${r.premises_id}`, title: 'Открыть помещение' }, text);
 }
 
 // Кнопки «Определить лицевые счета» и «История определений» для списка платежей: правила применяются по его текущим фильтрам.

@@ -1132,3 +1132,16 @@ a.btn-primary {
   width: min(1200px, 96vw);
   max-width: none;
 }
+
+/* Лицевой счёт в списке платежей: метка-ссылка на помещение */
+.account-link {
+  display: inline-block;
+  padding: 1px var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--color-success-bg);
+  color: var(--color-success);
+  font-weight: 600;
+  white-space: nowrap;
+  text-decoration: none;
+}
+a.account-link:hover { text-decoration: underline; }
