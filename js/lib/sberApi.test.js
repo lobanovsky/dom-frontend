@@ -31,9 +31,9 @@ test('certificate note warns 30 days ahead', () => {
 
 test('schedule label', () => {
   assert.match(scheduleLabel(''), /выключен/);
-  assert.equal(scheduleLabel('1h0m0s'), 'Банк опрашивается каждый час.');
-  assert.equal(scheduleLabel('2h0m0s'), 'Банк опрашивается каждые 2 ч.');
-  assert.equal(scheduleLabel('30m0s'), 'Банк опрашивается каждые 30 мин.');
+  assert.match(scheduleLabel('01:00', 'Europe/Moscow'), /^Банк опрашивается раз в сутки, в 01:00 по Москве\./);
+  assert.match(scheduleLabel('03:30', 'Asia/Yekaterinburg'), /в 03:30 \(Asia\/Yekaterinburg\)/);
+  assert.match(scheduleLabel('04:00'), /в 04:00\./);
 });
 
 test('period body', () => {

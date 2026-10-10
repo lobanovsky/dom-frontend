@@ -74,7 +74,7 @@ export async function sberApiPage(container) {
       el('div', { class: 'card sber-card' }, [
         el('div', {}, [el('span', { class: `badge badge-${view.kind}` }, view.title), status.running ? el('span', { class: 'badge badge-warning' }, 'Идёт получение…') : null]),
         view.hint ? el('p', { class: 'section-note' }, view.hint) : null,
-        status.configured ? el('p', { class: 'section-note' }, scheduleLabel(status.schedule_interval)) : null,
+        status.configured ? el('p', { class: 'section-note' }, scheduleLabel(status.schedule_at, status.schedule_tz)) : null,
         note ? el('p', { class: 'section-note' }, note) : null,
         status.tokens_updated_at ? el('p', { class: 'section-note' }, `Токены обновлены: ${dateTime(status.tokens_updated_at)}`) : null,
         el('div', { class: 'header-actions' }, [
