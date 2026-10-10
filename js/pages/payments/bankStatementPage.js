@@ -26,7 +26,7 @@ export async function bankStatementPage(container, { id }) {
   container.replaceChildren(el('div', { class: 'page' }, [
     el('nav', { class: 'breadcrumbs' }, [el('a', { href: '/bank-statements' }, 'Выписки'), ' / ']),
     el('div', { class: 'section-header' }, [
-      el('h1', {}, `Выписка ${period || `№ ${statement.id}`}`),
+      el('h1', {}, `Выписка № ${statement.id}${period ? `, ${period}` : ''}`),
       el('div', { class: 'header-actions' }, el('a', { class: 'btn', href: bankStatementsApi.fileUrl(statement.id), download: statement.file_name }, 'Скачать файл')),
     ]),
     el('div', { class: 'card' }, definitionList([

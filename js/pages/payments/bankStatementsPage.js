@@ -39,7 +39,8 @@ export async function bankStatementsPage(container) {
       { name: 'q', label: 'Поиск', type: 'search', placeholder: 'Имя файла' },
     ],
     columns: [
-      { key: 'period', label: 'Период', primary: true, render: (r) => el('a', { href: `/bank-statements/${r.id}` }, period(r) || `№ ${r.id}`) },
+      { key: 'id', label: '№', render: (r) => el('span', { class: 'nowrap' }, `№ ${r.id}`) }, // тот же номер указан в «Источнике» платежей
+      { key: 'period', label: 'Период', primary: true, render: (r) => el('a', { href: `/bank-statements/${r.id}` }, period(r) || `Выписка № ${r.id}`) },
       { key: 'file_name', label: 'Файл' },
       { key: 'bank_account_id', label: 'Счёт', render: (r) => refs.bankName(r.bank_account_id) },
       { key: 'opening_balance', label: 'Остаток на начало', render: (r) => el('span', { class: 'nowrap' }, formatMoney(r.opening_balance)) },
