@@ -80,6 +80,7 @@ export function runErrorText(error) {
     if (part.startsWith('stopped: the bank rejected the tokens')) return 'Остальные счета не опрашивались';
     if (part.includes('status 403')) return part.replace(/status 403.*$/, 'нет доступа к счёту в банке (403)');
     if (part.includes('status 429')) return 'Банк ограничил число запросов (429), повторите позже';
+    if (part === 'no bank accounts to sync') return 'Нет счетов для опроса: в «Банковских счетах» нужен действующий счёт с БИК 044525225 (или без БИК)';
     if (part.includes('interrupted: server restarted')) return 'Прервано перезапуском сервера';
     return part;
   }).join('; ');
