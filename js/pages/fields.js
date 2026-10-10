@@ -166,11 +166,11 @@ export const outgoingPaymentFields = ({ banks, categories }) => [
 ];
 
 // Правило определения лицевых счетов: условия и действие — составные поля со своими редакторами.
-export const paymentRuleFields = ({ banks, categories }) => [
+export const paymentRuleFields = ({ banks, categories, direction = 'incoming' }) => [
   textField('name', 'Название', { required: true, full: true }),
   checkboxField('enabled', 'Правило включено'),
   selectField('match_mode', 'Когда срабатывает', options(MATCH_MODES), { required: true }),
-  { type: 'picker', name: 'conditions', label: 'Условия', full: true, component: conditionsEditor({ banks }),
+  { type: 'picker', name: 'conditions', label: 'Условия', full: true, component: conditionsEditor({ banks, direction }),
     help: 'Все условия (или любое) должны подойти платежу. Несколько значений у одного условия означают «или».' },
-  { type: 'picker', name: 'action', label: 'Действие', full: true, required: true, component: actionEditor({ categories }) },
+  { type: 'picker', name: 'action', label: 'Действие', full: true, required: true, component: actionEditor({ categories, direction }) },
 ];

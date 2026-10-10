@@ -41,7 +41,7 @@ export async function bankStatementPage(container, { id }) {
     ])),
     el('div', { class: 'section-header section-header--sub' }, [el('h2', { class: 'section-title' }, 'Поступления'), assignActions(incoming)]),
     incoming.element,
-    el('h2', { class: 'section-title' }, 'Списания'),
+    el('div', { class: 'section-header section-header--sub' }, [el('h2', { class: 'section-title' }, 'Списания'), assignActions(outgoing, { direction: 'outgoing' })]),
     outgoing.element,
   ]));
 }

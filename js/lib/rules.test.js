@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  normalizeConditions, changeField, describeCondition, describeConditions, describeAction, normalizeAction, previewSummary, hasChanges, opsFor, scopeFromQuery, originLabel,
+  normalizeConditions, changeField, describeCondition, describeConditions, describeAction, normalizeAction, previewSummary, hasChanges, opsFor, scopeFromQuery, originLabel, conditionFields, textFieldNames, actionTypes, directionTexts, defaultAction, changeLabels,
 } from './rules.js';
 
 test('conditions are normalised for the API', () => {
@@ -72,4 +72,22 @@ test('origin label', () => {
   assert.equal(originLabel({ assigned_by: 'registry' }), 'из реестра');
   assert.equal(originLabel({ assigned_by: 'manual' }), 'вручную');
   assert.equal(originLabel({ assigned_by: null }), '');
+});
+
+test('outgoing rules use recipient fields and only set a category', () => {
+  assert.ok('recipient_inn' in conditionFields('outgoing') && !('payer_inn' in conditionFields('outgoing')));
+  assert.ok('payer_inn' in conditionFields('incoming') && !('recipient_inn' in conditionFields('incoming')));
+  assert.deepEqual(textFieldNames('outgoing').slice(0, 2), ['recipient_name', 'recipient_inn']);
+  assert.deepEqual(Object.keys(actionTypes('outgoing')), ['set_category']);
+  assert.ok(Object.keys(actionTypes('incoming')).length > 1);
+  assert.deepEqual(defaultAction('outgoing'), { type: 'set_category' });
+  assert.equal(directionTexts('outgoing').target, 'Категория');
+  assert.equal(directionTexts('whatever').assign, 'Определить лицевые счета');
+  assert.equal(changeLabels('outgoing').new, 'Новая категория');
+  const rule = { direction: 'outgoing', conditions: [{ field: 'recipient_inn', op: 'equals', values: ['7727406020'] }, { field: 'bank_account_id', op: 'equals', values: ['3'] }] };
+  assert.equal(describeConditions(rule, { bankName: () => 'Основной' }), 'ИНН получателя равно «7727406020» И Банковский счёт (с которого списано) — Основной');
+  assert.equal(
+    previewSummary({ candidates: 5, new: 2, changed: 0, same: 0, cleared: 0, unresolved: 3 }, 'outgoing'),
+    'Проверено платежей: 5. Получат категорию: 2. Останутся без категории: 3.',
+  );
 });

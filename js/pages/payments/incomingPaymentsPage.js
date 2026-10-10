@@ -6,7 +6,7 @@ import { formatMoney, formatTime, monthLabel } from '../../lib/format.js';
 import { describeApiError } from '../../lib/apiErrors.js';
 import { loadPaymentRefs, bankFilterOptions, categoryFilterOptions, dateFilters, seasonRowClass, dateWithSeason } from './common.js';
 import { openAssignDialog, openAssignHistory } from '../../ui/assignDialog.js';
-import { scopeFromQuery, originLabel } from '../../lib/rules.js';
+import { scopeFromQuery, originLabel, directionTexts } from '../../lib/rules.js';
 
 // Список входящих платежей. Используется и на странице «Входящие платежи», и на странице реестра
 // (fixedQuery: {registry_id}, showRegistry: false) и на странице выписки (fixedQuery: {statement_id}).
@@ -59,14 +59,16 @@ function accountLink(r) {
   return el('a', { class: 'account-link', href: `/premises/${r.premises_id}`, title: 'Открыть помещение' }, text);
 }
 
-// Кнопки «Определить лицевые счета» и «История определений» для списка платежей: правила применяются по его текущим фильтрам.
-export function assignActions(list) {
+// Кнопки «Определить лицевые счета» («Определить категории» для исходящих) и «История определений» для списка платежей:
+// правила применяются по его текущим фильтрам.
+export function assignActions(list, { direction = 'incoming' } = {}) {
   return el('div', { class: 'header-actions' }, [
     el('button', {
       type: 'button', class: 'btn btn-primary',
-      onclick: () => openAssignDialog({ scope: scopeFromQuery(list.getQuery()), onApplied: () => list.reload() }),
-    }, 'Определить лицевые счета'),
-    el('button', { type: 'button', class: 'btn', onclick: () => openAssignHistory({ onChanged: () => list.reload() }) }, 'История определений'),
+      onclick: () => openAssignDialog({ direction, scope: scopeFromQuery(list.getQuery()), onApplied: () => list.reload() }),
+    }, directionTexts(direction).assign),
+    el('button', { type: 'button', class: 'btn', onclick: () => openAssignHistory({ direction, onChanged: () => list.reload() }) }, 'История определений'),
+    el('a', { class: 'btn', href: `/payment-rules?direction=${direction}` }, 'Правила'),
   ]);
 }
 

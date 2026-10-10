@@ -3,7 +3,7 @@ import { listInput } from './listInput.js';
 import { entityPicker } from './picker.js';
 import { premisesKinds, options } from '../lib/labels.js';
 import {
-  CONDITION_FIELDS, TEXT_FIELD_NAMES, ACTION_TYPES, opsFor, newCondition, changeField, normalizeConditions, normalizeAction, DEFAULT_ACTION,
+  conditionFields, textFieldNames, actionTypes, opsFor, newCondition, changeField, normalizeConditions, normalizeAction, defaultAction,
 } from '../lib/rules.js';
 
 // Редакторы для формы правила (type: 'picker' в ui/form.js: компонент сам рисует ввод и сообщает значение через onChange).
@@ -17,7 +17,9 @@ function select(optionsList, value, onChange, attrs = {}) {
 const entries = (dict) => Object.entries(dict).map(([value, label]) => ({ value, label }));
 
 // Условия: строки «поле — операция — значения», значения по «или». Пустой список — правило для любого платежа.
-export function conditionsEditor({ banks = [] } = {}) {
+export function conditionsEditor({ banks = [], direction = 'incoming' } = {}) {
+  const fields = conditionFields(direction);
+  const textFields = textFieldNames(direction);
   const multi = listInput({ placeholder: 'Текст (можно несколько: «или»)', addLabel: '+ ещё значение (или)' });
   return function createConditions({ id, value, onChange }) {
     let items = (Array.isArray(value) ? value : []).map((c) => ({ ...c, values: c.values?.length ? [...c.values] : [''] }));
@@ -43,12 +45,12 @@ export function conditionsEditor({ banks = [] } = {}) {
     }
 
     function row(c, i) {
-      const isText = TEXT_FIELD_NAMES.includes(c.field) && c.op !== 'regex';
+      const isText = textFields.includes(c.field) && c.op !== 'regex';
       const ignore = el('input', { type: 'checkbox', checked: !!c.ignore_spaces });
       ignore.addEventListener('change', () => { c.ignore_spaces = ignore.checked; emit(); });
       return el('div', { class: 'rule-condition' }, [
         el('div', { class: 'rule-condition-head' }, [
-          select(entries(CONDITION_FIELDS), c.field, (v) => { items[i] = changeField(c, v); render(); emit(); }, { 'aria-label': 'Поле' }),
+          select(entries(fields), c.field, (v) => { items[i] = changeField(c, v); render(); emit(); }, { 'aria-label': 'Поле' }),
           select(entries(opsFor(c.field)), c.op, (v) => { c.op = v; if (c.field === 'amount') c.values = c.values.slice(0, v === 'between' ? 2 : 1); render(); emit(); }, { 'aria-label': 'Операция' }),
           el('button', { type: 'button', class: 'btn btn-ghost btn-sm btn-danger-text', onclick: () => { items.splice(i, 1); render(); emit(); } }, 'Удалить'),
         ]),
@@ -70,11 +72,12 @@ export function conditionsEditor({ banks = [] } = {}) {
 }
 
 // Действие правила: тип и параметры выбранного типа.
-export function actionEditor({ categories = [] } = {}) {
+export function actionEditor({ categories = [], direction = 'incoming' } = {}) {
+  const fields = conditionFields(direction);
   const premisesPicker = entityPicker('premises');
   const accountPicker = entityPicker('personal_account');
   return function createAction({ id, value, onChange }) {
-    let a = { ...DEFAULT_ACTION, ...(value || {}) };
+    let a = { ...defaultAction(direction), ...(value || {}) };
     const root = el('div', { class: 'rule-action', id });
     const emit = () => onChange(normalizeAction(a));
 
@@ -82,7 +85,7 @@ export function actionEditor({ categories = [] } = {}) {
       el('input', { type: 'text', placeholder: 'Регулярное выражение', value: a.pattern || '', 'aria-label': 'Регулярное выражение', oninput: (e) => { a.pattern = e.target.value; emit(); } }),
       el('div', { class: 'field-help' }, help),
     ];
-    const fieldSelect = () => select(entries(Object.fromEntries(TEXT_FIELD_NAMES.map((f) => [f, CONDITION_FIELDS[f]]))), a.field || 'purpose', (v) => { a.field = v; emit(); }, { 'aria-label': 'Откуда брать текст' });
+    const fieldSelect = () => select(entries(Object.fromEntries(textFieldNames(direction).map((f) => [f, fields[f]]))), a.field || 'purpose', (v) => { a.field = v; emit(); }, { 'aria-label': 'Откуда брать текст' });
     const ignoreSpaces = () => {
       const box = el('input', { type: 'checkbox', checked: !!a.ignore_spaces });
       box.addEventListener('change', () => { a.ignore_spaces = box.checked; emit(); });
@@ -106,14 +109,16 @@ export function actionEditor({ categories = [] } = {}) {
         case 'set_category':
           return [select([{ value: '', label: 'Выберите категорию' }, ...categories.map((c) => ({ value: String(c.id), label: c.name }))], a.category_id ?? '',
             (v) => { a.category_id = v ? Number(v) : null; emit(); }, { 'aria-label': 'Категория' }),
-          el('div', { class: 'field-help' }, 'Для платежей, которые не относятся к лицевому счёту: аренда оборудования, субсидии, возвраты, сводные реестры.')];
+          el('div', { class: 'field-help' }, direction === 'outgoing'
+            ? 'Категория расхода: налоги и взносы, зарплата, коммунальные услуги, обслуживание. Категории заводятся в справочнике «Категории платежей» (направление «Исходящие»).'
+            : 'Для платежей, которые не относятся к лицевому счёту: аренда оборудования, субсидии, возвраты, сводные реестры.')];
         default: return [];
       }
     }
 
     function render() {
       root.replaceChildren(
-        select(entries(ACTION_TYPES), a.type, (v) => { a = { ...a, type: v }; render(); emit(); }, { 'aria-label': 'Действие' }),
+        select(entries(actionTypes(direction)), a.type, (v) => { a = { ...a, type: v }; render(); emit(); }, { 'aria-label': 'Действие' }),
         ...details(),
       );
     }

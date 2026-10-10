@@ -13,6 +13,24 @@ export const CONDITION_FIELDS = {
   bank_account_id: 'Банковский счёт (получатель)',
 };
 
+// У исходящих платежей контрагент — получатель, поля называются recipient_*.
+export const CONDITION_FIELDS_OUTGOING = {
+  recipient_name: 'Название или ФИО получателя',
+  recipient_inn: 'ИНН получателя',
+  recipient_account: 'Счёт получателя',
+  recipient_bank: 'Банк получателя',
+  purpose: 'Назначение платежа',
+  doc_number: 'Номер документа',
+  comment: 'Комментарий',
+  operation_type: 'ВО (вид операции)',
+  amount: 'Сумма',
+  bank_account_id: 'Банковский счёт (с которого списано)',
+};
+
+export const conditionFields = (direction) => (direction === 'outgoing' ? CONDITION_FIELDS_OUTGOING : CONDITION_FIELDS);
+
+const fieldLabel = (field) => CONDITION_FIELDS[field] || CONDITION_FIELDS_OUTGOING[field] || field;
+
 export const TEXT_OPS = {
   contains: 'содержит',
   not_contains: 'не содержит',
@@ -34,7 +52,37 @@ export const ACTION_TYPES = {
   set_category: 'Поставить категорию (платёж не за лицевой счёт)',
 };
 
-export const TEXT_FIELD_NAMES = Object.keys(CONDITION_FIELDS).filter((f) => f !== 'amount' && f !== 'bank_account_id');
+const textFields = (fields) => Object.keys(fields).filter((f) => f !== 'amount' && f !== 'bank_account_id');
+export const TEXT_FIELD_NAMES = textFields(CONDITION_FIELDS);
+export const textFieldNames = (direction) => textFields(conditionFields(direction));
+
+// Исходящим платежам правила ставят только категорию.
+export const actionTypes = (direction) => (direction === 'outgoing' ? { set_category: 'Поставить категорию' } : ACTION_TYPES);
+
+// Тексты интерфейса по направлению платежей.
+export const DIRECTION_TEXTS = {
+  incoming: {
+    assign: 'Определить лицевые счета',
+    assignTitle: 'Определить лицевые счета',
+    historyTitle: 'История определения лицевых счетов',
+    rulesTitle: 'Правила определения лицевых счетов',
+    counterparty: 'Плательщик',
+    target: 'Лицевой счёт / категория',
+    noun: 'привязку',
+    unassigned: 'Только платежи без привязки',
+  },
+  outgoing: {
+    assign: 'Определить категории',
+    assignTitle: 'Определить категории',
+    historyTitle: 'История определения категорий',
+    rulesTitle: 'Правила определения категорий исходящих платежей',
+    counterparty: 'Получатель',
+    target: 'Категория',
+    noun: 'категорию',
+    unassigned: 'Только платежи без категории',
+  },
+};
+export const directionTexts = (direction) => DIRECTION_TEXTS[direction] || DIRECTION_TEXTS.incoming;
 
 export function opsFor(field) {
   if (field === 'amount') return AMOUNT_OPS;
@@ -49,7 +97,7 @@ export function normalizeConditions(list) {
   return (Array.isArray(list) ? list : [])
     .map((c) => {
       const out = { field: c.field, op: c.op, values: (c.values || []).map((v) => String(v).trim()).filter(Boolean) };
-      if (c.ignore_spaces && TEXT_FIELD_NAMES.includes(c.field) && c.op !== 'regex') out.ignore_spaces = true;
+      if (c.ignore_spaces && c.field !== 'amount' && c.field !== 'bank_account_id' && c.op !== 'regex') out.ignore_spaces = true;
       return out;
     })
     .filter((c) => c.values.length > 0);
@@ -64,8 +112,8 @@ export function changeField(condition, field) {
   return { ...condition, field, op, values: wasNumeric !== isNumeric ? [''] : condition.values };
 }
 
-export function describeCondition(c, { bankName = (id) => `#${id}` } = {}) {
-  const field = CONDITION_FIELDS[c.field] || c.field;
+export function describeCondition(c, { bankName = (id) => `#${id}`, direction } = {}) {
+  const field = conditionFields(direction)[c.field] || fieldLabel(c.field);
   const values = c.values || [];
   if (c.field === 'amount') {
     const op = AMOUNT_OPS[c.op] || c.op;
@@ -81,7 +129,7 @@ export function describeConditions(rule, ctx) {
   const conds = rule.conditions || [];
   if (conds.length === 0) return 'Любой платёж';
   const sep = rule.match_mode === 'any' ? ' ИЛИ ' : ' И ';
-  return conds.map((c) => describeCondition(c, ctx)).join(sep);
+  return conds.map((c) => describeCondition(c, { ...ctx, direction: rule.direction })).join(sep);
 }
 
 // ctx: {categoryName(id), premisesLabel(id), accountLabel(id)}
@@ -91,16 +139,17 @@ export function describeAction(a, ctx = {}) {
   const category = (id) => (ctx.categoryName ? ctx.categoryName(id) : `категория #${id}`);
   switch (a.type) {
     case 'link_by_owner': return 'Найти по ФИО (собственник/плательщик счёта)';
-    case 'account_from_text': return `Номер ЛС из поля «${CONDITION_FIELDS[a.field || 'purpose']}»${a.ignore_spaces ? ' (без пробелов)' : ''}: ${a.pattern}`;
+    case 'account_from_text': return `Номер ЛС из поля «${fieldLabel(a.field || 'purpose')}»${a.ignore_spaces ? ' (без пробелов)' : ''}: ${a.pattern}`;
     case 'link_premises': return `Помещение: ${premises(a.premises_id)}`;
     case 'link_account': return `Лицевой счёт: ${account(a.personal_account_id)}`;
-    case 'premises_from_text': return `Номер помещения из поля «${CONDITION_FIELDS[a.field || 'purpose']}»: ${a.pattern}`;
+    case 'premises_from_text': return `Номер помещения из поля «${fieldLabel(a.field || 'purpose')}»: ${a.pattern}`;
     case 'set_category': return `Категория: ${category(a.category_id)}`;
     default: return a.type;
   }
 }
 
 export const DEFAULT_ACTION = { type: 'link_by_owner' };
+export const defaultAction = (direction) => (direction === 'outgoing' ? { type: 'set_category' } : DEFAULT_ACTION);
 
 // Очистка действия перед отправкой: оставляются только поля выбранного типа.
 export function normalizeAction(a) {
@@ -133,13 +182,23 @@ export const CHANGE_LABELS = {
   unresolved: 'Не определён',
 };
 
-export function previewSummary(p) {
+export const CHANGE_LABELS_OUTGOING = {
+  ...CHANGE_LABELS,
+  new: 'Новая категория',
+  changed: 'Категория изменится',
+  cleared: 'Категория снимется',
+};
+
+export const changeLabels = (direction) => (direction === 'outgoing' ? CHANGE_LABELS_OUTGOING : CHANGE_LABELS);
+
+export function previewSummary(p, direction = 'incoming') {
+  const outgoing = direction === 'outgoing';
   const parts = [`Проверено платежей: ${p.candidates}.`];
-  if (p.new) parts.push(`Получат привязку: ${p.new}.`);
-  if (p.changed) parts.push(`Привязка изменится: ${p.changed}.`);
-  if (p.cleared) parts.push(`Привязка снимется: ${p.cleared}.`);
+  if (p.new) parts.push(`Получат ${outgoing ? 'категорию' : 'привязку'}: ${p.new}.`);
+  if (p.changed) parts.push(`${outgoing ? 'Категория изменится' : 'Привязка изменится'}: ${p.changed}.`);
+  if (p.cleared) parts.push(`${outgoing ? 'Категория снимется' : 'Привязка снимется'}: ${p.cleared}.`);
   if (p.same) parts.push(`Без изменений: ${p.same}.`);
-  parts.push(`Останутся без привязки: ${p.unresolved}.`);
+  parts.push(`Останутся ${outgoing ? 'без категории' : 'без привязки'}: ${p.unresolved}.`);
   return parts.join(' ');
 }
 

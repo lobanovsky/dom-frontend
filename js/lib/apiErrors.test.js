@@ -117,6 +117,7 @@ test('statement errors', async () => {
 });
 
 test('rule errors map to the action/conditions fields', () => {
+  assert.deepEqual(describeApiError(err('action.type: must be set_category for outgoing payments')), { field: 'action', message: 'для исходящих платежей правило может только ставить категорию' });
   assert.deepEqual(describeApiError(err('action.pattern: must contain a capture group')), { field: 'action', message: 'в выражении нужна группа захвата в скобках, например (\\d+)' });
   assert.deepEqual(describeApiError(err('action.premises_id: is required')), { field: 'action', message: 'Обязательное поле' });
   assert.deepEqual(describeApiError(err('conditions: condition 2: amount "x" is not a number')), { field: 'conditions', message: 'Условие 2: сумма «x» — не число' });

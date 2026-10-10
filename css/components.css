@@ -1145,3 +1145,23 @@ a.btn-primary {
   text-decoration: none;
 }
 a.account-link:hover { text-decoration: underline; }
+
+/* Переключатель направления (входящие / исходящие) */
+.segmented {
+  display: inline-flex;
+  margin-bottom: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  overflow: hidden;
+}
+.segmented-item {
+  padding: var(--space-2) var(--space-4);
+  border: 0;
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  cursor: pointer;
+}
+.segmented-item + .segmented-item { border-left: 1px solid var(--color-border); }
+.segmented-item.is-active { background: var(--color-accent); color: #fff; }

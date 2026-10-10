@@ -87,6 +87,8 @@ const RULE_REASONS = [
   [/^field must be one of: .*$/, 'недопустимое поле'],
   [/^must contain a capture group$/, 'в выражении нужна группа захвата в скобках, например (\\d+)'],
   [/^not found or deleted$/, 'не найдено или удалено'],
+  [/^must be set_category for outgoing payments$/, 'для исходящих платежей правило может только ставить категорию'],
+  [/^must match direction of the request$/, 'направление правила не совпадает с направлением проверки'],
 ];
 
 function translateRuleReason(reason) {
