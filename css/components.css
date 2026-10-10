@@ -481,6 +481,19 @@ textarea:focus {
   gap: var(--space-2);
 }
 
+/* Карточка состояния Sber API: вертикальные интервалы, кнопка не на всю ширину */
+.sber-card > * + * {
+  margin-top: var(--space-2);
+}
+
+.sber-card .section-note {
+  margin-bottom: 0;
+}
+
+.sber-card .btn-primary {
+  width: auto;
+}
+
 .section-title,
 .page-section {
   margin-top: var(--space-6);

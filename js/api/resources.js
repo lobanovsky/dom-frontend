@@ -76,6 +76,13 @@ export const bankStatementsApi = {
   },
 };
 
+// Получение выписок напрямую из банка (Sber API): состояние, запуск, токены.
+export const sberApi = {
+  status: () => client.get('/api/v1/sber/status'),
+  sync: (body) => client.post('/api/v1/sber/sync', body),
+  setTokens: (refreshToken) => client.put('/api/v1/sber/tokens', { refresh_token: refreshToken }),
+};
+
 // Правила определения лицевых счетов и запуски определения (предпросмотр, применение, откат).
 export const paymentRulesApi = {
   ...resource('payment-rules'),

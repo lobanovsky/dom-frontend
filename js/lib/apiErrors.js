@@ -24,6 +24,10 @@ const REASONS = [
   [/^must have at most 2 decimal places$/, 'Не больше двух знаков после запятой'],
   [/^must not be set together with personal_account_id$/, 'Нельзя указать и лицевой счёт, и категорию'],
   [/^time must be HH:MM:SS$/, 'Время в формате чч:мм'],
+  [/^must not be in the future$/, 'Дата не может быть в будущем'],
+  [/^must not be after date_to$/, 'Позже даты окончания'],
+  [/^too long$/, 'Слишком длинный период (не больше 400 дней)'],
+  [/^must not be empty$/, 'Не может быть пустым'],
 ];
 
 // Понятные сообщения для уникальных ограничений БД (имя ограничения из миграции).
@@ -157,6 +161,9 @@ export function describeApiError(err, { action = 'save' } = {}) {
   m = raw.match(/^day totals do not match the documents \((\d+) days\): (.*)$/);
   if (m) return { field: null, message: `Итоги по дням в файле не совпадают с суммой документов (дней: ${m[1]}). Например: ${m[2]}. Файл, скорее всего, повреждён: выгрузите период из банка заново.` };
   if (raw === 'not a valid xlsx file') return { field: null, message: 'Не удалось прочитать файл: нужен xlsx (Excel)' };
+  if (raw === 'sber api is not configured') return { field: null, message: 'Интеграция со Sber API не настроена на сервере' };
+  if (raw === 'sber tokens are not set') return { field: null, message: 'Токены Sber API не введены: вставьте refresh_token из личного кабинета' };
+  if (raw === 'sber sync is already running') return { field: null, message: 'Получение выписок уже идёт, дождитесь окончания' };
   if (raw === 'assignment run not found') return { field: null, message: 'Запуск не найден' };
   if (raw === 'assignment run is already rolled back') return { field: null, message: 'Этот запуск уже откатан' };
   if (raw === 'rule not found') return { field: null, message: 'Правило не найдено' };
