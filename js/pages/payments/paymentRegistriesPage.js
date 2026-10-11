@@ -35,7 +35,7 @@ export async function paymentRegistriesPage(container) {
       { key: 'total_amount', label: 'Сумма', render: (r) => formatMoney(r.total_amount) },
       { key: 'created_at', label: 'Загружен', render: (r) => formatDate(r.created_at) },
     ],
-    emptyMessage: 'Реестров пока нет. Загрузите файл реестра Сбера',
+    emptyMessage: 'Реестров пока нет. Загрузите файл реестра Сбера или ВТБ',
   });
 
   const onFiles = (files) => startRegistryUpload(files, { onImported: () => list.reload() });
@@ -48,7 +48,7 @@ export async function paymentRegistriesPage(container) {
         ...uploadButton('Загрузить файлы', { accept: '.txt,text/plain', multiple: true, primary: false, disabled, onFiles }),
       ]),
     ]),
-    el('p', { class: 'field-help' }, 'Счёт определяется по номеру в имени файла (например, 900005_9715357654_40703810338000004376_640.txt), поэтому он должен быть добавлен в «Банковские счета». В ZIP реестры ищутся во всех вложенных папках, остальные файлы игнорируются.'),
+    el('p', { class: 'field-help' }, 'Счёт определяется по номеру в имени файла (Сбер: 900005_9715357654_40703810338000004376_640.txt), а если номера нет (ВТБ: 040126_VTB_231068_001.txt) — по «коду реестра», который указан в карточке счёта на странице «Банковские счета». В ZIP реестры ищутся во всех вложенных папках, остальные файлы игнорируются.'),
     refs.banks.length ? null : el('div', { class: 'form-error' }, ['Сначала добавьте ', el('a', { href: '/bank-accounts' }, 'банковский счёт'), '.']),
     list.element,
   ]));

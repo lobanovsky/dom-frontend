@@ -55,7 +55,7 @@ export const paymentRegistriesApi = {
   get: (id) => client.get(`/api/v1/payment-registries/${id}`),
   // Ссылка на исходный файл реестра (cookie-сессия, тот же origin).
   fileUrl: (id) => `/api/v1/payment-registries/${id}/file`,
-  // Один запрос: реестры .txt и/или zip-архивы; счёт бэкенд определяет по номеру в имени файла.
+  // Один запрос: реестры .txt и/или zip-архивы; счёт бэкенд определяет по номеру или коду реестра в имени файла.
   importFiles: async (files) => {
     const body = new FormData();
     for (const file of await Promise.all(files.map(maybeGzip))) body.append('file', file);

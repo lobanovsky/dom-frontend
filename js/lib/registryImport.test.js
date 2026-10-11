@@ -51,7 +51,7 @@ test('only files with problems are listed, most serious first', () => {
 });
 
 test('ignore reasons are explained in Russian, unknown codes are shown as is', () => {
-  assert.match(ignoreReasonText('no_account'), /нет 20-значного номера/);
+  assert.match(ignoreReasonText('no_account'), /нет 20-значного номера.*код реестра/);
   assert.match(ignoreReasonText('not_txt'), /\.txt/);
   assert.equal(ignoreReasonText('weird'), 'weird');
   assert.match(summaryText({ ...base, files_ignored: 1 }), /^Ни один файл не загружен\. Не распознано как реестры: 1 файл /);
