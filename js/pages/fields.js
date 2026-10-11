@@ -117,7 +117,9 @@ export const bankAccountFields = (organizations) => [
   checkboxField('is_special', 'Специальный счёт (капремонт)'),
   dateField('valid_from', 'Действует с', { required: true }),
   dateField('valid_to', 'Действует по', { help: 'Пусто — действует сейчас. Счёт активен, пока сегодняшняя дата внутри периода' }),
-  textField('registry_code', 'Код реестра в имени файла', { maxLength: 64, help: 'Для банков, которые не пишут номер счёта в имя файла реестра. Например, у ВТБ файл 040126_VTB_231068_001.txt → код VTB_231068_001 (без даты в начале и без .txt)' }),
+  { type: 'list', name: 'registry_codes', label: 'Коды реестров в имени файла', full: true,
+    help: 'Для банков, которые не пишут номер счёта в имя файла реестра. У ВТБ файл 040126_VTB_231068_001.txt → код VTB_231068_001 (без даты в начале и без .txt). Кодов может быть несколько: имена файлов у банка меняются (например, ещё 311023_VTB_224416 → VTB_224416)',
+    component: listInput({ placeholder: 'VTB_231068_001', addLabel: '+ Добавить код', autocomplete: 'off' }) },
   textField('description', 'Описание', { full: true }),
 ];
 
