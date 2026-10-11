@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { summaryText, summaryTone, statusInfo, isProblem, problemFiles, ignoreReasonText } from './registryImport.js';
+import { summaryText, summaryTone, statusInfo, isProblem, problemFiles, ignoreReasonText, paymentLinkText } from './registryImport.js';
 
 const base = { files_imported: 0, files_failed: 0, files_ignored: 0, payments_created: 0, payments_skipped: 0, linked: 0, unlinked: 0 };
 
@@ -34,9 +34,9 @@ test('status info falls back to the raw status', () => {
 });
 
 test('only files with problems are listed, most serious first', () => {
-  const clean = { file_name: 'clean', status: 'imported', result: { warnings: [], skipped: [] } };
-  const warned = { file_name: 'warned', status: 'imported', result: { warnings: ['w'], skipped: [] } };
-  const skipped = { file_name: 'skipped', status: 'imported', result: { warnings: [], skipped: [{}] } };
+  const clean = { file_name: 'clean', status: 'imported', result: { warnings: [], skipped: [], payment: { id: 1 } } };
+  const warned = { file_name: 'warned', status: 'imported', result: { warnings: ['w'], skipped: [], payment: { id: 1 } } };
+  const skipped = { file_name: 'skipped', status: 'imported', result: { warnings: [], skipped: [{}], payment: { id: 1 } } };
   const dup = { file_name: 'dup', status: 'duplicate_file' };
   const bad = { file_name: 'bad', status: 'invalid' };
   const unknown = { file_name: 'unknown', status: 'unknown_account' };
@@ -55,4 +55,14 @@ test('ignore reasons are explained in Russian, unknown codes are shown as is', (
   assert.match(ignoreReasonText('not_txt'), /\.txt/);
   assert.equal(ignoreReasonText('weird'), 'weird');
   assert.match(summaryText({ ...base, files_ignored: 1 }), /^Ни один файл не загружен\. Не распознано как реестры: 1 файл /);
+});
+
+test('registry without a bank payment is a problem and is explained', () => {
+  const noPayment = { file_name: 'x', status: 'imported', result: { warnings: [], skipped: [], payment: null } };
+  assert.equal(isProblem(noPayment), true);
+  assert.match(summaryText({ ...base, files_imported: 1, payments_created: 3, files_without_payment: 1 }), /Платёж в выписке пока не найден для реестров: 1/);
+  const fmt = (d) => `d:${d}`;
+  const money = (v) => `m:${v}`;
+  assert.equal(paymentLinkText({ payment_date: '2026-10-09', amount: 2740.92 }, fmt, money), 'Платёж в выписке найден: d:2026-10-09, m:2740.92');
+  assert.match(paymentLinkText(null, fmt, money), /не найден.*«Загрузить сейчас»/);
 });

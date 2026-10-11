@@ -5,7 +5,7 @@ import { formatDate } from '../lib/format.js';
 export function definitionList(pairs) {
   return el('dl', { class: 'def-list' }, pairs
     .filter(([, value]) => value !== null && value !== undefined && value !== '')
-    .map(([term, value]) => el('div', { class: 'def-list-row' }, [el('dt', {}, term), el('dd', {}, String(value))])));
+    .map(([term, value]) => el('div', { class: 'def-list-row' }, [el('dt', {}, term), el('dd', {}, value instanceof Node ? value : String(value))])));
 }
 
 export function notFoundView(message, backHref, backLabel) {

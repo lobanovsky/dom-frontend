@@ -53,6 +53,8 @@ export const outgoingPaymentsApi = resource('outgoing-payments');
 export const paymentRegistriesApi = {
   list: (query) => client.get('/api/v1/payment-registries', { query }),
   get: (id) => client.get(`/api/v1/payment-registries/${id}`),
+  // Повторное сопоставление реестров с платежами выписок: {linked, unmatched:[{registry_id, file_name, reason}]}.
+  relink: () => client.post('/api/v1/payment-registries/relink', {}),
   // Ссылка на исходный файл реестра (cookie-сессия, тот же origin).
   fileUrl: (id) => `/api/v1/payment-registries/${id}/file`,
   // Один запрос: реестры .txt и/или zip-архивы; счёт бэкенд определяет по номеру или коду реестра в имени файла.

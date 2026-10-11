@@ -22,7 +22,7 @@ export function statusInfo(status) {
   return FILE_STATUSES[status] || { label: status, tone: 'neutral' };
 }
 
-function plural(n, one, few, many) {
+export function plural(n, one, few, many) {
   const m10 = n % 10;
   const m100 = n % 100;
   if (m10 === 1 && m100 !== 11) return one;
@@ -31,7 +31,7 @@ function plural(n, one, few, many) {
 }
 
 const files = (n) => `${n} ${plural(n, 'файл', 'файла', 'файлов')}`;
-const payments = (n) => `${n} ${plural(n, 'платёж', 'платежа', 'платежей')}`;
+export const payments = (n) => `${n} ${plural(n, 'платёж', 'платежа', 'платежей')}`;
 
 // Итоговая строка для окна результата.
 export function summaryText(summary) {
@@ -43,6 +43,7 @@ export function summaryText(summary) {
     parts.push('Ни один файл не загружен.');
   }
   if (summary.payments_skipped) parts.push(`Пропущено уже загруженных платежей: ${summary.payments_skipped}.`);
+  if (summary.files_without_payment) parts.push(`Платёж в выписке пока не найден для реестров: ${summary.files_without_payment} (они свяжутся, когда придёт выписка).`);
   if (summary.files_failed) parts.push(`Не загружено файлов: ${summary.files_failed}.`);
   if (summary.files_ignored) parts.push(`Не распознано как реестры: ${files(summary.files_ignored)} (какие и почему — ниже).`);
   return parts.join(' ');
@@ -59,7 +60,7 @@ export function summaryTone(summary) {
 export function isProblem(file) {
   if (file.status !== 'imported') return true;
   const r = file.result || {};
-  return Boolean(r.warnings?.length || r.skipped?.length);
+  return Boolean(r.warnings?.length || r.skipped?.length || !r.payment);
 }
 
 const SEVERITY = { error: 0, invalid: 0, unknown_account: 0, duplicate_file: 1, all_duplicates: 1, imported: 2 };
@@ -72,4 +73,10 @@ export function problemFiles(files) {
     .filter(({ f }) => isProblem(f))
     .sort((a, b) => (SEVERITY[a.f.status] ?? 1) - (SEVERITY[b.f.status] ?? 1) || a.i - b.i)
     .map(({ f }) => f);
+}
+
+// Что сказать о связи реестра с платежом из выписки: в ответе загрузки и в списках.
+export function paymentLinkText(payment, formatDate, formatMoney) {
+  if (!payment) return 'Платёж в выписке не найден: он подтянется после получения выписки (ночная синхронизация, «Загрузить сейчас» на странице «Банк (Сбер)» или файл 1С)';
+  return `Платёж в выписке найден: ${formatDate(payment.payment_date)}, ${formatMoney(payment.amount)}`;
 }

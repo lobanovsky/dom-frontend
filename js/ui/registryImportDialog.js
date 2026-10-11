@@ -1,6 +1,6 @@
 import { el } from '../lib/dom.js';
 import { paymentRegistriesApi } from '../api/resources.js';
-import { summaryText, summaryTone, problemFiles, ignoreReasonText } from '../lib/registryImport.js';
+import { summaryText, summaryTone, problemFiles, ignoreReasonText, paymentLinkText } from '../lib/registryImport.js';
 import { formatDate, formatMoney } from '../lib/format.js';
 import { startFilesUpload, fileCard, shortList, errorDetails, ignoredBlock } from './uploadReport.js';
 
@@ -21,6 +21,7 @@ function fileDetails(f) {
       return [
         el('div', {}, `Платежей: ${r.created}. Привязано к лицевым счетам: ${r.linked}, без привязки: ${r.unlinked}.`),
         r.warnings?.length ? shortList(r.warnings, (w) => w) : null,
+        el('div', { class: r.payment ? '' : 'field-help' }, paymentLinkText(r.payment, formatDate, formatMoney)),
         skippedBlock(r.skipped),
         el('a', { href: `/payment-registries/${r.registry_id}` }, 'Открыть реестр'),
       ];

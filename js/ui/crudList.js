@@ -10,18 +10,20 @@ import { config } from '../config.js';
 // редактирование и удаление через модальную форму. Удаление мягкое: переключатель
 // «Удалённые» показывает корзину, где записи можно восстановить.
 //
-// filters: [{name, label, type: 'search'|'select'|'date', options?}] — значения уходят в query.
+// filters: [{name, label, type: 'search'|'select'|'date', options?, allLabel?, defaultValue?}] — значения уходят в query;
+// у select allLabel — подпись пустого значения (по умолчанию «Все»), defaultValue — выбранное значение при открытии.
 // fixedQuery — всегда добавляется к запросу списка (например building_id).
 // fixed — всегда добавляется к телу при создании/сохранении.
 // newDefaults — начальные значения формы новой записи.
 // rowClass(row) -> CSS-класс строки, см. ui/table.js.
 // groupBy(row) -> строка: метка группы (например месяц), см. ui/table.js.
+// canAdd: false — без кнопки добавления (окно детализации).
 // extraActions(row) -> [Node] — дополнительные кнопки в строках действующих записей.
 // Возвращает {element, reload}.
 export function createCrudList({
   api, columns, fields, watch, filters = [], fixedQuery = {}, fixed = {},
   entityTitle, addLabel = 'Добавить', emptyMessage, deleteMessage = (row) => 'Удалить запись?',
-  canEdit = true, extraActions, groupBy, rowClass, newDefaults = {},
+  canEdit = true, canAdd = true, extraActions, groupBy, rowClass, newDefaults = {},
 }) {
   let offset = 0;
   let showDeleted = false;
@@ -35,14 +37,14 @@ export function createCrudList({
   const pageInfo = el('span', { class: 'pager-info' });
   const pager = el('div', { class: 'pager' }, [prevButton, pageInfo, nextButton]);
 
-  const addButton = canEdit ? el('button', { type: 'button', class: 'btn btn-primary btn-add', onclick: () => openForm(null) }, addLabel) : null;
+  const addButton = canEdit && canAdd ? el('button', { type: 'button', class: 'btn btn-primary btn-add', onclick: () => openForm(null) }, addLabel) : null;
   const toolbar = el('div', { class: 'table-toolbar' }, [
     ...filters.map(renderFilter),
     el('div', { class: 'table-toolbar-spacer' }),
     canEdit ? deletedToggle((checked) => {
       showDeleted = checked;
       offset = 0;
-      addButton.hidden = checked;
+      if (addButton) addButton.hidden = checked;
       load();
     }) : null,
     addButton,
@@ -52,7 +54,11 @@ export function createCrudList({
     const id = `filter-${f.name}`;
     let input;
     if (f.type === 'select') {
-      input = el('select', { id }, [el('option', { value: '' }, 'Все'), ...f.options.map((o) => el('option', { value: o.value }, o.label))]);
+      input = el('select', { id }, [el('option', { value: '' }, f.allLabel || 'Все'), ...f.options.map((o) => el('option', { value: o.value }, o.label))]);
+      if (f.defaultValue !== undefined) {
+        input.value = f.defaultValue;
+        filterValues[f.name] = f.defaultValue;
+      }
       input.addEventListener('change', () => { filterValues[f.name] = input.value; offset = 0; load(); });
     } else if (f.type === 'date') {
       input = el('input', { type: 'date', id });

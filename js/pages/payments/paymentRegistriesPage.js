@@ -24,6 +24,7 @@ export async function paymentRegistriesPage(container) {
     filters: [
       { name: 'bank_account_id', label: 'Счёт', type: 'select', options: bankFilterOptions(refs.banks) },
       ...dateFilters,
+      { name: 'no_payment', label: 'Платёж в выписке', type: 'select', options: [{ value: 'true', label: 'Не найден' }] },
       { name: 'q', label: 'Поиск', type: 'search', placeholder: 'Имя файла или номер реестра' },
     ],
     columns: [
@@ -32,6 +33,7 @@ export async function paymentRegistriesPage(container) {
       { key: 'registry_number', label: 'Номер' },
       { key: 'bank_account_id', label: 'Счёт', render: (r) => refs.bankName(r.bank_account_id) },
       { key: 'payments_count', label: 'Платежей' },
+      { key: 'payment_id', label: 'Платёж в выписке', render: (r) => (r.payment_id ? `${formatDate(r.payment_date)} · ${formatMoney(r.payment_amount)}` : el('span', { class: 'badge badge-neutral' }, 'не найден')) },
       { key: 'total_amount', label: 'Сумма', render: (r) => formatMoney(r.total_amount) },
       { key: 'created_at', label: 'Загружен', render: (r) => formatDate(r.created_at) },
     ],
