@@ -24,6 +24,7 @@ import { bankStatementsPage } from './pages/payments/bankStatementsPage.js';
 import { sberApiPage } from './pages/payments/sberApiPage.js';
 import { bankStatementPage } from './pages/payments/bankStatementPage.js';
 import { paymentRulesPage } from './pages/payments/paymentRulesPage.js';
+import { counterpartiesPage } from './pages/payments/counterpartiesPage.js';
 
 const appRoot = document.getElementById('app');
 
@@ -45,6 +46,7 @@ const routes = [
   { pattern: '/payments/outgoing', mount: outgoingPaymentsPage },
   { pattern: '/payment-categories', mount: paymentCategoriesPage },
   { pattern: '/payment-rules', mount: paymentRulesPage },
+  { pattern: '/counterparties', mount: counterpartiesPage },
 ];
 
 let router = null;

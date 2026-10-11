@@ -50,6 +50,10 @@ export const bankAccountsApi = resource('bank-accounts');
 export const paymentCategoriesApi = resource('payment-categories');
 export const incomingPaymentsApi = resource('incoming-payments');
 export const outgoingPaymentsApi = resource('outgoing-payments');
+// Контрагенты из платежей (только чтение): ?direction=outgoing|incoming, ?q=.
+export const counterpartiesApi = {
+  list: (query) => client.get('/api/v1/counterparties', { query }),
+};
 export const paymentRegistriesApi = {
   list: (query) => client.get('/api/v1/payment-registries', { query }),
   get: (id) => client.get(`/api/v1/payment-registries/${id}`),
