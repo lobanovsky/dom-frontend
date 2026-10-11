@@ -16,6 +16,18 @@ export function shortList(items, render) {
   return el('ul', { class: 'import-errors' }, rows);
 }
 
+// Блок «пропущенные файлы»: имя и причина каждого. total — сколько всего пропущено (в списке бэкенд называет не все).
+export function ignoredBlock(list, total, title, reasonText) {
+  if (!list?.length) return null;
+  return el('details', { open: true }, [
+    el('summary', {}, `${title}: ${total}`),
+    el('ul', { class: 'import-errors' }, [
+      ...list.map((f) => el('li', {}, [el('span', { class: 'import-file-name' }, f.file_name), ` — ${reasonText(f.reason)}`])),
+      total > list.length ? el('li', {}, `…и ещё ${total - list.length}`) : null,
+    ].filter(Boolean)),
+  ]);
+}
+
 // Подробности файла с ошибкой: перевод сообщения бэкенда и строки с ошибками.
 export function errorDetails(f) {
   return [
@@ -34,13 +46,13 @@ export function fileCard(f, details) {
 }
 
 // Загружает файлы одним запросом и показывает отчёт.
-// upload(files) -> Promise<{files, summary}>; problems(files) -> файлы с замечаниями; card(file) -> узел;
+// upload(files) -> Promise<{files, summary, ignored?}>; ignoredNode(ignored, summary) -> узел со списком пропущенных файлов; problems(files) -> файлы с замечаниями; card(file) -> узел;
 // summaryText/summaryTone(summary); onImported(summary) вызывается, если хоть что-то загружено.
-export function startFilesUpload({ title, files, upload, summaryText, summaryTone, problems, card, onImported }) {
+export function startFilesUpload({ title, files, upload, summaryText, summaryTone, problems, card, ignoredNode, onImported }) {
   const body = el('div', {}, el('div', { class: 'table-status' }, `Подготовка и отправка файлов: ${files.length}…`));
   const modal = openModal({ title, content: body, wide: true });
 
-  upload(files).then(({ files: results, summary }) => {
+  upload(files).then(({ files: results, summary, ignored }) => {
     const tone = summaryTone(summary);
     const shown = problems(results);
     const clean = results.length - shown.length;
@@ -61,9 +73,10 @@ export function startFilesUpload({ title, files, upload, summaryText, summaryTon
 
     body.replaceChildren(...[
       el('div', { class: tone === 'success' ? 'form-success' : 'form-error', role: 'status' }, summaryText(summary)),
+      ignoredNode?.(ignored, summary),
       shown.length
         ? el('p', {}, `Файлов с замечаниями: ${shown.length}. Без замечаний: ${clean}.`)
-        : el('p', {}, 'Замечаний нет: все файлы загружены без предупреждений.'),
+        : results.length ? el('p', {}, 'Замечаний нет: все файлы загружены без предупреждений.') : null,
       problemsBlock,
       results.length > shown.length ? toggleAll : null,
       allFiles,

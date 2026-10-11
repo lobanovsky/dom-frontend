@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { summaryText, summaryTone, statusInfo, isProblem, problemFiles } from './registryImport.js';
+import { summaryText, summaryTone, statusInfo, isProblem, problemFiles, ignoreReasonText } from './registryImport.js';
 
 const base = { files_imported: 0, files_failed: 0, files_ignored: 0, payments_created: 0, payments_skipped: 0, linked: 0, unlinked: 0 };
 
@@ -8,7 +8,7 @@ test('summary text and tone', () => {
   const ok = { ...base, files_imported: 6, payments_created: 60, linked: 58, unlinked: 2, files_ignored: 3 };
   assert.equal(
     summaryText(ok),
-    'Загружено: 6 файлов, 60 платежей. Привязано к лицевым счетам: 58, без привязки: 2. Пропущено файлов, не похожих на реестры: 3.',
+    'Загружено: 6 файлов, 60 платежей. Привязано к лицевым счетам: 58, без привязки: 2. Не распознано как реестры: 3 файла (какие и почему — ниже).',
   );
   assert.equal(summaryTone(ok), 'success');
 
@@ -48,4 +48,11 @@ test('only files with problems are listed, most serious first', () => {
     ['bad', 'unknown', 'dup', 'warned', 'skipped'],
   );
   assert.deepEqual(problemFiles([clean, clean]), []);
+});
+
+test('ignore reasons are explained in Russian, unknown codes are shown as is', () => {
+  assert.match(ignoreReasonText('no_account'), /нет 20-значного номера/);
+  assert.match(ignoreReasonText('not_txt'), /\.txt/);
+  assert.equal(ignoreReasonText('weird'), 'weird');
+  assert.match(summaryText({ ...base, files_ignored: 1 }), /^Ни один файл не загружен\. Не распознано как реестры: 1 файл /);
 });

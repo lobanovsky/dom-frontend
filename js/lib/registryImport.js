@@ -9,6 +9,15 @@ export const FILE_STATUSES = {
   error: { label: 'Ошибка', tone: 'error' },
 };
 
+// Почему файл пропущен (коды бэкенда в ответе `ignored`).
+export const IGNORE_REASONS = {
+  not_txt: 'это не текстовый файл (.txt)',
+  no_account: 'в имени файла нет 20-значного номера банковского счёта',
+  not_1c: 'это не файл обмена с 1С',
+};
+
+export const ignoreReasonText = (reason) => IGNORE_REASONS[reason] || reason;
+
 export function statusInfo(status) {
   return FILE_STATUSES[status] || { label: status, tone: 'neutral' };
 }
@@ -35,7 +44,7 @@ export function summaryText(summary) {
   }
   if (summary.payments_skipped) parts.push(`Пропущено уже загруженных платежей: ${summary.payments_skipped}.`);
   if (summary.files_failed) parts.push(`Не загружено файлов: ${summary.files_failed}.`);
-  if (summary.files_ignored) parts.push(`Пропущено файлов, не похожих на реестры: ${summary.files_ignored}.`);
+  if (summary.files_ignored) parts.push(`Не распознано как реестры: ${files(summary.files_ignored)} (какие и почему — ниже).`);
   return parts.join(' ');
 }
 

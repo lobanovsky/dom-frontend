@@ -1,8 +1,8 @@
 import { el } from '../lib/dom.js';
 import { paymentRegistriesApi } from '../api/resources.js';
-import { summaryText, summaryTone, problemFiles } from '../lib/registryImport.js';
+import { summaryText, summaryTone, problemFiles, ignoreReasonText } from '../lib/registryImport.js';
 import { formatDate, formatMoney } from '../lib/format.js';
-import { startFilesUpload, fileCard, shortList, errorDetails } from './uploadReport.js';
+import { startFilesUpload, fileCard, shortList, errorDetails, ignoredBlock } from './uploadReport.js';
 
 function skippedBlock(skipped) {
   if (!skipped?.length) return null;
@@ -51,6 +51,7 @@ export function startRegistryUpload(files, { onImported } = {}) {
     summaryTone,
     problems: problemFiles,
     card: (f) => fileCard(f, fileDetails(f)),
+    ignoredNode: (ignored, summary) => ignoredBlock(ignored, summary.files_ignored, 'Не распознаны как реестры', (r) => ignoreReasonText(r)),
     onImported,
   });
 }
