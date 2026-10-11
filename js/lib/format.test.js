@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { formatDate, formatPeriod, formatShare, formatArea, personName, isActiveOn, todayIso } from './format.js';
+import { formatDate, formatPeriod, formatShare, formatArea, personName, isActiveOn, todayIso, registryLabel } from './format.js';
 
 test('formatDate', () => {
   assert.equal(formatDate('2020-03-05'), '05.03.2020');
@@ -65,4 +65,10 @@ test('seasonOf', async () => {
   byMonth.forEach((season, i) => assert.equal(seasonOf(`2026-${String(i + 1).padStart(2, '0')}-15`), season));
   assert.equal(seasonOf(null), '');
   assert.equal(seasonOf('2026-13-01'), '');
+});
+
+test('registryLabel prefers the file name', () => {
+  assert.equal(registryLabel({ registry_file_name: '081026_VTB_231068_001.txt', registry_number: '12' }), '081026_VTB_231068_001.txt');
+  assert.equal(registryLabel({ registry_number: '12' }), 'Реестр 12');
+  assert.equal(registryLabel({}), 'Реестр');
 });

@@ -2,7 +2,7 @@ import { el } from '../../lib/dom.js';
 import { createCrudList } from '../../ui/crudList.js';
 import { incomingPaymentsApi } from '../../api/resources.js';
 import { incomingPaymentFields } from '../fields.js';
-import { formatMoney, formatTime, monthLabel } from '../../lib/format.js';
+import { formatMoney, formatTime, monthLabel, registryLabel } from '../../lib/format.js';
 import { describeApiError } from '../../lib/apiErrors.js';
 import { loadPaymentRefs, bankFilterOptions, categoryFilterOptions, dateFilters, seasonRowClass, dateWithSeason } from './common.js';
 import { openAssignDialog, openAssignHistory } from '../../ui/assignDialog.js';
@@ -73,7 +73,7 @@ export function assignActions(list, { direction = 'incoming' } = {}) {
 }
 
 export function sourceCell(r) {
-  if (r.registry_id) return el('a', { href: `/payment-registries/${r.registry_id}` }, `Реестр${r.registry_number ? ` ${r.registry_number}` : ''}`);
+  if (r.registry_id) return el('a', { href: `/payment-registries/${r.registry_id}` }, registryLabel(r));
   if (r.statement_id) return el('a', { href: `/bank-statements/${r.statement_id}` }, `Выписка № ${r.statement_id}`);
   return 'Вручную';
 }

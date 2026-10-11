@@ -70,3 +70,8 @@ export function seasonOf(iso) {
   if (m <= 8) return 'summer';
   return 'autumn';
 }
+
+// Подпись источника-реестра в списке платежей: имя файла (в нём дата и код банка), иначе номер реестра.
+export function registryLabel(p) {
+  return p.registry_file_name || (p.registry_number ? `Реестр ${p.registry_number}` : 'Реестр');
+}

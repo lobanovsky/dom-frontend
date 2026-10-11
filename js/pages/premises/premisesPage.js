@@ -13,7 +13,7 @@ import {
   premisesFields, ownershipFields, residencyFields, accountFields, accountHolderFields, ownerKindOf,
 } from '../fields.js';
 import { premisesKinds, relations, accountPurposes, accountStatuses, label } from '../../lib/labels.js';
-import { formatArea, formatDate, formatMoney, formatPeriod, formatShare, formatTime, personName, isActiveOn, todayIso } from '../../lib/format.js';
+import { formatArea, formatDate, formatMoney, formatPeriod, formatShare, formatTime, personName, isActiveOn, todayIso, registryLabel } from '../../lib/format.js';
 import { activeShareSum, describeShareSum } from '../../lib/shares.js';
 import { describeApiError } from '../../lib/apiErrors.js';
 import { notFoundView, definitionList, deletedBanner } from '../common.js';
@@ -272,7 +272,7 @@ export async function premisesPage(container, { id }) {
             { key: 'amount', label: 'Сумма', render: (p) => formatMoney(p.amount) },
             { key: 'payer_name', label: 'Оплатил' },
             { key: 'source', label: 'Источник', render: (p) => (p.registry_id
-              ? el('a', { href: `/payment-registries/${p.registry_id}` }, `Реестр${p.registry_number ? ` ${p.registry_number}` : ''}`)
+              ? el('a', { href: `/payment-registries/${p.registry_id}` }, registryLabel(p))
               : 'Вручную') },
             { key: 'purpose', label: 'Назначение' },
           ],
