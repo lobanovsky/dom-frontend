@@ -68,7 +68,7 @@ test('seasonOf', async () => {
 });
 
 test('registryLabel prefers the file name', () => {
-  assert.equal(registryLabel({ registry_file_name: '081026_VTB_231068_001.txt', registry_number: '12' }), '081026_VTB_231068_001.txt');
+  assert.equal(registryLabel({ registry_file_name: '081026_VTB_231068_001.txt', registry_number: '12' }), 'Реестр 081026_VTB_231068_001.txt');
   assert.equal(registryLabel({ registry_number: '12' }), 'Реестр 12');
   assert.equal(registryLabel({}), 'Реестр');
 });

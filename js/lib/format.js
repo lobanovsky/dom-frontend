@@ -71,7 +71,8 @@ export function seasonOf(iso) {
   return 'autumn';
 }
 
-// Подпись источника-реестра в списке платежей: имя файла (в нём дата и код банка), иначе номер реестра.
+// Подпись источника-реестра в списке платежей: «Реестр» и имя файла (в нём дата и код банка), без имени — номер реестра.
 export function registryLabel(p) {
-  return p.registry_file_name || (p.registry_number ? `Реестр ${p.registry_number}` : 'Реестр');
+  const what = p.registry_file_name || p.registry_number;
+  return what ? `Реестр ${what}` : 'Реестр';
 }
