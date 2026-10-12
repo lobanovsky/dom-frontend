@@ -15,7 +15,7 @@ const dateTime = (iso) => (iso ? `${formatDate(iso)} ${new Date(iso).toLocaleTim
 // Банк (Сбер API): состояние подключения, получение выписок кнопкой или за период, ввод токена, журнал запусков.
 export async function sberApiPage(container) {
   const body = el('div', {});
-  const balancesHost = el('div', {}); // остатки живут отдельно от статуса: его опрос перерисовывает body
+  const balancesHost = el('div', { class: 'sber-balances' }); // остатки живут отдельно от статуса: его опрос перерисовывает body
   container.replaceChildren(el('div', { class: 'page' }, [
     el('div', { class: 'section-header' }, el('h1', {}, 'Банк (Сбер API)')),
     el('p', { class: 'section-note' }, 'Платежи читаются прямо из банка (только чтение) и попадают во «Входящие» и «Исходящие». Повторы из файлов 1С и прошлых запусков не задваиваются. Лицевой счёт определяют правила.'),

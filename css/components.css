@@ -494,6 +494,10 @@ textarea:focus {
   width: auto;
 }
 
+.sber-balances:not(:empty) {
+  margin-bottom: var(--space-6);
+}
+
 .section-title,
 .page-section {
   margin-top: var(--space-6);
