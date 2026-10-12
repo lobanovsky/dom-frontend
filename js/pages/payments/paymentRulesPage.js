@@ -65,18 +65,23 @@ export async function paymentRulesPage(container, _params, query = {}) {
       accountLabel: (id) => accountLabels.get(id) || `#${id}`,
     };
 
-    async function move(rule, delta) {
+    // Сохраняет порядок и перечитывает список (при ошибке строки вернутся на прежние места).
+    async function saveOrder(ids) {
+      try {
+        await paymentRulesApi.reorder(ids);
+      } catch (err) {
+        if (err.status !== 0 && err.status < 500) toast.error(describeApiError(err).message);
+      }
+      list.reload();
+    }
+
+    function move(rule, delta) {
       const ids = shown.map((r) => r.id);
       const i = ids.indexOf(rule.id);
       const j = i + delta;
       if (i < 0 || j < 0 || j >= ids.length) return;
       [ids[i], ids[j]] = [ids[j], ids[i]];
-      try {
-        await paymentRulesApi.reorder(ids);
-        list.reload();
-      } catch (err) {
-        if (err.status !== 0 && err.status < 500) toast.error(describeApiError(err).message);
-      }
+      saveOrder(ids);
     }
 
     const list = createCrudList({
@@ -86,6 +91,7 @@ export async function paymentRulesPage(container, _params, query = {}) {
       entityTitle: 'Правило',
       addLabel: 'Добавить правило',
       fields: paymentRuleFields({ banks: refs.banks, categories: outgoing ? refs.outgoingCategories : refs.incomingCategories, direction }),
+      onReorder: (rows) => saveOrder(rows.map((r) => r.id)),
       newDefaults: { enabled: true, match_mode: 'all', action: defaultAction(direction) },
       columns: [
         { key: 'position', label: '№', primary: true, render: (r) => `${shown.indexOf(r) + 1}. ${r.name}` },

@@ -18,12 +18,13 @@ import { config } from '../config.js';
 // rowClass(row) -> CSS-класс строки, см. ui/table.js.
 // groupBy(row) -> строка: метка группы (например месяц), см. ui/table.js.
 // canAdd: false — без кнопки добавления (окно детализации).
+// onReorder(rows) — включает перетаскивание строк мышью (не в режиме «Удалённые»), получает строки в новом порядке.
 // extraActions(row) -> [Node] — дополнительные кнопки в строках действующих записей.
 // Возвращает {element, reload}.
 export function createCrudList({
   api, columns, fields, watch, filters = [], fixedQuery = {}, fixed = {},
   entityTitle, addLabel = 'Добавить', emptyMessage, deleteMessage = (row) => 'Удалить запись?',
-  canEdit = true, canAdd = true, extraActions, groupBy, rowClass, newDefaults = {},
+  canEdit = true, canAdd = true, extraActions, groupBy, rowClass, newDefaults = {}, onReorder,
 }) {
   let offset = 0;
   let showDeleted = false;
@@ -123,6 +124,7 @@ export function createCrudList({
         columns,
         groupBy,
         rowClass,
+        onReorder: showDeleted ? null : onReorder,
         rows: items,
         emptyMessage: showDeleted ? 'Удалённых записей нет' : emptyMessage,
         rowActions: !canEdit ? null : showDeleted

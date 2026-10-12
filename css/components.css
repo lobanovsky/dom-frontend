@@ -1146,6 +1146,16 @@ a.btn-primary {
 }
 a.account-link:hover { text-decoration: underline; }
 
+/* Перетаскивание строк за ручку (правила определения) */
+.data-table .col-drag { width: 28px; padding-right: 0; text-align: center; }
+.drag-handle { cursor: grab; color: var(--color-text-muted); font-size: 18px; line-height: 1; user-select: none; }
+.data-table tr.is-dragging { opacity: 0.4; }
+.data-table tr.drop-before > td { box-shadow: inset 0 2px 0 var(--color-accent); }
+.data-table tr.drop-after > td { box-shadow: inset 0 -2px 0 var(--color-accent); }
+@media (max-width: 768px) {
+  .data-table .col-drag { display: none; }
+}
+
 /* Категория платежа: значок и название в её цвете */
 .category-badge {
   display: inline-flex;
