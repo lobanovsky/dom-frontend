@@ -7,6 +7,8 @@ import { ApiError } from '../api/client.js';
 const REASONS = [
   [/^is required$/, 'Обязательное поле'],
   [/^must be positive$/, 'Должно быть больше нуля'],
+  [/^must be #rrggbb$/, 'Цвет в формате #rrggbb'],
+  [/^must be 1 to 16 characters$/, 'От 1 до 16 символов'],
   [/^must be one of/, 'Недопустимое значение'],
   [/^must not be before valid_from$/, 'Окончание раньше начала'],
   [/^must not be before opened_at$/, 'Дата закрытия раньше даты открытия'],

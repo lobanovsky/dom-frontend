@@ -52,7 +52,7 @@ function linkCell(r, refs) {
   if (!r.personal_account_number && !r.category_id) return el('span', { class: 'badge badge-neutral' }, 'Не привязан');
   const origin = originLabel(r);
   return el('div', {}, [
-    r.personal_account_number ? accountLink(r) : refs.categoryName(r.category_id),
+    r.personal_account_number ? accountLink(r) : refs.categoryBadge(r.category_id),
     origin ? el('div', { class: 'assigned-by' }, origin) : null,
   ]);
 }

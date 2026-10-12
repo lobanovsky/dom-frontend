@@ -4,6 +4,7 @@ import {
 } from '../lib/labels.js';
 import { entityPicker } from '../ui/picker.js';
 import { listInput } from '../ui/listInput.js';
+import { categoryColorPicker, categoryIconPicker } from '../ui/categoryStyle.js';
 import { conditionsEditor, actionEditor } from '../ui/ruleEditors.js';
 import { MATCH_MODES } from '../lib/rules.js';
 
@@ -126,6 +127,8 @@ export const bankAccountFields = (organizations) => [
 export const paymentCategoryFields = [
   textField('name', 'Название', { required: true, full: true }),
   selectField('direction', 'Направление', options(paymentDirections), { required: true, placeholder: 'Выберите' }),
+  { type: 'picker', name: 'color', label: 'Цвет', full: true, help: 'Необязательно. Повторный клик снимает выбор', component: categoryColorPicker },
+  { type: 'picker', name: 'icon', label: 'Значок', full: true, help: 'Необязательно. Показывается рядом с названием в таблицах платежей', component: categoryIconPicker },
 ];
 
 const bankOptions = (banks) => banks.map((b) => ({ value: String(b.id), label: bankLabel(b) }));

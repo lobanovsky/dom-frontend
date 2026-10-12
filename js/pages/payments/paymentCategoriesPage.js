@@ -1,6 +1,7 @@
 import { crudPage } from '../../ui/crudList.js';
 import { paymentCategoriesApi } from '../../api/resources.js';
 import { paymentCategoryFields } from '../fields.js';
+import { categoryBadge } from '../../ui/categoryStyle.js';
 import { paymentDirections, label, options } from '../../lib/labels.js';
 
 export const paymentCategoriesPage = crudPage({
@@ -10,7 +11,7 @@ export const paymentCategoriesPage = crudPage({
   fields: paymentCategoryFields,
   filters: [{ name: 'direction', label: 'Направление', type: 'select', options: options(paymentDirections) }],
   columns: [
-    { key: 'name', label: 'Название', primary: true },
+    { key: 'name', label: 'Название', primary: true, render: (r) => categoryBadge(r) },
     { key: 'direction', label: 'Направление', render: (r) => label(paymentDirections, r.direction) },
   ],
   emptyMessage: 'Категорий пока нет. Они нужны для платежей без лицевого счёта (например, аренда оборудования) и для расходов',

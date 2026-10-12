@@ -43,7 +43,7 @@ export function createOutgoingList(refs, { fixedQuery = {}, showSource = true } 
 function categoryCell(r, refs) {
   if (!r.category_id) return el('span', { class: 'badge badge-neutral' }, 'Без категории');
   const origin = originLabel(r);
-  return el('div', {}, [refs.categoryName(r.category_id), origin ? el('div', { class: 'assigned-by' }, origin) : null]);
+  return el('div', {}, [refs.categoryBadge(r.category_id), origin ? el('div', { class: 'assigned-by' }, origin) : null]);
 }
 
 export async function outgoingPaymentsPage(container) {

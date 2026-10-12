@@ -3,6 +3,7 @@ import { el } from '../../lib/dom.js';
 import { bankLabel } from '../../lib/labels.js';
 import { seasonOf, formatDate } from '../../lib/format.js';
 import { seasonIcon } from '../../ui/seasonIcon.js';
+import { categoryBadge } from '../../ui/categoryStyle.js';
 
 // Справочники для списков и форм платежей: банковские счета и категории (все, включая закрытые счета:
 // старые платежи ссылаются на них).
@@ -20,6 +21,8 @@ export async function loadPaymentRefs() {
     outgoingCategories: categories.filter((c) => c.direction === 'outgoing'),
     bankName: (id) => (bankById.has(id) ? bankLabel(bankById.get(id)) : ''),
     categoryName: (id) => categoryById.get(id)?.name || '',
+    // Метка категории с её цветом и значком (null, если категории нет).
+    categoryBadge: (id) => (categoryById.has(id) ? categoryBadge(categoryById.get(id)) : null),
   };
 }
 
