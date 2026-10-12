@@ -80,3 +80,18 @@ export function runErrorText(error) {
     return part;
   }).join('; ');
 }
+
+// Подпись к остатку: день, за который он, и время составления сводки банком («2026-10-12T09:15:00»).
+export function balanceNote(b) {
+  if (!b?.date) return '';
+  const day = b.date.split('-').reverse().join('.');
+  const time = typeof b.composed_at === 'string' && b.composed_at.length >= 16 ? b.composed_at.slice(11, 16) : '';
+  return time ? `на конец дня ${day}, сводка банка от ${time}` : `на конец дня ${day}`;
+}
+
+// Сумма исходящих остатков по счетам, по которым банк ответил (в копейках, без накопления дробной ошибки).
+export function balancesTotal(accounts) {
+  const ok = (accounts || []).filter((a) => !a.error && a.closing !== null && a.closing !== undefined);
+  if (ok.length === 0) return null;
+  return ok.reduce((sum, a) => sum + Math.round(a.closing * 100), 0) / 100;
+}

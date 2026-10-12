@@ -3,8 +3,9 @@ import { renderTable } from '../../ui/table.js';
 import { toast } from '../../ui/toast.js';
 import { sberApi } from '../../api/resources.js';
 import { describeApiError } from '../../lib/apiErrors.js';
-import { formatDate, todayIso } from '../../lib/format.js';
-import { runState, runPeriod, runSummary, connectionView, certNote, scheduleLabel, periodBody, cleanToken, runErrorText, RUN_STATE_LABELS, TRIGGER_LABELS } from '../../lib/sberApi.js';
+import { formatDate, formatMoney, todayIso } from '../../lib/format.js';
+import { loadPaymentRefs } from './common.js';
+import { runState, runPeriod, runSummary, connectionView, certNote, scheduleLabel, periodBody, cleanToken, runErrorText, balanceNote, balancesTotal, RUN_STATE_LABELS, TRIGGER_LABELS } from '../../lib/sberApi.js';
 
 const BADGE = { running: 'badge-warning', error: 'badge-danger', ok: 'badge-success' };
 const POLL_MS = 3000;
@@ -14,9 +15,11 @@ const dateTime = (iso) => (iso ? `${formatDate(iso)} ${new Date(iso).toLocaleTim
 // Банк (Сбер API): состояние подключения, получение выписок кнопкой или за период, ввод токена, журнал запусков.
 export async function sberApiPage(container) {
   const body = el('div', {});
+  const balancesHost = el('div', {}); // остатки живут отдельно от статуса: его опрос перерисовывает body
   container.replaceChildren(el('div', { class: 'page' }, [
     el('div', { class: 'section-header' }, el('h1', {}, 'Банк (Сбер API)')),
     el('p', { class: 'section-note' }, 'Платежи читаются прямо из банка (только чтение) и попадают во «Входящие» и «Исходящие». Повторы из файлов 1С и прошлых запусков не задваиваются. Лицевой счёт определяют правила.'),
+    balancesHost,
     body,
   ]));
 
@@ -35,8 +38,45 @@ export async function sberApiPage(container) {
       return;
     }
     render(status);
+    if (status.configured && status.tokens_set && !balancesLoaded) loadBalances();
     if (status.running && !timer) timer = setInterval(refresh, POLL_MS);
     if (!status.running) stop();
+  }
+
+  let balancesLoaded = false;
+  async function loadBalances() {
+    balancesLoaded = true;
+    balancesHost.replaceChildren(el('div', { class: 'page-section' }, [el('h2', {}, 'Остатки на счетах'), el('div', { class: 'table-status' }, 'Запрос в банк…')]));
+    let rows;
+    try {
+      const [{ accounts }, refs] = await Promise.all([sberApi.balances(), loadPaymentRefs()]);
+      const byNumber = new Map(refs.banks.map((b) => [b.number, b]));
+      rows = accounts.map((a) => ({ ...a, description: byNumber.get(a.number)?.description || '' }));
+      const total = balancesTotal(accounts);
+      balancesHost.replaceChildren(el('div', { class: 'page-section' }, [
+        el('h2', {}, 'Остатки на счетах'),
+        el('p', { class: 'section-note' }, 'Берутся из банка по запросу (только чтение) и нигде не сохраняются. Если сводки за сегодня банк ещё не отдаёт, показан остаток за вчера.'),
+        renderTable({
+          rows,
+          emptyMessage: 'Нет действующих счетов Сбербанка',
+          getRowKey: (r) => r.number,
+          columns: [
+            { key: 'number', label: 'Счёт', primary: true, render: (r) => (r.description ? `${r.number} · ${r.description}` : r.number) },
+            { key: 'closing', label: 'Остаток', render: (r) => (r.error ? el('span', { class: 'badge badge-danger' }, runErrorText(r.error)) : el('strong', { class: 'nowrap' }, formatMoney(r.closing))) },
+            { key: 'turnover', label: 'За день', render: (r) => (r.error ? '' : `+${formatMoney(r.credit)} / −${formatMoney(r.debit)}`) },
+            { key: 'note', label: 'Данные банка', render: balanceNote },
+          ],
+        }),
+        total !== null ? el('p', {}, ['Всего на счетах: ', el('strong', {}, formatMoney(total))]) : null,
+        el('button', { type: 'button', class: 'btn', onclick: loadBalances }, 'Обновить остатки'),
+      ].filter(Boolean)));
+    } catch (err) {
+      balancesHost.replaceChildren(el('div', { class: 'page-section' }, [
+        el('h2', {}, 'Остатки на счетах'),
+        el('div', { class: 'table-status table-status-error' }, runErrorText(describeApiError(err).message)),
+        el('button', { type: 'button', class: 'btn', onclick: loadBalances }, 'Повторить'),
+      ]));
+    }
   }
 
   async function run(request, doneText) {

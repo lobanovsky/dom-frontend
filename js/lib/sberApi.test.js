@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { runState, runPeriod, runSummary, connectionView, certNote, scheduleLabel, periodBody, cleanToken, runErrorText } from './sberApi.js';
+import { runState, runPeriod, runSummary, connectionView, certNote, scheduleLabel, periodBody, cleanToken, runErrorText, balanceNote, balancesTotal } from './sberApi.js';
 
 test('run state', () => {
   assert.equal(runState({ finished_at: null }), 'running');
@@ -55,4 +55,13 @@ test('run errors are translated', () => {
   assert.equal(runErrorText('4070: 2026-10-08: sber api: status 403: FORBIDDEN: no access'), '4070: 2026-10-08: sber api: нет доступа к счёту в банке (403)');
   assert.equal(runErrorText('interrupted: server restarted'), 'Прервано перезапуском сервера');
   assert.equal(runErrorText('something else'), 'something else');
+});
+
+test('balance note and total', () => {
+  assert.equal(balanceNote({ date: '2026-10-12', composed_at: '2026-10-12T09:15:00' }), 'на конец дня 12.10.2026, сводка банка от 09:15');
+  assert.equal(balanceNote({ date: '2026-10-12', composed_at: '' }), 'на конец дня 12.10.2026');
+  assert.equal(balanceNote({ error: 'x' }), '');
+  assert.equal(balancesTotal([{ closing: 0.1 }, { closing: 0.2 }, { error: 'x' }, { closing: 100 }]), 100.3);
+  assert.equal(balancesTotal([{ error: 'x' }]), null);
+  assert.equal(balancesTotal([]), null);
 });

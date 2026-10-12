@@ -86,6 +86,7 @@ export const bankStatementsApi = {
 export const sberApi = {
   status: () => client.get('/api/v1/sber/status'),
   sync: (body) => client.post('/api/v1/sber/sync', body),
+  balances: () => client.get('/api/v1/sber/balances'),
   setTokens: (refreshToken) => client.put('/api/v1/sber/tokens', { refresh_token: refreshToken }),
 };
 
