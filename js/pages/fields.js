@@ -151,7 +151,8 @@ export const incomingPaymentFields = ({ banks, categories }) => (values) => [
     help: 'Например, Иванов заплатил за ЖКУ. Для платежей, которые не относятся к лицевому счёту, оставьте пустым и выберите категорию' },
   { ...selectField('category_id', 'Категория', categoryOptions(categories), { numeric: true, placeholder: 'Без категории' }),
     visible: (v) => !v.personal_account_id },
-  textField('comment', 'Комментарий', { full: true }),
+  checkboxField('attention', 'Обратить внимание', { full: true, help: 'Платёж будет выделен в списке. Например, оплата капремонта пришла на обычный счёт. Нужен комментарий — что именно не так' }),
+  textField('comment', 'Комментарий', { full: true, required: !!values.attention }),
 ];
 
 export const outgoingPaymentFields = ({ banks, categories }) => [

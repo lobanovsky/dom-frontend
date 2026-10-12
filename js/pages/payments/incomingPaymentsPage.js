@@ -19,16 +19,17 @@ export function createIncomingList(refs, { fixedQuery = {}, showRegistry = true,
     addLabel: 'Добавить платёж',
     api: incomingPaymentsApi,
     fields,
-    watch: ['personal_account_id'],
+    watch: ['personal_account_id', 'attention'],
     fixedQuery,
     groupBy: (r) => monthLabel(r.payment_date),
-    rowClass: seasonRowClass,
+    rowClass: (r) => [seasonRowClass(r), r.attention ? 'row-attention' : null].filter(Boolean).join(' ') || null,
     canAdd: !compact,
     filters: compact ? [] : [
       { name: 'bank_account_id', label: 'Счёт', type: 'select', options: bankFilterOptions(refs.banks) },
       ...dateFilters,
       { name: 'q', label: 'Поиск', type: 'search', placeholder: 'Плательщик, лицевой счёт, назначение' },
       { name: 'category_id', label: 'Категория', type: 'select', options: categoryFilterOptions(refs.incomingCategories) },
+      { name: 'attention', label: 'Внимание', type: 'select', options: [{ value: 'true', label: 'Требуют внимания' }] },
       { name: 'binding', label: 'Привязка', type: 'select', options: [{ value: 'account', label: 'К лицевым счетам' }, { value: 'unlinked', label: 'Не привязанные' }] },
       // Платёж банка с реестром уже показывает строки реестра суммой: детализация открывается по клику на источник.
       showRegistry ? { name: 'hide_registry_details', label: 'Строки реестров', type: 'select', allLabel: 'Показывать', options: [{ value: 'true', label: 'Скрыть (в окне платежа)' }], defaultValue: 'true' } : null,
@@ -37,7 +38,7 @@ export function createIncomingList(refs, { fixedQuery = {}, showRegistry = true,
       { key: 'payment_date', label: 'Дата', primary: true, render: (r) => dateWithSeason(r, r.payment_time ? ` ${formatTime(r.payment_time)}` : '') },
       { key: 'payer_name', label: 'От кого' },
       { key: 'amount', label: 'Сумма', render: (r) => el('span', { class: 'nowrap' }, formatMoney(r.amount)) },
-      { key: 'link', label: 'Лицевой счёт / категория', render: (r) => linkCell(r, refs) },
+      { key: 'link', label: 'Лицевой счёт / категория', render: (r) => withAttention(linkCell(r, refs), r) },
       { key: 'bank_account_id', label: 'Счёт', render: (r) => refs.bankName(r.bank_account_id) },
       showRegistry ? { key: 'registry_id', label: 'Источник', render: (r) => sourceCell(r, refs) } : null,
       { key: 'purpose', label: 'Назначение' },
@@ -46,6 +47,12 @@ export function createIncomingList(refs, { fixedQuery = {}, showRegistry = true,
     emptyMessage: 'Платежей не найдено',
     deleteMessage: (r) => `Удалить платёж ${formatMoney(r.amount)}${r.payer_name ? ` от «${r.payer_name}»` : ''}?`,
   });
+}
+
+// Платёж с флагом «обратить внимание» (например, капремонт на обычном счёте): метка под привязкой, причина — в подсказке и комментарии.
+function withAttention(node, r) {
+  if (!r.attention) return node;
+  return el('div', {}, [node, el('div', {}, el('span', { class: 'badge badge-attention', title: r.comment || '' }, '⚠ Обратить внимание'))]);
 }
 
 function linkCell(r, refs) {
