@@ -29,7 +29,7 @@ export function createIncomingList(refs, { fixedQuery = {}, showRegistry = true,
       ...dateFilters,
       { name: 'q', label: 'Поиск', type: 'search', placeholder: 'Плательщик, лицевой счёт, назначение' },
       { name: 'category_id', label: 'Категория', type: 'select', options: categoryFilterOptions(refs.incomingCategories) },
-      { name: 'unlinked', label: 'Привязка', type: 'select', options: [{ value: 'true', label: 'Не привязанные' }] },
+      { name: 'binding', label: 'Привязка', type: 'select', options: [{ value: 'account', label: 'К лицевым счетам' }, { value: 'unlinked', label: 'Не привязанные' }] },
       // Платёж банка с реестром уже показывает строки реестра суммой: детализация открывается по клику на источник.
       showRegistry ? { name: 'hide_registry_details', label: 'Строки реестров', type: 'select', allLabel: 'Показывать', options: [{ value: 'true', label: 'Скрыть (в окне платежа)' }], defaultValue: 'true' } : null,
     ].filter(Boolean),
