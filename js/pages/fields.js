@@ -1,6 +1,6 @@
 import { textField, numberField, dateField, selectField, checkboxField } from '../lib/fields.js';
 import {
-  options, paymentDirections, bankLabel, organizationKinds, buildingKinds, premisesKinds, relations, accountPurposes, accountStatuses, ownerKinds,
+  options, bankLabel, organizationKinds, buildingKinds, premisesKinds, relations, accountPurposes, accountStatuses, ownerKinds,
 } from '../lib/labels.js';
 import { entityPicker } from '../ui/picker.js';
 import { listInput } from '../ui/listInput.js';
@@ -126,7 +126,6 @@ export const bankAccountFields = (organizations) => [
 
 export const paymentCategoryFields = [
   textField('name', 'Название', { required: true, full: true }),
-  selectField('direction', 'Направление', options(paymentDirections), { required: true, placeholder: 'Выберите' }),
   { type: 'picker', name: 'color', label: 'Цвет', full: true, help: 'Необязательно. Повторный клик снимает выбор', component: categoryColorPicker },
   { type: 'picker', name: 'icon', label: 'Значок', full: true, help: 'Необязательно. Показывается рядом с названием в таблицах платежей', component: categoryIconPicker },
 ];
