@@ -1,6 +1,6 @@
 import { test, describe, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { client, ApiError, buildQueryString, onUnauthenticated, onGlobalError } from './client.js';
+import { client, ApiError, buildQueryString, onUnauthenticated, onGlobalError, fileNameFromDisposition } from './client.js';
 
 const originalFetch = globalThis.fetch;
 
@@ -143,5 +143,30 @@ describe('multipart upload', () => {
     );
     assert.ok(seen.body instanceof FormData);
     assert.equal(seen.headers['Content-Type'], undefined);
+  });
+});
+
+describe('download', () => {
+  test('returns the blob and the file name from Content-Disposition', async () => {
+    let seenUrl;
+    mockFetch(async (url) => {
+      seenUrl = url;
+      return new Response('xlsx-bytes', { status: 200, headers: { 'Content-Disposition': "attachment; filename*=UTF-8''incoming-payments-2026-10-13.xlsx" } });
+    });
+    const { blob, fileName } = await client.download('/api/v1/incoming-payments/export', { query: { bank_account_id: '3', q: '' } });
+    assert.equal(seenUrl, '/api/v1/incoming-payments/export?bank_account_id=3');
+    assert.equal(fileName, 'incoming-payments-2026-10-13.xlsx');
+    assert.equal(await blob.text(), 'xlsx-bytes');
+  });
+
+  test('errors come back as ApiError', async () => {
+    mockFetch(async () => new Response(JSON.stringify({ error: 'too many payments: at most 20000 for export' }), { status: 422, headers: { 'Content-Type': 'application/json' } }));
+    await assert.rejects(() => client.download('/x'), (err) => err instanceof ApiError && err.status === 422 && /too many/.test(err.message));
+  });
+
+  test('file name parsing', () => {
+    assert.equal(fileNameFromDisposition("attachment; filename*=UTF-8''%D0%B0%20b.txt"), 'а b.txt');
+    assert.equal(fileNameFromDisposition('attachment; filename="plain.xlsx"'), 'plain.xlsx');
+    assert.equal(fileNameFromDisposition(null, 'fallback.bin'), 'fallback.bin');
   });
 });

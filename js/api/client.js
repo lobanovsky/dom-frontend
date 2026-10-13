@@ -92,9 +92,49 @@ export async function request(method, path, { query, body, signal } = {}) {
   throw error;
 }
 
+// Имя файла из заголовка Content-Disposition (filename*=UTF-8''... или filename="...").
+export function fileNameFromDisposition(header, fallback = 'file') {
+  if (!header) return fallback;
+  const star = header.match(/filename\*=UTF-8''([^;]+)/i);
+  if (star) {
+    try {
+      return decodeURIComponent(star[1].trim());
+    } catch {
+      // битая последовательность — пробуем обычное имя
+    }
+  }
+  const plain = header.match(/filename="?([^";]+)"?/i);
+  return plain ? plain[1].trim() : fallback;
+}
+
+// Скачивание файла: {blob, fileName}. Ошибки приходят как обычный ApiError (JSON), а не страницей браузера.
+export async function download(path, { query, signal } = {}) {
+  const url = `${config.apiBase}${path}${buildQueryString(query)}`;
+  let response;
+  try {
+    response = await fetch(url, { method: 'GET', credentials: 'include', signal });
+  } catch (err) {
+    if (err && err.name === 'AbortError') throw err;
+    const networkError = new ApiError({ status: 0, message: 'Не удалось связаться с сервером' });
+    if (globalErrorHandler) globalErrorHandler(networkError);
+    throw networkError;
+  }
+  if (!response.ok) {
+    const error = await toApiError(response);
+    if (error.status === 401) {
+      if (unauthenticatedHandler) unauthenticatedHandler();
+    } else if (isGlobalError(error)) {
+      if (globalErrorHandler) globalErrorHandler(error);
+    }
+    throw error;
+  }
+  return { blob: await response.blob(), fileName: fileNameFromDisposition(response.headers.get('Content-Disposition')) };
+}
+
 export const client = {
   get: (path, opts) => request('GET', path, opts),
   post: (path, body, opts) => request('POST', path, { ...opts, body }),
   put: (path, body, opts) => request('PUT', path, { ...opts, body }),
   delete: (path, opts) => request('DELETE', path, opts),
+  download,
 };

@@ -1,7 +1,9 @@
 import { el } from '../../lib/dom.js';
 import { openModal } from '../../ui/modal.js';
 import { createCrudList } from '../../ui/crudList.js';
-import { incomingPaymentsApi, paymentRegistriesApi } from '../../api/resources.js';
+import { incomingPaymentsApi, outgoingPaymentsApi, paymentRegistriesApi } from '../../api/resources.js';
+import { saveFile } from '../../ui/saveFile.js';
+import { toast } from '../../ui/toast.js';
 import { incomingPaymentFields } from '../fields.js';
 import { formatMoney, formatTime, monthLabel, registryLabel } from '../../lib/format.js';
 import { describeApiError } from '../../lib/apiErrors.js';
@@ -81,6 +83,25 @@ function accountLink(r) {
   return el('a', { class: 'account-link', href: `/premises/${r.premises_id}`, title: 'Открыть помещение' }, text);
 }
 
+// Кнопка «Скачать в Excel»: все платежи по текущим фильтрам списка (на сервере есть предел по числу строк).
+function excelButton(list, direction) {
+  const api = direction === 'outgoing' ? outgoingPaymentsApi : incomingPaymentsApi;
+  const button = el('button', { type: 'button', class: 'btn', title: 'Все платежи по текущим фильтрам, а не только текущая страница' }, 'Скачать в Excel');
+  button.addEventListener('click', async () => {
+    button.disabled = true;
+    button.textContent = 'Формируем файл…';
+    try {
+      saveFile(await api.exportExcel(list.getQuery()));
+    } catch (err) {
+      if (err.status !== 0 && err.status < 500) toast.error(describeApiError(err).message);
+    } finally {
+      button.disabled = false;
+      button.textContent = 'Скачать в Excel';
+    }
+  });
+  return button;
+}
+
 // Кнопки «Определить лицевые счета» («Определить категории» для исходящих) и «История определений» для списка платежей:
 // правила применяются по его текущим фильтрам.
 export function assignActions(list, { direction = 'incoming' } = {}) {
@@ -91,6 +112,7 @@ export function assignActions(list, { direction = 'incoming' } = {}) {
     }, directionTexts(direction).assign),
     el('button', { type: 'button', class: 'btn', onclick: () => openAssignHistory({ direction, onChanged: () => list.reload() }) }, 'История определений'),
     el('a', { class: 'btn', href: `/payment-rules?direction=${direction}` }, 'Правила'),
+    excelButton(list, direction),
   ]);
 }
 

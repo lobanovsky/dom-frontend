@@ -149,5 +149,6 @@ test('export errors are translated', () => {
   assert.match(describeApiError(err('payments belong to several bank accounts')).message, /только одного банковского счёта/);
   assert.match(describeApiError(err('no payments to export')).message, /Нет платежей для выгрузки/);
   assert.match(describeApiError(err('too many payments: at most 20000 per registry')).message, /не больше 20000/);
+  assert.match(describeApiError(err('too many payments: at most 20000 for export')).message, /В выгрузке не больше 20000/);
   assert.match(describeApiError(err('selection changed: expected 5 payments, found 7', 409)).message, /было 5, стало 7/);
 });

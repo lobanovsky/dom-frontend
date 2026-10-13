@@ -48,8 +48,15 @@ export const accountHoldersApi = resource('account-holders');
 // Платежи. Банковский счёт организации (bank-accounts) — не лицевой счёт помещения (accounts).
 export const bankAccountsApi = resource('bank-accounts');
 export const paymentCategoriesApi = resource('payment-categories');
-export const incomingPaymentsApi = resource('incoming-payments');
-export const outgoingPaymentsApi = resource('outgoing-payments');
+// exportExcel(query) — выгрузка в Excel по тем же фильтрам, что у списка: {blob, fileName}.
+export const incomingPaymentsApi = {
+  ...resource('incoming-payments'),
+  exportExcel: (query) => client.download('/api/v1/incoming-payments/export', { query }),
+};
+export const outgoingPaymentsApi = {
+  ...resource('outgoing-payments'),
+  exportExcel: (query) => client.download('/api/v1/outgoing-payments/export', { query }),
+};
 // Контрагенты из платежей (только чтение): ?direction=outgoing|incoming, ?q=.
 export const counterpartiesApi = {
   list: (query) => client.get('/api/v1/counterparties', { query }),

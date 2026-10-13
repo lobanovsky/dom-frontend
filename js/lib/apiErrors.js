@@ -174,6 +174,8 @@ export function describeApiError(err, { action = 'save' } = {}) {
   if (raw === 'payments belong to several bank accounts') return { field: null, message: 'В одном реестре могут быть платежи только одного банковского счёта: выберите счёт в фильтре' };
   if (raw === 'no payments to export') return { field: null, message: 'Нет платежей для выгрузки: нужны платежи из выписок с лицевым счётом, ещё не выгруженные' };
   if (raw === 'organization inn must be 10 or 12 digits') return { field: null, message: 'У организации счёта не указан ИНН (10 или 12 цифр): он нужен для имени файла реестра' };
+  m = raw.match(/^too many payments: at most (\d+) for export$/);
+  if (m) return { field: null, message: `В выгрузке не больше ${m[1]} платежей: сузьте фильтр, например по датам` };
   m = raw.match(/^too many payments: at most (\d+) per registry$/);
   if (m) return { field: null, message: `В одном реестре не больше ${m[1]} платежей: сузьте фильтр, например по датам` };
   m = raw.match(/^selection changed: expected (\d+) payments, found (\d+)$/);
