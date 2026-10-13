@@ -4,7 +4,7 @@ import { confirmDialog } from './confirmDialog.js';
 import { openEntityForm } from './entityForm.js';
 import { toast } from './toast.js';
 import { describeApiError } from '../lib/apiErrors.js';
-import { config } from '../config.js';
+import { PAGE_SIZES, loadPageSize, savePageSize } from '../lib/pageSize.js';
 
 // Список записей одной сущности: фильтры, таблица, пагинация, добавление,
 // редактирование и удаление через модальную форму. Удаление мягкое: переключатель
@@ -29,6 +29,7 @@ export function createCrudList({
   canEdit = true, canAdd = true, extraActions, groupBy, rowClass, newDefaults = {}, onReorder, selection,
 }) {
   let offset = 0;
+  let pageSize = loadPageSize();
   let showDeleted = false;
   const filterValues = {};
   let searchTimer = null;
@@ -36,10 +37,13 @@ export function createCrudList({
   let lastItems = [];
 
   const tableHost = el('div', { class: 'crud-table' }, el('div', { class: 'table-status' }, 'Загрузка…'));
-  const prevButton = el('button', { type: 'button', class: 'btn btn-ghost', onclick: () => { offset = Math.max(0, offset - config.pageSize); load(); } }, '← Назад');
-  const nextButton = el('button', { type: 'button', class: 'btn btn-ghost', onclick: () => { offset += config.pageSize; load(); } }, 'Вперёд →');
+  const prevButton = el('button', { type: 'button', class: 'btn btn-ghost', onclick: () => { offset = Math.max(0, offset - pageSize); load(); } }, '← Назад');
+  const nextButton = el('button', { type: 'button', class: 'btn btn-ghost', onclick: () => { offset += pageSize; load(); } }, 'Вперёд →');
   const pageInfo = el('span', { class: 'pager-info' });
-  const pager = el('div', { class: 'pager' }, [prevButton, pageInfo, nextButton]);
+  const sizeSelect = el('select', { 'aria-label': 'Строк на странице' }, PAGE_SIZES.map((n) => el('option', { value: String(n) }, String(n))));
+  sizeSelect.value = String(pageSize);
+  sizeSelect.addEventListener('change', () => { pageSize = Number(sizeSelect.value); savePageSize(pageSize); offset = 0; load(); });
+  const pager = el('div', { class: 'pager' }, [prevButton, pageInfo, nextButton, el('label', { class: 'pager-size' }, ['На странице: ', sizeSelect])]);
 
   const addButton = canEdit && canAdd ? el('button', { type: 'button', class: 'btn btn-primary btn-add', onclick: () => openForm(null) }, addLabel) : null;
   const toolbar = el('div', { class: 'table-toolbar' }, [
@@ -143,13 +147,14 @@ export function createCrudList({
   async function load() {
     const current = ++seq;
     try {
-      const { items } = await api.list({ ...fixedQuery, ...filterValues, deleted: showDeleted ? 'only' : undefined, limit: config.pageSize, offset });
+      const { items } = await api.list({ ...fixedQuery, ...filterValues, deleted: showDeleted ? 'only' : undefined, limit: pageSize, offset });
       if (current !== seq) return;
       lastItems = items;
       draw();
       prevButton.disabled = offset === 0;
-      nextButton.disabled = items.length < config.pageSize;
-      pager.hidden = offset === 0 && items.length < config.pageSize;
+      nextButton.disabled = items.length < pageSize;
+      // Пока выбран не минимальный размер страницы, панель остаётся: иначе его нельзя уменьшить обратно.
+      pager.hidden = offset === 0 && items.length < pageSize && pageSize === PAGE_SIZES[0];
       pageInfo.textContent = `${offset + 1}–${offset + items.length}`;
     } catch (err) {
       if (current !== seq) return;

@@ -1238,3 +1238,14 @@ a.account-link:hover { text-decoration: underline; }
 @media (max-width: 768px) {
   .data-table .col-select { width: auto; text-align: left; padding: 4px 0; }
 }
+
+/* Выбор числа строк на странице */
+.pager { flex-wrap: wrap; }
+.pager-size {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+.pager-size select { width: auto; min-width: 64px; }
