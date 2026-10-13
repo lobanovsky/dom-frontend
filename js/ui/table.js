@@ -10,17 +10,22 @@ import { el } from '../lib/dom.js';
 // rowClass(row) -> строка: дополнительный CSS-класс строки (например, цвет по времени года).
 // onReorder(rows) -> void: строки можно перетаскивать мышью за ручку «⠿» (слева); вызывается с новым порядком строк.
 // Перетаскивание HTML5 работает только мышью, на телефоне ручка скрыта (там остаются кнопки ↑/↓ вызывающего).
-export function renderTable({ columns, rows, rowActions, getRowKey = (row) => row.id, emptyMessage = 'Ничего не найдено', groupBy, rowClass, onReorder }) {
+// selection: {canSelect(row), isSelected(row), onToggle(rows, checked)} — колонка с галочками (слева); у строк, которые
+// выбрать нельзя, галочки нет; галочка в шапке отмечает/снимает все доступные строки страницы.
+export function renderTable({ columns, rows, rowActions, getRowKey = (row) => row.id, emptyMessage = 'Ничего не найдено', groupBy, rowClass, onReorder, selection }) {
   if (!rows || rows.length === 0) {
     return el('div', { class: 'data-table-wrap' }, el('div', { class: 'table-status' }, emptyMessage));
   }
 
+  const selectable = selection ? rows.filter(selection.canSelect) : [];
+  const chosen = selectable.filter(selection ? selection.isSelected : () => false).length;
   const thead = el('thead', {}, el('tr', {}, [
+    selection ? el('th', { class: 'col-select' }, selectable.length ? pageCheckbox(selectable, chosen, selection) : null) : null,
     onReorder ? el('th', { class: 'col-drag' }, el('span', { class: 'visually-hidden' }, 'Порядок')) : null,
     ...columns.map((c) => el('th', {}, c.label)),
     rowActions ? el('th', { class: 'col-actions' }, el('span', { class: 'visually-hidden' }, 'Действия')) : null,
   ]));
-  const span = columns.length + (rowActions ? 1 : 0) + (onReorder ? 1 : 0);
+  const span = columns.length + (rowActions ? 1 : 0) + (onReorder ? 1 : 0) + (selection ? 1 : 0);
   const trs = [];
   let currentGroup = null;
   for (const row of rows) {
@@ -30,6 +35,7 @@ export function renderTable({ columns, rows, rowActions, getRowKey = (row) => ro
     }
     currentGroup = group;
     trs.push(el('tr', { 'data-row-key': String(getRowKey(row)), class: rowClass ? rowClass(row) || null : null }, [
+      selection ? el('td', { class: 'col-select' }, selection.canSelect(row) ? rowCheckbox(row, selection) : null) : null,
       onReorder ? el('td', { class: 'col-drag' }, el('span', { class: 'drag-handle', title: 'Перетащите, чтобы изменить порядок', 'aria-hidden': 'true' }, '⠿')) : null,
       ...columns.map((c) => {
         const value = c.render ? c.render(row) : row[c.key];
@@ -42,6 +48,21 @@ export function renderTable({ columns, rows, rowActions, getRowKey = (row) => ro
   if (onReorder) enableDragReorder(tbody, rows, getRowKey, onReorder);
 
   return el('div', { class: 'data-table-wrap' }, el('table', { class: 'data-table' }, [thead, tbody]));
+}
+
+function rowCheckbox(row, selection) {
+  const input = el('input', { type: 'checkbox', 'aria-label': 'Выбрать платёж' });
+  input.checked = selection.isSelected(row);
+  input.addEventListener('change', () => selection.onToggle([row], input.checked));
+  return input;
+}
+
+function pageCheckbox(selectable, chosen, selection) {
+  const input = el('input', { type: 'checkbox', 'aria-label': 'Выбрать все на странице' });
+  input.checked = chosen === selectable.length;
+  input.indeterminate = chosen > 0 && chosen < selectable.length;
+  input.addEventListener('change', () => selection.onToggle(selectable, input.checked));
+  return input;
 }
 
 // Перетаскивание строк за ручку: строка встаёт перед или после той, над которой отпустили (по половине высоты).

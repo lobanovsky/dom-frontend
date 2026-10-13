@@ -171,6 +171,13 @@ export function describeApiError(err, { action = 'save' } = {}) {
   if (raw === 'sber api is not configured') return { field: null, message: 'Интеграция со Sber API не настроена на сервере' };
   if (raw === 'sber tokens are not set') return { field: null, message: 'Токены Sber API не введены: вставьте refresh_token из личного кабинета' };
   if (raw === 'sber sync is already running') return { field: null, message: 'Получение выписок уже идёт, дождитесь окончания' };
+  if (raw === 'payments belong to several bank accounts') return { field: null, message: 'В одном реестре могут быть платежи только одного банковского счёта: выберите счёт в фильтре' };
+  if (raw === 'no payments to export') return { field: null, message: 'Нет платежей для выгрузки: нужны платежи из выписок с лицевым счётом, ещё не выгруженные' };
+  if (raw === 'organization inn must be 10 or 12 digits') return { field: null, message: 'У организации счёта не указан ИНН (10 или 12 цифр): он нужен для имени файла реестра' };
+  m = raw.match(/^too many payments: at most (\d+) per registry$/);
+  if (m) return { field: null, message: `В одном реестре не больше ${m[1]} платежей: сузьте фильтр, например по датам` };
+  m = raw.match(/^selection changed: expected (\d+) payments, found (\d+)$/);
+  if (m) return { field: null, message: `Список платежей изменился (было ${m[1]}, стало ${m[2]}). Закройте окно и повторите выгрузку` };
   if (raw === 'assignment run not found') return { field: null, message: 'Запуск не найден' };
   if (raw === 'assignment run is already rolled back') return { field: null, message: 'Этот запуск уже откатан' };
   if (raw === 'rule not found') return { field: null, message: 'Правило не найдено' };

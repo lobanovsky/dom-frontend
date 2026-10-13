@@ -20,17 +20,20 @@ import { config } from '../config.js';
 // canAdd: false — без кнопки добавления (окно детализации).
 // onReorder(rows) — включает перетаскивание строк мышью (не в режиме «Удалённые»), получает строки в новом порядке.
 // extraActions(row) -> [Node] — дополнительные кнопки в строках действующих записей.
-// Возвращает {element, reload}.
+// selection: {canSelect(row), isSelected(row), onToggle(rows, checked), onFilterChange?()} — колонка галочек (см. ui/table.js),
+// не показывается в режиме «Удалённые»; onFilterChange вызывается при смене фильтров (выбор обычно сбрасывают).
+// Возвращает {element, reload, redraw, getQuery}: redraw перерисовывает текущую страницу без запроса (после смены выбора).
 export function createCrudList({
   api, columns, fields, watch, filters = [], fixedQuery = {}, fixed = {},
   entityTitle, addLabel = 'Добавить', emptyMessage, deleteMessage = (row) => 'Удалить запись?',
-  canEdit = true, canAdd = true, extraActions, groupBy, rowClass, newDefaults = {}, onReorder,
+  canEdit = true, canAdd = true, extraActions, groupBy, rowClass, newDefaults = {}, onReorder, selection,
 }) {
   let offset = 0;
   let showDeleted = false;
   const filterValues = {};
   let searchTimer = null;
   let seq = 0;
+  let lastItems = [];
 
   const tableHost = el('div', { class: 'crud-table' }, el('div', { class: 'table-status' }, 'Загрузка…'));
   const prevButton = el('button', { type: 'button', class: 'btn btn-ghost', onclick: () => { offset = Math.max(0, offset - config.pageSize); load(); } }, '← Назад');
@@ -45,11 +48,14 @@ export function createCrudList({
     canEdit ? deletedToggle((checked) => {
       showDeleted = checked;
       offset = 0;
+      filtersChanged();
       if (addButton) addButton.hidden = checked;
       load();
     }) : null,
     addButton,
   ]);
+
+  const filtersChanged = () => { if (selection && selection.onFilterChange) selection.onFilterChange(); };
 
   function renderFilter(f) {
     const id = `filter-${f.name}`;
@@ -60,15 +66,15 @@ export function createCrudList({
         input.value = f.defaultValue;
         filterValues[f.name] = f.defaultValue;
       }
-      input.addEventListener('change', () => { filterValues[f.name] = input.value; offset = 0; load(); });
+      input.addEventListener('change', () => { filterValues[f.name] = input.value; offset = 0; filtersChanged(); load(); });
     } else if (f.type === 'date') {
       input = el('input', { type: 'date', id });
-      input.addEventListener('change', () => { filterValues[f.name] = input.value; offset = 0; load(); });
+      input.addEventListener('change', () => { filterValues[f.name] = input.value; offset = 0; filtersChanged(); load(); });
     } else {
       input = el('input', { type: 'search', id, placeholder: f.placeholder || 'Поиск', autocomplete: 'off' });
       input.addEventListener('input', () => {
         clearTimeout(searchTimer);
-        searchTimer = setTimeout(() => { filterValues[f.name] = input.value.trim(); offset = 0; load(); }, 300);
+        searchTimer = setTimeout(() => { filterValues[f.name] = input.value.trim(); offset = 0; filtersChanged(); load(); }, 300);
       });
     }
     return el('div', { class: f.type === 'select' || f.type === 'date' ? 'field' : 'field field--search' }, [el('label', { for: id }, f.label), input]);
@@ -114,27 +120,33 @@ export function createCrudList({
     }
   }
 
+  function draw() {
+    tableHost.classList.toggle('crud-table--deleted', showDeleted);
+    tableHost.replaceChildren(renderTable({
+      columns,
+      groupBy,
+      rowClass,
+      onReorder: showDeleted ? null : onReorder,
+      selection: showDeleted ? null : selection,
+      rows: lastItems,
+      emptyMessage: showDeleted ? 'Удалённых записей нет' : emptyMessage,
+      rowActions: !canEdit ? null : showDeleted
+        ? (row) => [el('button', { type: 'button', class: 'btn btn-sm', onclick: () => restore(row) }, 'Восстановить')]
+        : (row) => [
+          ...(extraActions ? extraActions(row) : []),
+          el('button', { type: 'button', class: 'btn btn-ghost btn-sm', onclick: () => openForm(row) }, 'Изменить'),
+          el('button', { type: 'button', class: 'btn btn-ghost btn-sm btn-danger-text', onclick: () => remove(row) }, 'Удалить'),
+        ],
+    }));
+  }
+
   async function load() {
     const current = ++seq;
     try {
       const { items } = await api.list({ ...fixedQuery, ...filterValues, deleted: showDeleted ? 'only' : undefined, limit: config.pageSize, offset });
       if (current !== seq) return;
-      tableHost.classList.toggle('crud-table--deleted', showDeleted);
-      tableHost.replaceChildren(renderTable({
-        columns,
-        groupBy,
-        rowClass,
-        onReorder: showDeleted ? null : onReorder,
-        rows: items,
-        emptyMessage: showDeleted ? 'Удалённых записей нет' : emptyMessage,
-        rowActions: !canEdit ? null : showDeleted
-          ? (row) => [el('button', { type: 'button', class: 'btn btn-sm', onclick: () => restore(row) }, 'Восстановить')]
-          : (row) => [
-            ...(extraActions ? extraActions(row) : []),
-            el('button', { type: 'button', class: 'btn btn-ghost btn-sm', onclick: () => openForm(row) }, 'Изменить'),
-            el('button', { type: 'button', class: 'btn btn-ghost btn-sm btn-danger-text', onclick: () => remove(row) }, 'Удалить'),
-          ],
-      }));
+      lastItems = items;
+      draw();
       prevButton.disabled = offset === 0;
       nextButton.disabled = items.length < config.pageSize;
       pager.hidden = offset === 0 && items.length < config.pageSize;
@@ -148,7 +160,7 @@ export function createCrudList({
   load();
   // Текущие фильтры списка (для действий над выборкой: определение лицевых счетов и т.п.).
   const getQuery = () => ({ ...fixedQuery, ...filterValues });
-  return { element: el('div', { class: 'crud-list' }, [toolbar, tableHost, pager]), reload: load, getQuery };
+  return { element: el('div', { class: 'crud-list' }, [toolbar, tableHost, pager]), reload: load, redraw: draw, getQuery };
 }
 
 // Страница-справочник: заголовок + список.

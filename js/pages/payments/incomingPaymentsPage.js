@@ -9,10 +9,12 @@ import { loadPaymentRefs, bankFilterOptions, categoryFilterOptions, dateFilters,
 import { openAssignDialog, openAssignHistory } from '../../ui/assignDialog.js';
 import { scopeFromQuery, originLabel, directionTexts } from '../../lib/rules.js';
 import { payments } from '../../lib/registryImport.js';
+import { createExportSelection } from '../../ui/exportSelection.js';
 
 // Список входящих платежей. Используется и на странице «Входящие платежи», и на странице реестра
 // (fixedQuery: {registry_id}, showRegistry: false) и на странице выписки (fixedQuery: {statement_id}).
-export function createIncomingList(refs, { fixedQuery = {}, showRegistry = true, compact = false } = {}) {
+// selection — колонка галочек для выгрузки в реестр (ui/exportSelection.js), только на странице «Входящие».
+export function createIncomingList(refs, { fixedQuery = {}, showRegistry = true, compact = false, selection } = {}) {
   const fields = incomingPaymentFields({ banks: refs.banks, categories: refs.incomingCategories });
   return createCrudList({
     entityTitle: 'Платёж',
@@ -24,12 +26,14 @@ export function createIncomingList(refs, { fixedQuery = {}, showRegistry = true,
     groupBy: (r) => monthLabel(r.payment_date),
     rowClass: (r) => [seasonRowClass(r), r.attention ? 'row-attention' : null].filter(Boolean).join(' ') || null,
     canAdd: !compact,
+    selection,
     filters: compact ? [] : [
       { name: 'bank_account_id', label: 'Счёт', type: 'select', options: bankFilterOptions(refs.banks) },
       ...dateFilters,
       { name: 'q', label: 'Поиск', type: 'search', placeholder: 'Плательщик, лицевой счёт, назначение' },
       { name: 'category_id', label: 'Категория', type: 'select', options: categoryFilterOptions(refs.incomingCategories) },
       { name: 'attention', label: 'Внимание', type: 'select', options: [{ value: 'true', label: 'Требуют внимания' }] },
+      { name: 'export', label: 'Выгрузка в реестр', type: 'select', options: [{ value: 'pending', label: 'Не выгружены' }, { value: 'done', label: 'Выгружены' }] },
       { name: 'binding', label: 'Привязка', type: 'select', options: [{ value: 'account', label: 'К лицевым счетам' }, { value: 'unlinked', label: 'Не привязанные' }] },
       // Платёж банка с реестром уже показывает строки реестра суммой: детализация открывается по клику на источник.
       showRegistry ? { name: 'hide_registry_details', label: 'Строки реестров', type: 'select', allLabel: 'Показывать', options: [{ value: 'true', label: 'Скрыть (в окне платежа)' }], defaultValue: 'true' } : null,
@@ -38,7 +42,7 @@ export function createIncomingList(refs, { fixedQuery = {}, showRegistry = true,
       { key: 'payment_date', label: 'Дата', primary: true, render: (r) => dateWithSeason(r, r.payment_time ? ` ${formatTime(r.payment_time)}` : '') },
       { key: 'payer_name', label: 'От кого' },
       { key: 'amount', label: 'Сумма', render: (r) => el('span', { class: 'nowrap' }, formatMoney(r.amount)) },
-      { key: 'link', label: 'Лицевой счёт / категория', render: (r) => withAttention(linkCell(r, refs), r) },
+      { key: 'link', label: 'Лицевой счёт / категория', render: (r) => withExported(withAttention(linkCell(r, refs), r), r) },
       { key: 'bank_account_id', label: 'Счёт', render: (r) => refs.bankName(r.bank_account_id) },
       showRegistry ? { key: 'registry_id', label: 'Источник', render: (r) => sourceCell(r, refs) } : null,
       { key: 'purpose', label: 'Назначение' },
@@ -53,6 +57,12 @@ export function createIncomingList(refs, { fixedQuery = {}, showRegistry = true,
 function withAttention(node, r) {
   if (!r.attention) return node;
   return el('div', {}, [node, el('div', {}, el('span', { class: 'badge badge-attention', title: r.comment || '' }, '⚠ Обратить внимание'))]);
+}
+
+// Платёж, выгруженный в реестр для внешней системы: метка с именем файла в подсказке.
+function withExported(node, r) {
+  if (!r.export_id) return node;
+  return el('div', {}, [node, el('div', {}, el('a', { class: 'badge badge-success', href: '/payment-exports', title: `Выгружен в реестр ${r.export_file_name || ''}` }, '✓ Выгружен'))]);
 }
 
 function linkCell(r, refs) {
@@ -106,10 +116,13 @@ export async function incomingPaymentsPage(container) {
     container.replaceChildren(el('div', { class: 'table-status table-status-error' }, describeApiError(err).message));
     return;
   }
-  const list = createIncomingList(refs);
+  const exporting = createExportSelection({ bankName: refs.bankName });
+  const list = createIncomingList(refs, { selection: exporting.selection });
+  exporting.bind(list);
   container.replaceChildren(el('div', { class: 'page' }, [
     el('div', { class: 'section-header' }, [el('h1', {}, 'Входящие платежи'), assignActions(list)]),
     refs.banks.length ? null : el('div', { class: 'form-error' }, ['Сначала добавьте ', el('a', { href: '/bank-accounts' }, 'банковский счёт'), '.']),
+    exporting.bar,
     list.element,
   ]));
 }

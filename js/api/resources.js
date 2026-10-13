@@ -69,6 +69,17 @@ export const paymentRegistriesApi = {
   },
 };
 
+// Выгрузка входящих платежей в реестр Сбер-формата для внешней системы. Фильтр платежей уходит параметрами запроса
+// (как у списка входящих), выбор — телом (lib/paymentExport.js#exportBody).
+export const paymentExportsApi = {
+  list: (query) => client.get('/api/v1/payment-exports', { query }),
+  preview: (query, body) => client.post('/api/v1/payment-exports/preview', body, { query }),
+  create: (query, body) => client.post('/api/v1/payment-exports', body, { query }),
+  // Отзыв: платежи снова считаются невыгруженными.
+  revoke: (id) => client.delete(`/api/v1/payment-exports/${id}`),
+  fileUrl: (id) => `/api/v1/payment-exports/${id}/file`,
+};
+
 // Банковские выписки (xlsx). Счёт определяется из шапки файла.
 export const bankStatementsApi = {
   list: (query) => client.get('/api/v1/bank-statements', { query }),

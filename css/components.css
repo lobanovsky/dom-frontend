@@ -1218,3 +1218,23 @@ a.account-link:hover { text-decoration: underline; }
 }
 .segmented-item + .segmented-item { border-left: 1px solid var(--color-border); }
 .segmented-item.is-active { background: var(--color-accent); color: #fff; }
+
+/* Выбор платежей для выгрузки в реестр */
+.data-table .col-select { width: 32px; padding-right: 0; text-align: center; }
+.data-table .col-select input { margin: 0; cursor: pointer; }
+.selection-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+}
+.selection-bar .selection-text { flex: 1 1 260px; }
+.selection-bar .selection-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+@media (max-width: 768px) {
+  .data-table .col-select { width: auto; text-align: left; padding: 4px 0; }
+}
