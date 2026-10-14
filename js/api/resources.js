@@ -15,6 +15,13 @@ function resource(name) {
   };
 }
 
+// Пользователи системы (только администратор): list/create/update; удаления нет — пользователя отключают (active: false).
+export const usersApi = {
+  list: (query) => client.get('/api/v1/users', { query }),
+  create: (body) => client.post('/api/v1/users', body),
+  update: (id, body) => client.put(`/api/v1/users/${id}`, body),
+};
+
 export const organizationsApi = resource('organizations');
 export const buildingsApi = {
   ...resource('buildings'),

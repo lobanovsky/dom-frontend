@@ -6,6 +6,7 @@ import { paymentExportsApi } from '../../api/resources.js';
 import { formatDate, formatMoney } from '../../lib/format.js';
 import { describeApiError } from '../../lib/apiErrors.js';
 import { loadPaymentRefs, bankFilterOptions } from './common.js';
+import { canWrite } from '../../lib/permissions.js';
 
 // Выгруженные реестры: файлы, собранные из входящих платежей для загрузки во внешнюю систему.
 // Выгрузку можно скачать повторно или отозвать — платежи снова станут «не выгруженными».
@@ -52,11 +53,11 @@ export async function paymentExportsPage(container) {
         key: 'actions', label: 'Действия',
         render: (r) => el('div', { class: 'row-actions' }, [
           el('a', { class: 'btn btn-sm', href: paymentExportsApi.fileUrl(r.id), download: r.file_name }, 'Скачать'),
-          el('button', { type: 'button', class: 'btn btn-ghost btn-sm btn-danger-text', onclick: () => revoke(r) }, 'Отозвать'),
+          canWrite() ? el('button', { type: 'button', class: 'btn btn-ghost btn-sm btn-danger-text', onclick: () => revoke(r) }, 'Отозвать') : null,
         ]),
       },
     ],
-    emptyMessage: 'Выгрузок пока нет. Отметьте платежи на странице «Входящие» и нажмите «Выгрузить в реестр»',
+    emptyMessage: canWrite() ? 'Выгрузок пока нет. Отметьте платежи на странице «Входящие» и нажмите «Выгрузить в реестр»' : 'Выгрузок пока нет',
   });
 
   container.replaceChildren(el('div', { class: 'page' }, [

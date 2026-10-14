@@ -152,3 +152,14 @@ test('export errors are translated', () => {
   assert.match(describeApiError(err('too many payments: at most 20000 for export')).message, /В выгрузке не больше 20000/);
   assert.match(describeApiError(err('selection changed: expected 5 payments, found 7', 409)).message, /было 5, стало 7/);
 });
+
+test('user and permission errors are translated', () => {
+  assert.equal(describeApiError(err('forbidden', 403)).message, 'Недостаточно прав для этого действия');
+  assert.match(describeApiError(err('cannot remove the last admin', 409)).message, /последнего администратора/);
+  assert.equal(describeApiError(err('already exists: users_username_key', 409)).message, 'Пользователь с таким логином уже есть');
+  assert.deepEqual(describeApiError(err('username: must be 3-50 characters')), { field: 'username', message: 'От 3 до 50 символов' });
+  assert.deepEqual(describeApiError(err('username: must not contain spaces')), { field: 'username', message: 'Без пробелов' });
+  assert.deepEqual(describeApiError(err('password: must be at least 8 characters')), { field: 'password', message: 'Не короче 8 символов' });
+  assert.deepEqual(describeApiError(err('new_password: must be at least 8 characters')), { field: 'new_password', message: 'Не короче 8 символов' });
+  assert.deepEqual(describeApiError(err('current_password: is incorrect')), { field: 'current_password', message: 'Неверный пароль' });
+});

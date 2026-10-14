@@ -10,6 +10,7 @@ import { buildingFields, premisesFields } from '../fields.js';
 import { buildingKinds, premisesKinds, label, options } from '../../lib/labels.js';
 import { formatArea } from '../../lib/format.js';
 import { describeApiError } from '../../lib/apiErrors.js';
+import { canWrite } from '../../lib/permissions.js';
 import { notFoundView, definitionList, deletedBanner } from '../common.js';
 
 export async function buildingPage(container, { id }) {
@@ -116,11 +117,11 @@ export async function buildingPage(container, { id }) {
     el('nav', { class: 'breadcrumbs' }, [el('a', { href: '/buildings' }, 'Дома'), ' / ']),
     el('div', { class: 'section-header' }, [
       title,
-      el('div', { class: 'header-actions' }, [
+      canWrite() ? el('div', { class: 'header-actions' }, [
         el('button', { type: 'button', class: 'btn', onclick: importData }, 'Импорт из Excel'),
         el('button', { type: 'button', class: 'btn', onclick: edit }, 'Изменить'),
         el('button', { type: 'button', class: 'btn btn-ghost btn-danger-text', onclick: remove }, 'Удалить'),
-      ]),
+      ]) : null,
     ]),
     info,
     el('h2', { class: 'section-title' }, 'Помещения'),

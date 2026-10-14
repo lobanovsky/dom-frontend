@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { isAuthenticated, setAuthenticated, subscribeSession } from './session.js';
+import { isAuthenticated, setAuthenticated, subscribeSession, getUser, setUser } from './session.js';
 
 describe('session state', () => {
   test('starts unauthenticated and reflects setAuthenticated', () => {
@@ -20,5 +20,14 @@ describe('session state', () => {
     setAuthenticated(true);
     setAuthenticated(false);
     assert.deepEqual(seen, [true, false]);
+  });
+});
+
+describe('current user', () => {
+  test('is remembered and forgotten on logout', () => {
+    setUser({ username: 'a', role: 'viewer' });
+    assert.equal(getUser().role, 'viewer');
+    setAuthenticated(false);
+    assert.equal(getUser(), null);
   });
 });

@@ -6,6 +6,7 @@ import { describeApiError } from '../../lib/apiErrors.js';
 import { formatDate, formatMoney, todayIso } from '../../lib/format.js';
 import { loadPaymentRefs } from './common.js';
 import { runState, runPeriod, runSummary, connectionView, certNote, scheduleLabel, periodBody, cleanToken, runErrorText, balanceNote, balancesTotal, RUN_STATE_LABELS, TRIGGER_LABELS } from '../../lib/sberApi.js';
+import { canWrite } from '../../lib/permissions.js';
 
 const BADGE = { running: 'badge-warning', error: 'badge-danger', ok: 'badge-success' };
 const POLL_MS = 3000;
@@ -117,12 +118,12 @@ export async function sberApiPage(container) {
         status.configured ? el('p', { class: 'section-note' }, scheduleLabel(status.schedule_at, status.schedule_tz)) : null,
         note ? el('p', { class: 'section-note' }, note) : null,
         status.tokens_updated_at ? el('p', { class: 'section-note' }, `Токены обновлены: ${dateTime(status.tokens_updated_at)}`) : null,
-        el('div', { class: 'header-actions' }, [
+        canWrite() ? el('div', { class: 'header-actions' }, [
           el('button', { type: 'button', class: 'btn btn-primary', disabled: !ready || status.running, onclick: () => run(() => sberApi.sync(), 'Получение запущено') }, 'Загрузить сейчас'),
-        ]),
+        ]) : null,
       ]),
 
-      ready ? el('div', { class: 'page-section' }, [
+      ready && canWrite() ? el('div', { class: 'page-section' }, [
         el('h2', {}, 'Загрузить за период'),
         el('p', { class: 'section-note' }, 'Для первой загрузки истории. Пустые даты — последние дни; не больше 400 дней за раз. Повторная загрузка безопасна.'),
         el('div', { class: 'table-toolbar' }, [
@@ -132,7 +133,7 @@ export async function sberApiPage(container) {
         ]),
       ]) : null,
 
-      status.configured ? el('div', { class: 'page-section' }, [
+      status.configured && canWrite() ? el('div', { class: 'page-section' }, [
         el('h2', {}, 'Токен доступа'),
         el('p', { class: 'section-note' }, 'Нужен один раз (и если сервис не работал больше 180 дней): в личном кабинете Sber API → «Ключи доступа» выпустите токены и вставьте refresh_token. Дальше система обновляет его сама. Токен нигде не показывается.'),
         el('div', { class: 'table-toolbar' }, [

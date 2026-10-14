@@ -1,7 +1,8 @@
 import { createRouter } from './router.js';
 import { onUnauthenticated, onGlobalError, ApiError } from './api/client.js';
 import { me } from './api/auth.js';
-import { isAuthenticated, setAuthenticated } from './state/session.js';
+import { isAuthenticated, setAuthenticated, setUser } from './state/session.js';
+import { isAdmin } from './lib/permissions.js';
 import { setNavigate } from './state/nav.js';
 import { renderLoginPage } from './pages/login/loginPage.js';
 import { renderShell } from './pages/shell/shellLayout.js';
@@ -26,8 +27,18 @@ import { sberApiPage } from './pages/payments/sberApiPage.js';
 import { bankStatementPage } from './pages/payments/bankStatementPage.js';
 import { paymentRulesPage } from './pages/payments/paymentRulesPage.js';
 import { counterpartiesPage } from './pages/payments/counterpartiesPage.js';
+import { usersPage } from './pages/users/usersPage.js';
 
 const appRoot = document.getElementById('app');
+
+// Страницы только для администратора: сервер всё равно не отдаст данные, но и пустую страницу с ошибками показывать незачем.
+function adminOnly(mount) {
+  return (container, ...args) => {
+    if (isAdmin()) return mount(container, ...args);
+    container.replaceChildren(el('div', { class: 'card empty-state' }, [el('p', {}, 'Недостаточно прав для этой страницы'), el('a', { href: '/' }, 'На главную')]));
+    return undefined;
+  };
+}
 
 const routes = [
   { pattern: '/', mount: dashboardPage },
@@ -47,7 +58,8 @@ const routes = [
   { pattern: '/sber-api', mount: sberApiPage },
   { pattern: '/payments/outgoing', mount: outgoingPaymentsPage },
   { pattern: '/payment-categories', mount: paymentCategoriesPage },
-  { pattern: '/payment-rules', mount: paymentRulesPage },
+  { pattern: '/payment-rules', mount: adminOnly(paymentRulesPage) },
+  { pattern: '/users', mount: adminOnly(usersPage) },
   { pattern: '/counterparties', mount: counterpartiesPage },
 ];
 
@@ -79,7 +91,13 @@ function showAuth() {
   stopShell();
   // После входа возвращаемся туда, куда шли (кроме самой /login).
   const returnTo = window.location.pathname === '/login' ? '/' : window.location.pathname + window.location.search;
-  const onSuccess = () => {
+  const onSuccess = async () => {
+    try {
+      setUser(await me());
+    } catch (err) {
+      notifyGlobalError(err);
+      return;
+    }
     window.history.replaceState(null, '', returnTo);
     showShell();
   };
@@ -119,7 +137,7 @@ onUnauthenticated(() => {
 
 async function bootstrap() {
   try {
-    await me();
+    setUser(await me());
     showShell();
   } catch (err) {
     if (!(err instanceof ApiError && err.status === 401)) notifyGlobalError(err);

@@ -84,6 +84,11 @@ a.shell-brand {
   flex: 1;
 }
 
+.shell-user {
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
 .shell-nav {
   grid-area: nav;
   display: flex;
@@ -228,6 +233,11 @@ button.shell-nav-group {
   }
 
   .shell-header-spacer {
+    display: none;
+  }
+
+  /* На телефоне в шапке тесно: имя и роль пользователя не показываем. */
+  .shell-user {
     display: none;
   }
 

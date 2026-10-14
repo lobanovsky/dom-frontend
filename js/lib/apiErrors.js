@@ -32,6 +32,11 @@ const REASONS = [
   [/^must not be after date_to$/, 'Позже даты окончания'],
   [/^too long$/, 'Слишком длинный период (не больше 400 дней)'],
   [/^must not be empty$/, 'Не может быть пустым'],
+  [/^must be (\d+)-(\d+) characters$/, (m) => `От ${m[1]} до ${m[2]} символов`],
+  [/^must not contain spaces$/, 'Без пробелов'],
+  [/^must be at least (\d+) characters$/, (m) => `Не короче ${m[1]} символов`],
+  [/^must be at most (\d+) bytes$/, 'Слишком длинный пароль'],
+  [/^is incorrect$/, 'Неверный пароль'],
 ];
 
 // Понятные сообщения для уникальных ограничений БД (имя ограничения из миграции).
@@ -49,6 +54,7 @@ const CONFLICTS = {
   bank_statements_file_sha256_key: 'Эта выписка уже загружена',
   incoming_payments_external_id_key: 'Платёж с таким номером операции уже есть на этом счёте',
   payment_registries_file_sha256_key: 'Этот файл реестра уже загружен',
+  users_username_key: 'Пользователь с таким логином уже есть',
 };
 
 // Что мешает удалить запись: ключ из ответа бэкенда («has active premises») -> по-русски.
@@ -139,6 +145,8 @@ export function describeApiError(err, { action = 'save' } = {}) {
   if (raw === 'sum of ownership shares for the premises exceeds 1') {
     return { field: 'share_num', message: 'Сумма долей собственников превысит 1' };
   }
+  if (raw === 'forbidden') return { field: null, message: 'Недостаточно прав для этого действия' };
+  if (raw === 'cannot remove the last admin') return { field: null, message: 'Нельзя отключить или понизить последнего администратора' };
   if (raw === 'bank account not found') return { field: null, message: 'Банковский счёт не найден' };
   m = raw.match(/^registry file already loaded: registry (\d+)$/);
   if (m) return { field: null, message: `Этот файл уже загружен: реестр № ${m[1]}`, registryId: Number(m[1]) };

@@ -5,6 +5,7 @@ import { startStatementUpload } from '../../ui/statementImportDialog.js';
 import { formatDate, formatMoney } from '../../lib/format.js';
 import { describeApiError } from '../../lib/apiErrors.js';
 import { loadPaymentRefs, bankFilterOptions, dateFilters } from './common.js';
+import { canWrite } from '../../lib/permissions.js';
 
 const period = (r) => (r.period_from && r.period_to ? `${formatDate(r.period_from)} — ${formatDate(r.period_to)}` : '');
 
@@ -49,7 +50,7 @@ export async function bankStatementsPage(container) {
       { key: 'debit_count', label: 'Списаний' },
       { key: 'created_at', label: 'Загружена', render: (r) => formatDate(r.created_at) },
     ],
-    emptyMessage: 'Выписок пока нет. Загрузите файл обмена с 1С (.txt)',
+    emptyMessage: canWrite() ? 'Выписок пока нет. Загрузите файл обмена с 1С (.txt)' : 'Выписок пока нет',
   });
 
   const onFiles = (files) => startStatementUpload(files, { onImported: () => list.reload() });
@@ -57,13 +58,13 @@ export async function bankStatementsPage(container) {
   container.replaceChildren(el('div', { class: 'page' }, [
     el('div', { class: 'section-header' }, [
       el('h1', {}, 'Банковские выписки'),
-      el('div', { class: 'header-actions' }, [
+      canWrite() ? el('div', { class: 'header-actions' }, [
         ...uploadButton('Загрузить ZIP', { accept: '.zip,application/zip', multiple: false, primary: true, disabled, onFiles }),
         ...uploadButton('Загрузить файлы', { accept: '.txt,text/plain', multiple: true, primary: false, disabled, onFiles }),
-      ]),
+      ]) : null,
     ]),
     el('p', { class: 'field-help' }, 'Выписки в формате обмена с 1С («Клиент-банк — 1С», версия 1.03, файл .txt). Банковские счета берутся из файла, поэтому они должны быть добавлены в «Банковские счета»; если в файле несколько счетов, на каждый создаётся своя выписка. Выписки за пересекающиеся периоды загружать можно: операции, которые уже есть в базе, будут пропущены. В ZIP выписки ищутся во всех вложенных папках.'),
-    disabled ? el('div', { class: 'form-error' }, ['Сначала добавьте ', el('a', { href: '/bank-accounts' }, 'банковский счёт'), '.']) : null,
+    disabled && canWrite() ? el('div', { class: 'form-error' }, ['Сначала добавьте ', el('a', { href: '/bank-accounts' }, 'банковский счёт'), '.']) : null,
     list.element,
   ]));
 }

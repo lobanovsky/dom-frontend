@@ -5,6 +5,7 @@ import { openEntityForm } from './entityForm.js';
 import { toast } from './toast.js';
 import { describeApiError } from '../lib/apiErrors.js';
 import { PAGE_SIZES, loadPageSize, savePageSize } from '../lib/pageSize.js';
+import { canWrite } from '../lib/permissions.js';
 
 // Список записей одной сущности: фильтры, таблица, пагинация, добавление,
 // редактирование и удаление через модальную форму. Удаление мягкое: переключатель
@@ -26,7 +27,7 @@ import { PAGE_SIZES, loadPageSize, savePageSize } from '../lib/pageSize.js';
 export function createCrudList({
   api, columns, fields, watch, filters = [], fixedQuery = {}, fixed = {},
   entityTitle, addLabel = 'Добавить', emptyMessage, deleteMessage = (row) => 'Удалить запись?',
-  canEdit = true, canAdd = true, extraActions, groupBy, rowClass, newDefaults = {}, onReorder, selection,
+  canEdit = canWrite(), canAdd = true, extraActions, groupBy, rowClass, newDefaults = {}, onReorder, selection,
 }) {
   let offset = 0;
   let pageSize = loadPageSize();

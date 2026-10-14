@@ -66,3 +66,10 @@ test('toPayload: hidden list field is []', () => {
   const body = toPayload([{ name: 'phones', type: 'list', visible: () => false }], { phones: ['1'] });
   assert.deepEqual(body, { phones: [] });
 });
+
+test('password is sent as typed: no trimming, empty stays an empty string', () => {
+  const defs = [{ type: 'password', name: 'password' }];
+  assert.deepEqual(toPayload(defs, { password: ' a b ' }), { password: ' a b ' });
+  assert.deepEqual(toPayload(defs, { password: '' }), { password: '' });
+  assert.deepEqual(toPayload(defs, {}), { password: '' });
+});

@@ -16,6 +16,7 @@ import { premisesKinds, relations, accountPurposes, accountStatuses, label } fro
 import { formatArea, formatDate, formatMoney, formatPeriod, formatShare, formatTime, personName, isActiveOn, todayIso, registryLabel } from '../../lib/format.js';
 import { activeShareSum, describeShareSum } from '../../lib/shares.js';
 import { describeApiError } from '../../lib/apiErrors.js';
+import { canWrite } from '../../lib/permissions.js';
 import { notFoundView, definitionList, deletedBanner } from '../common.js';
 
 // Карточка помещения: сведения, собственники с долями, жители, лицевые счета
@@ -108,7 +109,7 @@ export async function premisesPage(container, { id }) {
           ],
           rows: items,
           emptyMessage: deleted ? 'Удалённых записей нет' : 'Собственники не указаны',
-          rowActions: deleted
+          rowActions: !canWrite() ? null : deleted
             ? (r) => [restoreButton(() => restoreRow(() => ownershipsApi.restore(r.id), loadOwners))]
             : (r) => [
               editButton(() => ownershipForm(r)),
@@ -151,7 +152,7 @@ export async function premisesPage(container, { id }) {
         ],
         rows: items,
         emptyMessage: deleted ? 'Удалённых записей нет' : 'Жители не указаны',
-        rowActions: deleted
+        rowActions: !canWrite() ? null : deleted
           ? (r) => [restoreButton(() => restoreRow(() => residenciesApi.restore(r.id), loadResidents))]
           : (r) => [
             editButton(() => residencyForm(r)),
@@ -201,7 +202,7 @@ export async function premisesPage(container, { id }) {
         el('div', { class: 'account-number' }, `№ ${account.number}`),
         el('div', { class: 'account-meta' }, `${label(accountPurposes, account.purpose)} · удалён ${formatDate(account.deleted_at)}`),
       ]),
-      el('div', { class: 'row-actions' }, restoreButton(() => restoreRow(() => accountsApi.restore(account.id), loadAccounts))),
+      el('div', { class: 'row-actions' }, canWrite() ? restoreButton(() => restoreRow(() => accountsApi.restore(account.id), loadAccounts)) : null),
     ]));
   }
 
@@ -245,8 +246,8 @@ export async function premisesPage(container, { id }) {
         el('div', { class: 'row-actions' }, [
           paymentsToggle,
           toggle,
-          editButton(() => accountForm(account)),
-          deleteButton(() => removeRow(`Удалить лицевой счёт № ${account.number}? Удалить можно только счёт без плательщиков.`, () => accountsApi.remove(account.id), loadAccounts)),
+          canWrite() ? editButton(() => accountForm(account)) : null,
+          canWrite() ? deleteButton(() => removeRow(`Удалить лицевой счёт № ${account.number}? Удалить можно только счёт без плательщиков.`, () => accountsApi.remove(account.id), loadAccounts)) : null,
         ]),
       ]),
       paymentsBody,
@@ -297,7 +298,7 @@ export async function premisesPage(container, { id }) {
       });
       toggle.querySelector('input').checked = deleted;
       host.replaceChildren(...[
-        el('div', { class: 'holders-tools' }, toggle),
+        canWrite() ? el('div', { class: 'holders-tools' }, toggle) : null,
         el('div', { class: deleted ? 'crud-table--deleted' : null }, renderTable({
           columns: [
             { key: 'holder', label: 'Плательщик', primary: true, render: (h) => holderName(h) },
@@ -305,14 +306,14 @@ export async function premisesPage(container, { id }) {
           ],
           rows: items,
           emptyMessage: deleted ? 'Удалённых записей нет' : 'Плательщики не указаны',
-          rowActions: deleted
+          rowActions: !canWrite() ? null : deleted
             ? (h) => [restoreButton(() => restoreRow(() => accountHoldersApi.restore(h.id), reload))]
             : (h) => [
               editButton(() => holderForm(account, h, reload)),
               deleteButton(() => removeRow(`Удалить плательщика «${holderName(h)}»?`, () => accountHoldersApi.remove(h.id), reload)),
             ],
         })),
-        deleted ? null : el('div', { class: 'form-actions' }, el('button', { type: 'button', class: 'btn btn-sm', onclick: () => holderForm(account, null, reload) }, '+ Добавить плательщика')),
+        deleted || !canWrite() ? null : el('div', { class: 'form-actions' }, el('button', { type: 'button', class: 'btn btn-sm', onclick: () => holderForm(account, null, reload) }, '+ Добавить плательщика')),
       ].filter(Boolean));
     } catch (err) {
       host.replaceChildren(errorStatus(err));
@@ -368,10 +369,10 @@ export async function premisesPage(container, { id }) {
     ]),
     el('div', { class: 'section-header' }, [
       title,
-      el('div', { class: 'header-actions' }, [
+      canWrite() ? el('div', { class: 'header-actions' }, [
         el('button', { type: 'button', class: 'btn', onclick: editPremises }, 'Изменить'),
         el('button', { type: 'button', class: 'btn btn-ghost btn-danger-text', onclick: removePremises }, 'Удалить'),
-      ]),
+      ]) : null,
     ]),
     info,
     section('Собственники', 'Добавить собственника', () => ownershipForm(null), ownersBody, (on) => { showDeleted.owners = on; loadOwners(); }),
@@ -385,6 +386,9 @@ export async function premisesPage(container, { id }) {
 }
 
 function section(titleText, addLabel, onAdd, body, onDeletedChange) {
+  if (!canWrite()) {
+    return el('section', { class: 'page-section' }, [el('div', { class: 'section-header section-header--sub' }, el('h2', {}, titleText)), body]);
+  }
   const addButton = el('button', { type: 'button', class: 'btn btn-primary btn-add', onclick: onAdd }, addLabel);
   const toggle = deletedToggle((checked) => {
     addButton.hidden = checked;

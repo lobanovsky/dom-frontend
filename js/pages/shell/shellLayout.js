@@ -1,7 +1,10 @@
 import { el } from '../../lib/dom.js';
 import { logout as apiLogout } from '../../api/auth.js';
 import { config } from '../../config.js';
-import { NAV, isActive, groupIsActive, loadOpenGroups, saveOpenGroups } from '../../lib/nav.js';
+import { getUser } from '../../state/session.js';
+import { roleLabel } from '../../lib/permissions.js';
+import { openPasswordDialog } from '../../ui/passwordDialog.js';
+import { navFor, isActive, groupIsActive, loadOpenGroups, saveOpenGroups } from '../../lib/nav.js';
 
 // SVG собираем через разметку: document.createElement('svg') создаёт элемент
 // в HTML-пространстве имён, и браузер его не рисует.
@@ -23,7 +26,7 @@ export function renderShell(container, { onLogout } = {}) {
   const nav = el(
     'nav',
     { class: 'shell-nav', id: navId, 'aria-label': 'Основная навигация' },
-    NAV.map((entry) => (entry.group ? navGroup(entry) : el('a', { href: entry.href, class: 'shell-nav-link' }, [navIcon(entry), entry.label]))),
+    navFor(getUser()?.role).map((entry) => (entry.group ? navGroup(entry) : el('a', { href: entry.href, class: 'shell-nav-link' }, [navIcon(entry), entry.label]))),
   );
 
   function navGroup(entry) {
@@ -85,10 +88,15 @@ export function renderShell(container, { onLogout } = {}) {
     'Выйти',
   );
 
+  const user = getUser();
+  const passwordButton = el('button', { type: 'button', class: 'btn btn-ghost', title: 'Сменить пароль', onclick: openPasswordDialog }, 'Пароль');
+
   const header = el('header', { class: 'shell-header' }, [
     menuButton,
     el('a', { class: 'shell-brand', href: '/' }, el('div', { class: 'shell-brand-name' }, config.appName)),
     el('div', { class: 'shell-header-spacer' }),
+    user ? el('span', { class: 'shell-user', title: roleLabel(user.role) }, [user.username, el('span', { class: 'shell-user-role' }, ` · ${roleLabel(user.role)}`)]) : null,
+    passwordButton,
     logoutButton,
   ]);
 

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { NAV, isActive, groupIsActive, loadOpenGroups, saveOpenGroups } from './nav.js';
+import { NAV, navFor, ADMIN_ONLY_PATHS, isActive, groupIsActive, loadOpenGroups, saveOpenGroups } from './nav.js';
 
 const finance = NAV.find((n) => n.group === 'Финансы');
 
@@ -39,4 +39,12 @@ test('open groups are persisted and survive broken storage', () => {
   assert.deepEqual([...loadOpenGroups(broken)], []);
   assert.doesNotThrow(() => saveOpenGroups(new Set(['x']), broken));
   assert.deepEqual([...loadOpenGroups({ getItem: () => 'not json' })], []);
+});
+
+test('viewer menu hides admin-only pages, admin sees all', () => {
+  const labels = (role) => navFor(role).flatMap((n) => (n.group ? n.items : [n])).map((n) => n.label);
+  assert.ok(labels('admin').includes('Правила') && labels('admin').includes('Пользователи'));
+  assert.ok(!labels('viewer').includes('Правила') && !labels('viewer').includes('Пользователи'));
+  assert.ok(labels('viewer').includes('Входящие') && labels('viewer').includes('Организации'));
+  assert.deepEqual(ADMIN_ONLY_PATHS.sort(), ['/payment-rules', '/users']);
 });

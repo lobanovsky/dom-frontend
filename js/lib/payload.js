@@ -9,6 +9,8 @@ function convert(def, value) {
   if (def.type === 'list') {
     return (Array.isArray(value) ? value : []).map((v) => String(v).trim()).filter(Boolean);
   }
+  // Пароль уходит как есть: пробелы по краям — часть пароля, пустой — «не менять».
+  if (def.type === 'password') return typeof value === 'string' ? value : '';
   if (value === undefined || value === null) return null;
   if (typeof value === 'string' && value.trim() === '') return null;
   if (def.type === 'number' || def.numeric) {

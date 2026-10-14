@@ -7,6 +7,7 @@ import { listInput } from '../ui/listInput.js';
 import { categoryColorPicker, categoryIconPicker } from '../ui/categoryStyle.js';
 import { conditionsEditor, actionEditor } from '../ui/ruleEditors.js';
 import { MATCH_MODES } from '../lib/rules.js';
+import { ROLES } from '../lib/permissions.js';
 
 // Описание полей форм для каждой сущности. Имена совпадают с JSON-полями API.
 
@@ -179,4 +180,22 @@ export const paymentRuleFields = ({ banks, categories, direction = 'incoming' })
   { type: 'picker', name: 'conditions', label: 'Условия', full: true, component: conditionsEditor({ banks, direction }),
     help: 'Все условия (или любое) должны подойти платежу. Несколько значений у одного условия означают «или».' },
   { type: 'picker', name: 'action', label: 'Действие', full: true, required: true, component: actionEditor({ categories, direction }) },
+];
+
+// --- Пользователи ---
+
+const passwordField = (opts) => ({ type: 'password', name: 'password', autocomplete: 'new-password', minLength: 8, maxLength: 72, ...opts });
+
+export const userCreateFields = [
+  textField('username', 'Логин', { required: true, full: true, minLength: 3, maxLength: 50, autocomplete: 'off' }),
+  selectField('role', 'Роль', options(ROLES), { required: true, full: true, help: 'Просмотр: видит все разделы и скачивает Excel и файлы, но ничего не меняет. Администратор: полный доступ, управляет пользователями' }),
+  passwordField({ label: 'Пароль', required: true, full: true, help: 'Не короче 8 символов. Передайте его пользователю: сменить пароль можно в шапке' }),
+];
+
+// Логин не меняется (поле только для показа и в запрос не уходит).
+export const userEditFields = [
+  textField('username', 'Логин', { virtual: true, disabled: true, full: true }),
+  selectField('role', 'Роль', options(ROLES), { required: true, full: true }),
+  checkboxField('active', 'Может входить в систему', { full: true, help: 'Если снять, пользователь сразу потеряет доступ, даже в уже открытом окне' }),
+  passwordField({ label: 'Новый пароль', full: true, help: 'Оставьте пустым, чтобы не менять. Если задать, все входы этого пользователя завершатся' }),
 ];

@@ -1,6 +1,6 @@
 // Пункты бокового меню и разбор активного пункта/группы. Без DOM, покрыто тестами.
 
-// Пункт: {href, label, icon}; группа: {group, icon, items: [пункт]}. Группы сворачиваются.
+// Пункт: {href, label, icon, adminOnly?}; группа: {group, icon, items: [пункт]}. Группы сворачиваются.
 export const NAV = [
   { href: '/', label: 'Обзор', icon: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>' },
   { href: '/buildings', label: 'Дома', icon: '<path d="M3 21h18M5 21V7l7-4 7 4v14M9 9h1M14 9h1M9 13h1M14 13h1M10 21v-4h4v4"/>' },
@@ -17,7 +17,7 @@ export const NAV = [
       { href: '/bank-statements', label: 'Выписки', icon: '<path d="M6 2h9l5 5v15H6zM14 2v6h6M9 13h8M9 17h8M9 9h3"/>' },
       { href: '/sber-api', label: 'Банк (Сбер)', icon: '<path d="M3 10l9-6 9 6M5 10v8M19 10v8M9 10v8M15 10v8M3 21h18"/>' },
       { href: '/counterparties', label: 'Контрагенты', icon: '<circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20v-1a5 5 0 0 1 5-5h2a5 5 0 0 1 5 5v1M16 14h1a4 4 0 0 1 4 4v1"/>' },
-      { href: '/payment-rules', label: 'Правила', icon: '<path d="M4 6h16M7 12h10M10 18h4"/>' },
+      { href: '/payment-rules', adminOnly: true, label: 'Правила', icon: '<path d="M4 6h16M7 12h10M10 18h4"/>' },
     ],
   },
   {
@@ -27,9 +27,19 @@ export const NAV = [
       { href: '/organizations', label: 'Организации', icon: '<path d="M3 21h18M6 21V10M10 21V10M14 21V10M18 21V10M12 3l9 5H3z"/>' },
       { href: '/bank-accounts', label: 'Банковские счета', icon: '<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/>' },
       { href: '/payment-categories', label: 'Категории платежей', icon: '<path d="M20.6 13.4l-7.2 7.2a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8zM7.5 7.5h.01"/>' },
+      { href: '/users', adminOnly: true, label: 'Пользователи', icon: '<circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/>' },
     ],
   },
 ];
+
+// Пути, доступные только администратору (страница в меню скрыта, а прямой заход закрывает app.js).
+export const ADMIN_ONLY_PATHS = NAV.flatMap((n) => (n.group ? n.items : [n])).filter((n) => n.adminOnly).map((n) => n.href);
+
+// Меню для роли: пункты «только админу» скрыты, пустые группы убираются.
+export function navFor(role) {
+  const visible = (item) => !item.adminOnly || role === 'admin';
+  return NAV.map((n) => (n.group ? { ...n, items: n.items.filter(visible) } : n)).filter((n) => (n.group ? n.items.length > 0 : visible(n)));
+}
 
 // Пункт активен для адреса path. Карточка помещения — часть раздела «Дома».
 export function isActive(href, path) {

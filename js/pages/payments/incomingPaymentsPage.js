@@ -12,6 +12,7 @@ import { openAssignDialog, openAssignHistory } from '../../ui/assignDialog.js';
 import { scopeFromQuery, originLabel, directionTexts } from '../../lib/rules.js';
 import { payments } from '../../lib/registryImport.js';
 import { createExportSelection } from '../../ui/exportSelection.js';
+import { canWrite } from '../../lib/permissions.js';
 
 // Список входящих платежей. Используется и на странице «Входящие платежи», и на странице реестра
 // (fixedQuery: {registry_id}, showRegistry: false) и на странице выписки (fixedQuery: {statement_id}).
@@ -105,6 +106,8 @@ function excelButton(list, direction) {
 // Кнопки «Определить лицевые счета» («Определить категории» для исходящих) и «История определений» для списка платежей:
 // правила применяются по его текущим фильтрам.
 export function assignActions(list, { direction = 'incoming' } = {}) {
+  // Просмотр: только скачивание Excel. Определение счетов, правила и история с откатами меняют данные.
+  if (!canWrite()) return el('div', { class: 'header-actions' }, excelButton(list, direction));
   return el('div', { class: 'header-actions' }, [
     el('button', {
       type: 'button', class: 'btn btn-primary',
@@ -138,13 +141,14 @@ export async function incomingPaymentsPage(container) {
     container.replaceChildren(el('div', { class: 'table-status table-status-error' }, describeApiError(err).message));
     return;
   }
-  const exporting = createExportSelection({ bankName: refs.bankName });
-  const list = createIncomingList(refs, { selection: exporting.selection });
-  exporting.bind(list);
+  // Выгрузка в реестр меняет данные (помечает платежи), поэтому галочки и панель выбора только у администратора.
+  const exporting = canWrite() ? createExportSelection({ bankName: refs.bankName }) : null;
+  const list = createIncomingList(refs, { selection: exporting?.selection });
+  exporting?.bind(list);
   container.replaceChildren(el('div', { class: 'page' }, [
     el('div', { class: 'section-header' }, [el('h1', {}, 'Входящие платежи'), assignActions(list)]),
     refs.banks.length ? null : el('div', { class: 'form-error' }, ['Сначала добавьте ', el('a', { href: '/bank-accounts' }, 'банковский счёт'), '.']),
-    exporting.bar,
+    exporting?.bar,
     list.element,
   ]));
 }

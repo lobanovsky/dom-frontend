@@ -6,6 +6,7 @@ import { toast } from '../../ui/toast.js';
 import { notFoundView, definitionList } from '../common.js';
 import { loadPaymentRefs } from './common.js';
 import { createIncomingList, assignActions } from './incomingPaymentsPage.js';
+import { canWrite } from '../../lib/permissions.js';
 
 // Реестр: сводка по файлу и таблица его платежей.
 export async function paymentRegistryPage(container, { id }) {
@@ -25,7 +26,7 @@ export async function paymentRegistryPage(container, { id }) {
     el('div', { class: 'section-header' }, [
       el('h1', {}, `Реестр ${registry.registry_number || `№ ${registry.id}`}`),
       el('div', { class: 'header-actions' }, [
-        registry.payment_id ? null : el('button', { type: 'button', class: 'btn', onclick: () => relink(container, { id }) }, 'Найти платёж в выписке'),
+        registry.payment_id || !canWrite() ? null : el('button', { type: 'button', class: 'btn', onclick: () => relink(container, { id }) }, 'Найти платёж в выписке'),
         el('a', { class: 'btn', href: paymentRegistriesApi.fileUrl(registry.id), download: registry.file_name }, 'Скачать файл'),
       ].filter(Boolean)),
     ]),
