@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { formatDate, formatPeriod, formatShare, formatArea, personName, isActiveOn, todayIso, registryLabel } from './format.js';
+import { formatDateTime, formatDate, formatPeriod, formatShare, formatArea, personName, isActiveOn, todayIso, registryLabel } from './format.js';
 
 test('formatDate', () => {
   assert.equal(formatDate('2020-03-05'), '05.03.2020');
@@ -71,4 +71,11 @@ test('registryLabel prefers the file name', () => {
   assert.equal(registryLabel({ registry_file_name: '081026_VTB_231068_001.txt', registry_number: '12' }), 'Реестр 081026_VTB_231068_001.txt');
   assert.equal(registryLabel({ registry_number: '12' }), 'Реестр 12');
   assert.equal(registryLabel({}), 'Реестр');
+});
+
+test('formatDateTime', () => {
+  const local = new Date(2026, 9, 5, 9, 7).toISOString();
+  assert.equal(formatDateTime(local), '05.10.2026 09:07');
+  assert.equal(formatDateTime(null), '');
+  assert.equal(formatDateTime('не дата'), '');
 });

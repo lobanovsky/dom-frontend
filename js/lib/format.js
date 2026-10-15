@@ -51,6 +51,13 @@ export function formatTime(value) {
   return value ? String(value).slice(0, 5) : '';
 }
 
+// Момент времени (ISO с поясом) в часовом поясе браузера: "15.10.2026 09:40"; пустое или неверное значение -> ''.
+export function formatDateTime(value) {
+  const d = value ? new Date(value) : null;
+  if (!d || Number.isNaN(d.getTime())) return '';
+  return `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 const MONTHS = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
 
 // "2026-10-05" -> «Октябрь 2026»; пустое или неверное значение -> ''.

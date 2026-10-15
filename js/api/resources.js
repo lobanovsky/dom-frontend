@@ -20,6 +20,7 @@ export const usersApi = {
   list: (query) => client.get('/api/v1/users', { query }),
   create: (body) => client.post('/api/v1/users', body),
   update: (id, body) => client.put(`/api/v1/users/${id}`, body),
+  logins: (query) => client.get('/api/v1/users/logins', { query }), // история входов, новые сверху
 };
 
 export const organizationsApi = resource('organizations');
