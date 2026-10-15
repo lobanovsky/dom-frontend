@@ -36,6 +36,7 @@ function everyText(every) {
   const h = Number(m?.[1] || 0);
   const min = Number(m?.[2] || 0);
   if (!m || (!h && !min)) return `раз в ${every}`;
+  if (h === 24 && !min) return 'раз в сутки';
   if (h && !min) return h === 1 ? 'раз в час' : `раз в ${h} ${plural(h, 'час', 'часа', 'часов')}`;
   if (!h) return `раз в ${min} ${plural(min, 'минуту', 'минуты', 'минут')}`;
   return `раз в ${h} ч ${min} мин`;

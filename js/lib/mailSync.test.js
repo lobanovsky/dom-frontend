@@ -26,6 +26,7 @@ test('runSummary', () => {
 test('scheduleLabel', () => {
   assert.match(scheduleLabel(''), /только по кнопке/);
   assert.match(scheduleLabel('1h0m0s'), /раз в час/);
+  assert.match(scheduleLabel('24h0m0s'), /раз в сутки/);
   assert.match(scheduleLabel('3h0m0s'), /раз в 3 часа/);
   assert.match(scheduleLabel('30m0s'), /раз в 30 минут/);
   assert.match(scheduleLabel('1h30m0s'), /раз в 1 ч 30 мин/);
