@@ -168,3 +168,14 @@ test('mail errors are translated', () => {
   assert.equal(describeApiError(err('mail is not configured', 409)).message, 'Почта не настроена на сервере');
   assert.match(describeApiError(err('mail sync is already running', 409)).message, /уже идёт/);
 });
+
+test('meter validation errors are translated', () => {
+  assert.deepEqual(describeApiError(err('t1: must not be less than previous reading')), { field: 't1', message: 'Меньше предыдущего показания' });
+  assert.deepEqual(describeApiError(err('t3: is required for this meter')), { field: 't3', message: 'Обязательно для этого счётчика' });
+  assert.deepEqual(describeApiError(err('initial_t1: must have at most 3 decimal places')), { field: 'initial_t1', message: 'Не больше трёх знаков после запятой' });
+  assert.deepEqual(describeApiError(err('reading_date: must not be before the meter installation date')), { field: 'reading_date', message: 'Раньше ввода счётчика в эксплуатацию' });
+  assert.equal(describeApiError(err('already exists: meters_serial_number_key', 409)).message, 'Счётчик с таким номером и видом ресурса уже есть');
+  assert.equal(describeApiError(err('already exists: meter_readings_meter_date_key', 409)).message, 'Показание на эту дату уже есть');
+  assert.match(describeApiError(err('cannot delete: has active meters')).message, /действующие счётчики/);
+  assert.match(describeApiError(err('cannot delete: has active readings')).message, /действующие показания/);
+});

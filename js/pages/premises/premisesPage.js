@@ -17,6 +17,7 @@ import { formatArea, formatDate, formatMoney, formatPeriod, formatShare, formatT
 import { activeShareSum, describeShareSum } from '../../lib/shares.js';
 import { describeApiError } from '../../lib/apiErrors.js';
 import { canWrite } from '../../lib/permissions.js';
+import { createMetersList } from '../meters/metersList.js';
 import { notFoundView, definitionList, deletedBanner } from '../common.js';
 
 // Карточка помещения: сведения, собственники с долями, жители, лицевые счета
@@ -378,6 +379,15 @@ export async function premisesPage(container, { id }) {
     section('Собственники', 'Добавить собственника', () => ownershipForm(null), ownersBody, (on) => { showDeleted.owners = on; loadOwners(); }),
     section('Жители', 'Добавить жителя', () => residencyForm(null), residentsBody, (on) => { showDeleted.residents = on; loadResidents(); }),
     section('Лицевые счета', 'Открыть счёт', () => accountForm(null), accountsBody, (on) => { showDeleted.accounts = on; loadAccounts(); }),
+    el('section', { class: 'page-section' }, [
+      el('div', { class: 'section-header section-header--sub' }, el('h2', {}, 'Счётчики')),
+      createMetersList({
+        fixedQuery: { premises_id: premises.id },
+        fixed: { premises_id: premises.id },
+        showLocation: false,
+        emptyMessage: 'Счётчиков в помещении пока нет',
+      }).element,
+    ]),
   ]));
 
   loadOwners();

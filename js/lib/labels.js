@@ -35,6 +35,11 @@ export const accountPurposes = {
 
 export const accountStatuses = { active: 'Открыт', closed: 'Закрыт' };
 
+export const meterResources = { cold_water: 'Холодная вода', hot_water: 'Горячая вода', electricity: 'Электроэнергия' };
+
+// Число тарифов электросчётчика (у водяного счётчика всегда один).
+export const meterTariffs = { 1: 'Однотарифный', 2: 'Двухтарифный (Т1, Т2)', 3: 'Трёхтарифный (Т1, Т2, Т3)' };
+
 export const ownerKinds = { person: 'Физлицо', legal_entity: 'Юрлицо' };
 
 export function label(dict, value) {

@@ -6,6 +6,7 @@ export const NAV = [
   { href: '/buildings', label: 'Дома', icon: '<path d="M3 21h18M5 21V7l7-4 7 4v14M9 9h1M14 9h1M9 13h1M14 13h1M10 21v-4h4v4"/>' },
   { href: '/persons', label: 'Физлица', icon: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>' },
   { href: '/legal-entities', label: 'Юрлица', icon: '<rect x="3" y="7" width="18" height="14" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 13h18"/>' },
+  { href: '/meters', label: 'Счётчики', icon: '<circle cx="12" cy="12" r="9"/><path d="M12 12l4-4M7 12h1M12 7v1M17 12h-1"/>' },
   {
     group: 'Финансы',
     icon: '<circle cx="12" cy="12" r="9"/><path d="M14.5 9.2c-.4-.8-1.300-1.200-2.500-1.200-1.500 0-2.500.8-2.500 1.900 0 2.600 5.200 1.300 5.200 4 0 1.100-1.100 1.900-2.700 1.900-1.300 0-2.300-.5-2.700-1.400M12 6v1.500M12 16.500V18"/>',

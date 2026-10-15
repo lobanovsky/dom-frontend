@@ -28,6 +28,8 @@ import { mailSyncPage } from './pages/payments/mailSyncPage.js';
 import { bankStatementPage } from './pages/payments/bankStatementPage.js';
 import { paymentRulesPage } from './pages/payments/paymentRulesPage.js';
 import { counterpartiesPage } from './pages/payments/counterpartiesPage.js';
+import { metersPage } from './pages/meters/metersPage.js';
+import { meterPage } from './pages/meters/meterPage.js';
 import { usersPage } from './pages/users/usersPage.js';
 
 const appRoot = document.getElementById('app');
@@ -49,6 +51,8 @@ const routes = [
   { pattern: '/buildings', mount: buildingsPage },
   { pattern: '/buildings/:id', mount: buildingPage },
   { pattern: '/premises/:id', mount: premisesPage },
+  { pattern: '/meters', mount: metersPage },
+  { pattern: '/meters/:id', mount: meterPage },
   { pattern: '/bank-accounts', mount: bankAccountsPage },
   { pattern: '/payments/incoming', mount: incomingPaymentsPage },
   { pattern: '/payment-registries', mount: paymentRegistriesPage },

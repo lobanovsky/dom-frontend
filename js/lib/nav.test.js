@@ -14,7 +14,7 @@ test('finance group holds the requested items', () => {
 test('every route appears in the menu exactly once', () => {
   const hrefs = NAV.flatMap((n) => (n.group ? n.items : [n])).map((n) => n.href);
   assert.equal(new Set(hrefs).size, hrefs.length);
-  for (const href of ['/payments/incoming', '/payments/outgoing', '/payment-registries', '/bank-statements', '/sber-api', '/mail', '/counterparties', '/payment-rules', '/bank-accounts', '/payment-categories', '/organizations', '/buildings', '/persons', '/legal-entities']) {
+  for (const href of ['/payments/incoming', '/payments/outgoing', '/payment-registries', '/bank-statements', '/sber-api', '/mail', '/counterparties', '/payment-rules', '/bank-accounts', '/payment-categories', '/organizations', '/buildings', '/persons', '/legal-entities', '/meters']) {
     assert.ok(hrefs.includes(href), href);
   }
 });

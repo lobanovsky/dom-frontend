@@ -1,7 +1,9 @@
-import { textField, numberField, dateField, selectField, checkboxField } from '../lib/fields.js';
+import { textField, numberField, dateField, textareaField, selectField, checkboxField } from '../lib/fields.js';
 import {
   options, bankLabel, organizationKinds, buildingKinds, premisesKinds, relations, accountPurposes, accountStatuses, ownerKinds,
+  meterResources, meterTariffs,
 } from '../lib/labels.js';
+import { tariffColumns, resourceUnit, previousReadingText } from '../lib/meters.js';
 import { entityPicker } from '../ui/picker.js';
 import { listInput } from '../ui/listInput.js';
 import { categoryColorPicker, categoryIconPicker } from '../ui/categoryStyle.js';
@@ -108,6 +110,45 @@ export const accountHolderFields = (values) => [
   dateField('valid_from', 'Плательщик с', { required: true }),
   dateField('valid_to', 'Плательщик по', { help: 'Пусто — платит сейчас' }),
 ];
+
+// --- Счётчики ---
+
+// target — как выбирается привязка счётчика: 'premises' — помещение (поиск), 'building' — дом из списка buildings,
+// 'fixed' — привязка задана снаружи (fixed формы: карточка помещения или дома). Нужен watch: ['resource', 'tariffs'].
+export const meterFields = ({ target = 'fixed', buildings = [] } = {}) => (values) => {
+  const electric = values.resource === 'electricity';
+  const tariffs = electric ? Number(values.tariffs) || 1 : 1;
+  const initial = (n) => (tariffs > 1 ? `Начальное показание Т${n}` : 'Начальное показание');
+  return [
+    target === 'premises' ? { type: 'picker', name: 'premises_id', label: 'Помещение', required: true, full: true, component: entityPicker('premises') } : null,
+    target === 'building' ? selectField('building_id', 'Дом', buildings.map((b) => ({ value: String(b.id), label: b.address })), { required: true, numeric: true, full: true, placeholder: 'Выберите' }) : null,
+    selectField('resource', 'Что измеряет', options(meterResources), { required: true, placeholder: 'Выберите' }),
+    { ...selectField('tariffs', 'Тарифность', options(meterTariffs), { required: true, numeric: true }), visible: (v) => v.resource === 'electricity' },
+    textField('serial_number', 'Номер счётчика', { required: true }),
+    textField('model', 'Модель'),
+    dateField('installed_at', 'Введён в эксплуатацию', { required: true }),
+    dateField('removed_at', 'Окончание работы', { help: 'Пусто — работает. После этой даты счётчик считается неактивным (замена, снятие). Сам счётчик остаётся в системе' }),
+    dateField('verified_at', 'Дата последней поверки'),
+    dateField('next_verification_at', 'Дата следующей поверки'),
+    numberField('initial_t1', initial(1), { min: 0, step: 0.001, inputmode: 'decimal', help: `Показания при установке (${resourceUnit(values.resource) || 'ед.'}); пусто — 0` }),
+    { ...numberField('initial_t2', initial(2), { min: 0, step: 0.001, inputmode: 'decimal' }), visible: () => tariffs >= 2 },
+    { ...numberField('initial_t3', initial(3), { min: 0, step: 0.001, inputmode: 'decimal' }), visible: () => tariffs >= 3 },
+    { ...numberField('coefficient', 'Коэффициент трансформации', { min: 0.001, step: 0.001, inputmode: 'decimal', help: 'Расход = разность показаний × коэффициент. Обычно 1' }), visible: () => electric },
+    textareaField('comment', 'Комментарий', { full: true }),
+  ].filter(Boolean);
+};
+
+// Показание счётчика: по одному полю на тариф. meter — счётчик из ответа API (число тарифов, прошлое показание для подсказки).
+export const meterReadingFields = (meter) => {
+  const unit = resourceUnit(meter.resource);
+  return [
+    dateField('reading_date', 'Дата показаний', { required: true }),
+    ...tariffColumns(meter.tariffs).map((c, i) => numberField(c.key, `${c.label}, ${unit}`, {
+      required: true, min: 0, step: 0.001, inputmode: 'decimal', help: i === 0 ? previousReadingText(meter) : undefined,
+    })),
+    textField('comment', 'Комментарий', { full: true }),
+  ];
+};
 
 // --- Платежи ---
 

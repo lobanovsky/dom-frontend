@@ -26,6 +26,21 @@ const REASONS = [
   [/^must contain exactly (\d+) digits$/, (m) => `Должно быть ровно ${m[1]} цифр`],
   [/^must contain 10 or 12 digits$/, 'Должно быть 10 или 12 цифр'],
   [/^must have at most 2 decimal places$/, 'Не больше двух знаков после запятой'],
+  [/^must have at most 3 decimal places$/, 'Не больше трёх знаков после запятой'],
+  [/^must not be negative$/, 'Не может быть отрицательным'],
+  [/^exactly one of premises_id and building_id must be set$/, 'Укажите помещение или дом'],
+  [/^must be 1 for water meters$/, 'У счётчика воды один тариф'],
+  [/^must not be before installed_at$/, 'Раньше даты ввода в эксплуатацию'],
+  [/^must not be before verified_at$/, 'Раньше даты последней поверки'],
+  [/^must not be less than previous reading$/, 'Меньше предыдущего показания'],
+  [/^must not be greater than next reading$/, 'Больше следующего показания'],
+  [/^is required for this meter$/, 'Обязательно для этого счётчика'],
+  [/^must be empty for this meter$/, 'У этого счётчика нет такого тарифа'],
+  [/^must not be before the meter installation date$/, 'Раньше ввода счётчика в эксплуатацию'],
+  [/^must not be after the meter removal date$/, 'Позже даты окончания работы счётчика'],
+  [/^meter not found$/, 'Счётчик не найден'],
+  [/^cannot be changed while the meter has readings$/, 'Нельзя менять, пока у счётчика есть показания'],
+  [/^existing readings are outside the working period or below the initial readings$/, 'Уже введённые показания выходят за период работы счётчика или меньше начальных'],
   [/^must not be set together with personal_account_id$/, 'Нельзя указать и лицевой счёт, и категорию'],
   [/^time must be HH:MM:SS$/, 'Время в формате чч:мм'],
   [/^must not be in the future$/, 'Дата не может быть в будущем'],
@@ -54,6 +69,8 @@ const CONFLICTS = {
   bank_statements_file_sha256_key: 'Эта выписка уже загружена',
   incoming_payments_external_id_key: 'Платёж с таким номером операции уже есть на этом счёте',
   payment_registries_file_sha256_key: 'Этот файл реестра уже загружен',
+  meters_serial_number_key: 'Счётчик с таким номером и видом ресурса уже есть',
+  meter_readings_meter_date_key: 'Показание на эту дату уже есть',
   users_username_key: 'Пользователь с таким логином уже есть',
 };
 
@@ -70,6 +87,8 @@ const ACTIVE_CHILDREN = {
   'payment registries': 'реестры платежей',
   'incoming payments': 'входящие платежи',
   'outgoing payments': 'исходящие платежи',
+  meters: 'счётчики',
+  readings: 'показания',
 };
 
 // На какую удалённую запись ссылаются при сохранении или восстановлении.
@@ -85,6 +104,7 @@ const DELETED_PARENTS = {
   'payment registry': 'реестр платежей',
   'bank statement': 'банковская выписка',
   'payment category': 'категория платежа',
+  meter: 'счётчик',
 };
 
 const RULE_REASONS = [
@@ -202,7 +222,7 @@ export function describeApiError(err, { action = 'save' } = {}) {
   if (m) return { field: null, message: `Строка ${m[1]}: ${describeApiError(new Error(m[2])).message}` };
   if (raw === 'not found') return { field: null, message: 'Запись не найдена' };
 
-  const fieldError = raw.match(/^([a-z_.]+): (.+)$/);
+  const fieldError = raw.match(/^([a-z0-9_.]+): (.+)$/);
   if (fieldError) {
     // action.pattern, action.premises_id -> поле формы «action»
     const field = fieldError[1].split('.')[0];

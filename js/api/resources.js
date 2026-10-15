@@ -53,6 +53,10 @@ export const residenciesApi = resource('residencies');
 export const accountsApi = resource('accounts');
 export const accountHoldersApi = resource('account-holders');
 
+// Счётчики воды и электроэнергии (индивидуальные у помещений, общедомовые у дома) и их показания.
+export const metersApi = resource('meters');
+export const meterReadingsApi = resource('meter-readings');
+
 // Платежи. Банковский счёт организации (bank-accounts) — не лицевой счёт помещения (accounts).
 export const bankAccountsApi = resource('bank-accounts');
 export const paymentCategoriesApi = resource('payment-categories');
