@@ -42,6 +42,8 @@ Run the backend first (`../dom-backend`: `set -a; . ./.env; set +a; go run ./cmd
 - **Big uploads**: `api/resources.js` runs files through `lib/gzip.js#maybeGzip` (`CompressionStream`, `.txt` ≥ 256 KB → `<name>.gz`) before posting registries and statements; the backend inflates them. Upload failures stay in the dialog (`uploadErrorText`) instead of a short-lived toast.
 - Mobile: single breakpoint 768px; tables become cards via `td[data-label]` CSS; modals become bottom sheets; nav is an off-canvas drawer. SVG must be created from markup (`html:`), not `el('svg')` (wrong namespace).
 
+**Mail page** (`js/pages/payments/mailSyncPage.js`, `js/lib/mailSync.js`, route `/mail`, «Финансы → Почта»): status/journal of the backend job that pulls VTB registries from an IMAP folder (`mailApi`: `GET /mail/status`, `POST /mail/sync`); modelled on `sberApiPage.js` (polls while `running`). The button is hidden without `canWrite()`; per-file result reuses `registryImport.statusInfo`, plus `no_account` with a hint to add the registry code to the bank account.
+
 ## Deploy
 
 `.github/workflows/build-and-deploy-frontend.yml`: test → Docker Hub → SSH deploy to `DEPLOY_HOST_PROJECT_PATH` with `/healthz` check (goes through Caddy to the backend) and rollback. Container `dom-frontend` joins external networks `dom-network` and `housekpr-network` (Traefik); the workflow only checks they exist, never creates them. Traefik issues the Let's Encrypt cert from compose labels (router `dom-frontend`, host `dom.lobanovsky.ru`, resolver `letsEncrypt`, HTTP-01) — don't rename the router/host or touch Traefik config, to avoid repeated issuance and LE rate limits.

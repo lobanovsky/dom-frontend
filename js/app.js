@@ -24,6 +24,7 @@ import { paymentExportsPage } from './pages/payments/paymentExportsPage.js';
 import { paymentRegistryPage } from './pages/payments/paymentRegistryPage.js';
 import { bankStatementsPage } from './pages/payments/bankStatementsPage.js';
 import { sberApiPage } from './pages/payments/sberApiPage.js';
+import { mailSyncPage } from './pages/payments/mailSyncPage.js';
 import { bankStatementPage } from './pages/payments/bankStatementPage.js';
 import { paymentRulesPage } from './pages/payments/paymentRulesPage.js';
 import { counterpartiesPage } from './pages/payments/counterpartiesPage.js';
@@ -56,6 +57,7 @@ const routes = [
   { pattern: '/bank-statements', mount: bankStatementsPage },
   { pattern: '/bank-statements/:id', mount: bankStatementPage },
   { pattern: '/sber-api', mount: sberApiPage },
+  { pattern: '/mail', mount: mailSyncPage },
   { pattern: '/payments/outgoing', mount: outgoingPaymentsPage },
   { pattern: '/payment-categories', mount: paymentCategoriesPage },
   { pattern: '/payment-rules', mount: adminOnly(paymentRulesPage) },

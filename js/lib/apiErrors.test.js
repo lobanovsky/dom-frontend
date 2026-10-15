@@ -163,3 +163,8 @@ test('user and permission errors are translated', () => {
   assert.deepEqual(describeApiError(err('new_password: must be at least 8 characters')), { field: 'new_password', message: 'Не короче 8 символов' });
   assert.deepEqual(describeApiError(err('current_password: is incorrect')), { field: 'current_password', message: 'Неверный пароль' });
 });
+
+test('mail errors are translated', () => {
+  assert.equal(describeApiError(err('mail is not configured', 409)).message, 'Почта не настроена на сервере');
+  assert.match(describeApiError(err('mail sync is already running', 409)).message, /уже идёт/);
+});

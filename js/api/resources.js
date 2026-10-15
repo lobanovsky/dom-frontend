@@ -109,6 +109,12 @@ export const bankStatementsApi = {
 };
 
 // Получение выписок напрямую из банка (Sber API): состояние, запуск, токены.
+// Реестры из почты: статус и журнал запусков, ручная проверка ящика (только администратор).
+export const mailApi = {
+  status: () => client.get('/api/v1/mail/status'),
+  sync: () => client.post('/api/v1/mail/sync'),
+};
+
 export const sberApi = {
   status: () => client.get('/api/v1/sber/status'),
   sync: (body) => client.post('/api/v1/sber/sync', body),

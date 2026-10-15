@@ -179,6 +179,8 @@ export function describeApiError(err, { action = 'save' } = {}) {
   if (raw === 'sber api is not configured') return { field: null, message: 'Интеграция со Sber API не настроена на сервере' };
   if (raw === 'sber tokens are not set') return { field: null, message: 'Токены Sber API не введены: вставьте refresh_token из личного кабинета' };
   if (raw === 'sber sync is already running') return { field: null, message: 'Получение выписок уже идёт, дождитесь окончания' };
+  if (raw === 'mail is not configured') return { field: null, message: 'Почта не настроена на сервере' };
+  if (raw === 'mail sync is already running') return { field: null, message: 'Проверка почты уже идёт, дождитесь окончания' };
   if (raw === 'payments belong to several bank accounts') return { field: null, message: 'В одном реестре могут быть платежи только одного банковского счёта: выберите счёт в фильтре' };
   if (raw === 'no payments to export') return { field: null, message: 'Нет платежей для выгрузки: нужны платежи из выписок с лицевым счётом, ещё не выгруженные' };
   if (raw === 'organization inn must be 10 or 12 digits') return { field: null, message: 'У организации счёта не указан ИНН (10 или 12 цифр): он нужен для имени файла реестра' };
