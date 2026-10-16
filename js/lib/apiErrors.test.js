@@ -179,3 +179,15 @@ test('meter validation errors are translated', () => {
   assert.match(describeApiError(err('cannot delete: has active meters')).message, /действующие счётчики/);
   assert.match(describeApiError(err('cannot delete: has active readings')).message, /действующие показания/);
 });
+
+test('ошибки загрузки показаний счётчиков', async () => {
+  const { describeApiError, describeImportRowError } = await import('./apiErrors.js');
+  assert.equal(describeImportRowError('premises number is required'), 'не заполнен номер квартиры');
+  assert.equal(describeImportRowError('t2: "abc" is not a number'), 'Т2: «abc» — не число');
+  assert.equal(describeImportRowError('t1: must not be negative'), 'Т1: показание не может быть отрицательным');
+  assert.equal(describeImportRowError('duplicate meter number "5" (already in row 2)'), 'повтор: номер счётчика «5» уже в строке 2');
+  const msg = (raw) => describeApiError(Object.assign(new Error(raw), { status: 422 })).message;
+  assert.equal(msg('row 4: premises: apartment "99" not found in this building'), 'Строка 4: квартира «99» не найдена в этом доме');
+  assert.equal(msg('row 3: meter "7" belongs to another premises'), 'Строка 3: счётчик «7» установлен в другом помещении');
+  assert.equal(msg('row 3: t1: must not be less than previous reading'), 'Строка 3: Меньше предыдущего показания');
+});

@@ -39,6 +39,7 @@ const REASONS = [
   [/^must not be before the meter installation date$/, 'Раньше ввода счётчика в эксплуатацию'],
   [/^must not be after the meter removal date$/, 'Позже даты окончания работы счётчика'],
   [/^meter not found$/, 'Счётчик не найден'],
+  [/^apartment "(.*)" not found in this building$/, (m) => `квартира «${m[1]}» не найдена в этом доме`],
   [/^cannot be changed while the meter has readings$/, 'Нельзя менять, пока у счётчика есть показания'],
   [/^existing readings are outside the working period or below the initial readings$/, 'Уже введённые показания выходят за период работы счётчика или меньше начальных'],
   [/^must not be set together with personal_account_id$/, 'Нельзя указать и лицевой счёт, и категорию'],
@@ -221,6 +222,13 @@ export function describeApiError(err, { action = 'save' } = {}) {
   m = raw.match(/^row (\d+): (.+)$/);
   if (m) return { field: null, message: `Строка ${m[1]}: ${describeApiError(new Error(m[2])).message}` };
   if (raw === 'not found') return { field: null, message: 'Запись не найдена' };
+  m = raw.match(/^meter "(.*)" not found$/);
+  if (m) return { field: null, message: `счётчик «${m[1]}» не найден: включите создание новых счётчиков` };
+  m = raw.match(/^meter "(.*)" belongs to another premises$/);
+  if (m) return { field: null, message: `счётчик «${m[1]}» установлен в другом помещении` };
+  m = raw.match(/^meter "(.*)" has (\d+) tariff\(s\), the row has (\d+) reading\(s\)$/);
+  if (m) return { field: null, message: `у счётчика «${m[1]}» тарифов: ${m[2]}, а в строке показаний: ${m[3]}` };
+  if (raw.startsWith('header row must contain the column')) return { field: null, message: 'В первой строке файла нужен заголовок с колонкой «Квартира»' };
 
   const fieldError = raw.match(/^([a-z0-9_.]+): (.+)$/);
   if (fieldError) {
@@ -263,7 +271,16 @@ const REGISTRY_ROW = [
   [/^amount "(.*)": expected a number with at most 2 decimals$/, (m) => `сумма «${m[1]}»: нужно число не больше чем с двумя знаками после запятой`],
 ];
 
-const DUPLICATES = { number: 'номер помещения', 'cadastral number': 'кадастровый номер', account: 'лицевой счёт' };
+const DUPLICATES = { number: 'номер помещения', 'cadastral number': 'кадастровый номер', account: 'лицевой счёт', 'meter number': 'номер счётчика' };
+
+const READING_ROW = [
+  [/^premises number is required$/, 'не заполнен номер квартиры'],
+  [/^meter number is required$/, 'не заполнен номер счётчика'],
+  [/^t(\d): reading is required$/, 'не заполнено показание Т1'],
+  [/^t(\d): tariffs must be filled in order$/, (m) => `показание Т${m[1]} заполнено без предыдущего тарифа`],
+  [/^t(\d): "(.*)" is not a number$/, (m) => `Т${m[1]}: «${m[2]}» — не число`],
+  [/^t(\d): must not be negative$/, (m) => `Т${m[1]}: показание не может быть отрицательным`],
+];
 
 // Перевод ошибки одной строки файла импорта (message из rows[].error бэкенда).
 export function describeImportRowError(message) {
@@ -273,7 +290,7 @@ export function describeImportRowError(message) {
   if (m) return `площадь «${m[1]}» — нужно число больше нуля`;
   m = message.match(/^duplicate (.+) "(.*)" \(already in row (\d+)\)$/);
   if (m) return `повтор: ${DUPLICATES[m[1]] || m[1]} «${m[2]}» уже в строке ${m[3]}`;
-  for (const [re, text] of [...REGISTRY_ROW, ...STATEMENT_ROW]) {
+  for (const [re, text] of [...READING_ROW, ...REGISTRY_ROW, ...STATEMENT_ROW]) {
     const rm = message.match(re);
     if (rm) return typeof text === 'function' ? text(rm) : text;
   }

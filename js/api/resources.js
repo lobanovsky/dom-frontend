@@ -55,7 +55,19 @@ export const accountHoldersApi = resource('account-holders');
 
 // Счётчики воды и электроэнергии (индивидуальные у помещений, общедомовые у дома) и их показания.
 export const metersApi = resource('meters');
-export const meterReadingsApi = resource('meter-readings');
+export const meterReadingsApi = {
+  ...resource('meter-readings'),
+  // Загрузка показаний одного ресурса дома из xlsx на дату readingDate; installedAt задан — неизвестные счётчики создаются.
+  importFile: ({ buildingId, resource: kind, readingDate, installedAt, file }) => {
+    const body = new FormData();
+    body.set('building_id', String(buildingId));
+    body.set('resource', kind);
+    body.set('reading_date', readingDate);
+    if (installedAt) body.set('installed_at', installedAt);
+    body.set('file', file);
+    return client.post('/api/v1/meter-readings/import', body);
+  },
+};
 
 // Платежи. Банковский счёт организации (bank-accounts) — не лицевой счёт помещения (accounts).
 export const bankAccountsApi = resource('bank-accounts');

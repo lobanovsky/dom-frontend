@@ -1,6 +1,8 @@
 import { el } from '../../lib/dom.js';
 import { buildingsApi } from '../../api/resources.js';
 import { describeApiError } from '../../lib/apiErrors.js';
+import { openMeterImportDialog } from '../../ui/meterImportDialog.js';
+import { canWrite } from '../../lib/permissions.js';
 import { createMetersList } from './metersList.js';
 
 const MODES = [
@@ -40,7 +42,12 @@ export async function metersPage(container) {
 
   show();
   container.replaceChildren(el('div', { class: 'page' }, [
-    el('div', { class: 'section-header' }, el('h1', {}, 'Счётчики')),
+    el('div', { class: 'section-header' }, [
+      el('h1', {}, 'Счётчики'),
+      canWrite() ? el('div', { class: 'header-actions' }, [
+        el('button', { type: 'button', class: 'btn', onclick: () => openMeterImportDialog({ buildings, onImported: show }) }, 'Загрузить показания'),
+      ]) : null,
+    ]),
     switcher,
     host,
   ]));
