@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { formatMoney, formatPrice, meterText, calcMethodText, tariffPeriod, receiptName, assignmentPeriod, premisesKindsText } from './services.js';
+import { isSumMethod, formatMoney, formatPrice, meterText, calcMethodText, tariffPeriod, receiptName, assignmentPeriod, premisesKindsText } from './services.js';
 
 const nbsp = (s) => s.replace(/\s/g, ' ');
 
@@ -26,8 +26,10 @@ test('meterText и calcMethodText', () => {
   assert.equal(calcMethodText({ calc_method: 'common_meter', meter_resource: 'electricity', meter_tariff: 1 }), 'Общедомовой счётчик: Электроэнергия Т1');
   assert.equal(calcMethodText({ calc_method: 'per_area' }), 'За м² площади помещения');
   const byId = new Map([[1, { name: 'ХВС' }], [2, { name: 'ХВС для ГВС' }]]);
-  assert.equal(calcMethodText({ calc_method: 'sum', component_ids: [1, 2] }, byId), 'Сумма: ХВС + ХВС для ГВС');
-  assert.equal(calcMethodText({ calc_method: 'sum', component_ids: [] }), 'Сумма других услуг');
+  assert.equal(calcMethodText({ calc_method: 'sum_volumes', component_ids: [1, 2] }, byId), 'Сумма объёмов: ХВС + ХВС для ГВС');
+  assert.equal(calcMethodText({ calc_method: 'sum_prices', component_ids: [1, 2] }, byId), 'Сумма цен: ХВС + ХВС для ГВС');
+  assert.equal(calcMethodText({ calc_method: 'sum_volumes', component_ids: [] }), 'Сумма объёмов других услуг');
+  assert.ok(isSumMethod('sum_volumes') && isSumMethod('sum_prices') && !isSumMethod('fixed'));
 });
 
 test('tariffPeriod', () => {

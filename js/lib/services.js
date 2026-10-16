@@ -34,9 +34,11 @@ export function calcMethodText(service, byId = new Map()) {
       return `По счётчику: ${meterText(service)}`;
     case 'common_meter':
       return `Общедомовой счётчик: ${meterText(service)}`;
-    case 'sum': {
+    case 'sum_volumes':
+    case 'sum_prices': {
       const names = (service.component_ids || []).map((id) => byId.get(id)?.name || `№${id}`);
-      return names.length ? `Сумма: ${names.join(' + ')}` : 'Сумма других услуг';
+      const what = service.calc_method === 'sum_volumes' ? 'объёмов' : 'цен';
+      return names.length ? `Сумма ${what}: ${names.join(' + ')}` : `Сумма ${what} других услуг`;
     }
     default:
       return label(serviceCalcMethods, service.calc_method);
@@ -70,3 +72,6 @@ export function assignmentPeriod(from, to, formatDate) {
 export function premisesKindsText(kinds, kindLabels) {
   return kinds && kinds.length ? kinds.map((k) => kindLabels[k] || k).join(', ') : 'любые';
 }
+
+// Составная услуга: сумма объёмов или сумма цен других услуг.
+export const isSumMethod = (method) => method === 'sum_volumes' || method === 'sum_prices';

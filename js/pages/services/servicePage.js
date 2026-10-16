@@ -116,9 +116,9 @@ export async function servicePage(container, { id }) {
     }
   }
 
-  const isSum = service.calc_method === 'sum';
+  const noTariffs = service.calc_method === 'sum_prices';
   const today = todayIso();
-  const tariffs = isSum ? null : createCrudList({
+  const tariffs = noTariffs ? null : createCrudList({
     entityTitle: 'Тариф',
     addLabel: 'Добавить тариф',
     api: tariffsApi,
@@ -179,7 +179,7 @@ export async function servicePage(container, { id }) {
     ]),
     info,
     el('h2', { class: 'section-title' }, 'Тарифы'),
-    tariffs ? tariffs.element : el('p', { class: 'text-muted' }, 'У составной услуги своих тарифов нет: цена — сумма цен входящих в неё услуг на выбранную дату.'),
+    tariffs ? tariffs.element : el('p', { class: 'text-muted' }, 'У этой услуги своих тарифов нет: цена — сумма цен входящих в неё услуг на выбранную дату.'),
     el('h2', { class: 'section-title' }, 'Назначена счетам'),
     assignments.element,
   ]));

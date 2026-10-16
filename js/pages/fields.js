@@ -7,7 +7,7 @@ import { tariffColumns, resourceUnit, previousReadingText } from '../lib/meters.
 import { entityPicker } from '../ui/picker.js';
 import { listInput } from '../ui/listInput.js';
 import { checkboxGroup } from '../ui/checkboxGroup.js';
-import { unitShort } from '../lib/services.js';
+import { unitShort, isSumMethod } from '../lib/services.js';
 import { categoryColorPicker, categoryIconPicker } from '../ui/categoryStyle.js';
 import { conditionsEditor, actionEditor } from '../ui/ruleEditors.js';
 import { MATCH_MODES } from '../lib/rules.js';
@@ -159,7 +159,7 @@ export const meterReadingFields = (meter) => {
 export const serviceFields = ({ organizations = [], services = [], selfId = null } = {}) => (values) => {
   const metered = values.calc_method === 'individual_meter' || values.calc_method === 'common_meter';
   const electric = values.meter_resource === 'electricity';
-  const plain = services.filter((s) => s.calc_method !== 'sum' && s.id !== selfId);
+  const plain = services.filter((s) => !isSumMethod(s.calc_method) && s.id !== selfId);
   return [
     selectField('organization_id', 'Организация', organizations.map((o) => ({ value: String(o.id), label: o.name })), { required: true, numeric: true, placeholder: 'Выберите', full: true }),
     selectField('kind', 'Вид услуги', options(serviceKinds), { required: true, placeholder: 'Выберите' }),
@@ -173,8 +173,8 @@ export const serviceFields = ({ organizations = [], services = [], selfId = null
       help: 'Ничего не отмечено — для любых помещений. Услугу нельзя назначить счёту помещения другого вида',
       component: checkboxGroup(options(premisesKinds)) },
     textField('receipt_name', 'Название в квитанции', { full: true, help: 'Пусто — как в справочнике. Удобно, когда услуги для квартир и машиномест называются в квитанции одинаково' }),
-    { type: 'picker', name: 'component_ids', label: 'Из каких услуг состоит', full: true, visible: () => values.calc_method === 'sum',
-      help: 'Цена суммы — сумма цен выбранных услуг, своих тарифов у неё нет. Подходят простые услуги той же организации и с той же единицей',
+    { type: 'picker', name: 'component_ids', label: 'Из каких услуг состоит', full: true, visible: () => isSumMethod(values.calc_method),
+      help: 'Сумма объёмов: объём услуги равен сумме объёмов выбранных (например, водоотведение = ХВС + ХВС для ГВС), цена — свой тариф. Сумма цен: цена равна сумме цен выбранных, своих тарифов нет. Подходят простые услуги той же организации, с той же единицей и типом счёта',
       component: checkboxGroup(plain.map((s) => ({ value: s.id, label: `${s.name} (${unitShort(s.unit)})` })), { emptyText: 'Сначала заведите простые услуги' }) },
     numberField('position', 'Порядок в квитанции', { step: 1, inputmode: 'numeric', help: 'Меньше — выше. Пусто — 0' }),
     checkboxField('active', 'Услуга оказывается'),
