@@ -191,3 +191,13 @@ test('ошибки загрузки показаний счётчиков', asyn
   assert.equal(msg('row 3: meter "7" belongs to another premises'), 'Строка 3: счётчик «7» установлен в другом помещении');
   assert.equal(msg('row 3: t1: must not be less than previous reading'), 'Строка 3: Меньше предыдущего показания');
 });
+
+test('ошибки услуг и тарифов', async () => {
+  const { describeApiError } = await import('./apiErrors.js');
+  const msg = (raw, status = 422) => describeApiError(Object.assign(new Error(raw), { status })).message;
+  assert.match(msg('already exists: service_tariffs_no_overlap', 409), /пересекается с другим тарифом/);
+  assert.match(msg('already exists: services_org_kind_name_key', 409), /Услуга с таким названием/);
+  assert.equal(msg('component_ids: must contain at least 1 item'), 'Выберите хотя бы 1');
+  assert.match(msg('component_ids: components must be plain services of the same organization and unit'), /простые/);
+  assert.match(msg('cannot delete: has active composite services'), /составные услуги/);
+});

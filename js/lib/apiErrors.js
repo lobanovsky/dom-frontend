@@ -39,6 +39,14 @@ const REASONS = [
   [/^must not be before the meter installation date$/, 'Раньше ввода счётчика в эксплуатацию'],
   [/^must not be after the meter removal date$/, 'Позже даты окончания работы счётчика'],
   [/^meter not found$/, 'Счётчик не найден'],
+  [/^service not found$/, 'Услуга не найдена'],
+  [/^is required for this calculation method$/, 'Обязательно для этого способа расчёта'],
+  [/^must be m2 for a per-area service$/, 'При расчёте по площади единица — м²'],
+  [/^must contain at least (\d+) items?$/, (m) => `Выберите хотя бы ${m[1]}`],
+  [/^components must be plain services of the same organization and unit$/, 'В состав входят только простые (не составные) услуги той же организации и с той же единицей измерения'],
+  [/^a sum service cannot have tariffs$/, 'У составной услуги нет своих тарифов: сначала удалите их'],
+  [/^a sum service has no tariffs of its own$/, 'У составной услуги нет своих тарифов: цена — сумма цен входящих услуг'],
+  [/^must not be before valid_from$/, 'Раньше даты начала действия'],
   [/^apartment "(.*)" not found in this building$/, (m) => `квартира «${m[1]}» не найдена в этом доме`],
   [/^cannot be changed while the meter has readings$/, 'Нельзя менять, пока у счётчика есть показания'],
   [/^existing readings are outside the working period or below the initial readings$/, 'Уже введённые показания выходят за период работы счётчика или меньше начальных'],
@@ -72,6 +80,8 @@ const CONFLICTS = {
   payment_registries_file_sha256_key: 'Этот файл реестра уже загружен',
   meters_serial_number_key: 'Счётчик с таким номером и видом ресурса уже есть',
   meter_readings_meter_date_key: 'Показание на эту дату уже есть',
+  services_org_kind_name_key: 'Услуга с таким названием и видом уже есть у этой организации',
+  service_tariffs_no_overlap: 'Период пересекается с другим тарифом этой услуги. Закройте предыдущий тариф датой окончания',
   users_username_key: 'Пользователь с таким логином уже есть',
 };
 
@@ -90,6 +100,9 @@ const ACTIVE_CHILDREN = {
   'outgoing payments': 'исходящие платежи',
   meters: 'счётчики',
   readings: 'показания',
+  tariffs: 'тарифы',
+  services: 'услуги',
+  'composite services': 'составные услуги, в которые она входит',
 };
 
 // На какую удалённую запись ссылаются при сохранении или восстановлении.
@@ -106,6 +119,7 @@ const DELETED_PARENTS = {
   'bank statement': 'банковская выписка',
   'payment category': 'категория платежа',
   meter: 'счётчик',
+  service: 'услуга',
 };
 
 const RULE_REASONS = [

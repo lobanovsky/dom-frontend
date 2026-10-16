@@ -118,6 +118,12 @@ textarea:focus {
   color: var(--color-text);
 }
 
+.checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
 .form-actions {
   display: flex;
   gap: var(--space-3);

@@ -1,11 +1,13 @@
 import { textField, numberField, dateField, textareaField, selectField, checkboxField } from '../lib/fields.js';
 import {
   options, bankLabel, organizationKinds, buildingKinds, premisesKinds, relations, accountPurposes, accountStatuses, ownerKinds,
-  meterResources, meterTariffs,
+  meterResources, meterTariffs, serviceKinds, serviceUnits, serviceCalcMethods,
 } from '../lib/labels.js';
 import { tariffColumns, resourceUnit, previousReadingText } from '../lib/meters.js';
 import { entityPicker } from '../ui/picker.js';
 import { listInput } from '../ui/listInput.js';
+import { checkboxGroup } from '../ui/checkboxGroup.js';
+import { unitShort } from '../lib/services.js';
 import { categoryColorPicker, categoryIconPicker } from '../ui/categoryStyle.js';
 import { conditionsEditor, actionEditor } from '../ui/ruleEditors.js';
 import { MATCH_MODES } from '../lib/rules.js';
@@ -149,6 +151,38 @@ export const meterReadingFields = (meter) => {
     textField('comment', 'Комментарий', { full: true }),
   ];
 };
+
+// --- Услуги ---
+
+// Услуга организации. services — уже заведённые услуги (кандидаты в состав суммы; бэкенд проверит организацию и единицу).
+// Нужен watch: ['calc_method', 'meter_resource'] — состав и счётчик показываются только у своих способов расчёта.
+export const serviceFields = ({ organizations = [], services = [], selfId = null } = {}) => (values) => {
+  const metered = values.calc_method === 'individual_meter' || values.calc_method === 'common_meter';
+  const electric = values.meter_resource === 'electricity';
+  const plain = services.filter((s) => s.calc_method !== 'sum' && s.id !== selfId);
+  return [
+    selectField('organization_id', 'Организация', organizations.map((o) => ({ value: String(o.id), label: o.name })), { required: true, numeric: true, placeholder: 'Выберите', full: true }),
+    selectField('kind', 'Вид услуги', options(serviceKinds), { required: true, placeholder: 'Выберите' }),
+    textField('name', 'Название', { required: true }),
+    selectField('calc_method', 'Как считается', options(serviceCalcMethods), { required: true, placeholder: 'Выберите', full: true }),
+    { ...selectField('meter_resource', 'Какой счётчик', options(meterResources), { required: true, placeholder: 'Выберите' }), visible: () => metered },
+    { ...selectField('meter_tariff', 'Тариф счётчика', [1, 2, 3].map((n) => ({ value: String(n), label: `Т${n}` })), { required: true, numeric: true }), visible: () => metered && electric },
+    selectField('unit', 'Единица измерения', options(serviceUnits), { required: true, placeholder: 'Выберите' }),
+    { type: 'picker', name: 'component_ids', label: 'Из каких услуг состоит', full: true, visible: () => values.calc_method === 'sum',
+      help: 'Цена суммы — сумма цен выбранных услуг, своих тарифов у неё нет. Подходят простые услуги той же организации и с той же единицей',
+      component: checkboxGroup(plain.map((s) => ({ value: s.id, label: `${s.name} (${unitShort(s.unit)})` })), { emptyText: 'Сначала заведите простые услуги' }) },
+    numberField('position', 'Порядок в квитанции', { step: 1, inputmode: 'numeric', help: 'Меньше — выше. Пусто — 0' }),
+    checkboxField('active', 'Услуга оказывается'),
+    textareaField('comment', 'Комментарий', { full: true }),
+  ];
+};
+
+export const serviceTariffFields = (service) => [
+  numberField('price', `Цена, ₽${unitShort(service.unit) ? ` за ${unitShort(service.unit)}` : ''}`, { required: true, min: 0, step: 0.0001, inputmode: 'decimal', help: 'Не больше четырёх знаков после запятой' }),
+  dateField('valid_from', 'Действует с', { required: true }),
+  dateField('valid_to', 'Действует по', { help: 'Включительно. Пусто — действует до сих пор. Периоды тарифов одной услуги не пересекаются' }),
+  textField('comment', 'Комментарий', { full: true }),
+];
 
 // --- Платежи ---
 

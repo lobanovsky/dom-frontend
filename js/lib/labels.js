@@ -40,6 +40,19 @@ export const meterResources = { cold_water: 'Холодная вода', hot_wat
 // Число тарифов электросчётчика (у водяного счётчика всегда один).
 export const meterTariffs = { 1: 'Однотарифный', 2: 'Двухтарифный (Т1, Т2)', 3: 'Трёхтарифный (Т1, Т2, Т3)' };
 
+export const serviceKinds = { utility: 'Коммунальная', maintenance: 'Эксплуатационная', additional: 'Дополнительная' };
+
+export const serviceUnits = { kwh: 'кВт·ч', m3: 'м³', gcal: 'Гкал', m2: 'м² площади', piece: 'шт.', month: 'месяц (за помещение)' };
+
+export const serviceCalcMethods = {
+  fixed: 'Фиксированно за помещение',
+  per_area: 'За м² площади помещения',
+  individual_meter: 'По индивидуальному счётчику',
+  common_meter: 'По общедомовому счётчику (делится по площади)',
+  sum: 'Сумма других услуг',
+  manual: 'Количество вводится вручную',
+};
+
 export const ownerKinds = { person: 'Физлицо', legal_entity: 'Юрлицо' };
 
 export function label(dict, value) {

@@ -55,6 +55,8 @@ export const accountHoldersApi = resource('account-holders');
 
 // Счётчики воды и электроэнергии (индивидуальные у помещений, общедомовые у дома) и их показания.
 export const metersApi = resource('meters');
+export const servicesApi = resource('services');
+export const serviceTariffsApi = resource('service-tariffs');
 export const meterReadingsApi = {
   ...resource('meter-readings'),
   // Загрузка показаний одного ресурса дома из xlsx на дату readingDate; installedAt задан — неизвестные счётчики создаются.

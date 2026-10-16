@@ -28,6 +28,7 @@ export const NAV = [
     items: [
       { href: '/organizations', label: 'Организации', icon: '<path d="M3 21h18M6 21V10M10 21V10M14 21V10M18 21V10M12 3l9 5H3z"/>' },
       { href: '/bank-accounts', label: 'Банковские счета', icon: '<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/>' },
+      { href: '/services', label: 'Услуги', icon: '<path d="M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>' },
       { href: '/payment-categories', label: 'Категории платежей', icon: '<path d="M20.6 13.4l-7.2 7.2a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8zM7.5 7.5h.01"/>' },
       { href: '/users', adminOnly: true, label: 'Пользователи', icon: '<circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/>' },
     ],
