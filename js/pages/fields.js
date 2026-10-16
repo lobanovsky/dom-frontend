@@ -168,12 +168,34 @@ export const serviceFields = ({ organizations = [], services = [], selfId = null
     { ...selectField('meter_resource', 'Какой счётчик', options(meterResources), { required: true, placeholder: 'Выберите' }), visible: () => metered },
     { ...selectField('meter_tariff', 'Тариф счётчика', [1, 2, 3].map((n) => ({ value: String(n), label: `Т${n}` })), { required: true, numeric: true }), visible: () => metered && electric },
     selectField('unit', 'Единица измерения', options(serviceUnits), { required: true, placeholder: 'Выберите' }),
+    selectField('account_purpose', 'На какой лицевой счёт', options(accountPurposes), { required: true, placeholder: 'Выберите', help: 'Квитанция выставляется по лицевому счёту: услуга попадёт только в квитанцию счёта этого типа' }),
+    { type: 'picker', name: 'premises_kinds', label: 'Для каких помещений', full: true,
+      help: 'Ничего не отмечено — для любых помещений. Услугу нельзя назначить счёту помещения другого вида',
+      component: checkboxGroup(options(premisesKinds)) },
+    textField('receipt_name', 'Название в квитанции', { full: true, help: 'Пусто — как в справочнике. Удобно, когда услуги для квартир и машиномест называются в квитанции одинаково' }),
     { type: 'picker', name: 'component_ids', label: 'Из каких услуг состоит', full: true, visible: () => values.calc_method === 'sum',
       help: 'Цена суммы — сумма цен выбранных услуг, своих тарифов у неё нет. Подходят простые услуги той же организации и с той же единицей',
       component: checkboxGroup(plain.map((s) => ({ value: s.id, label: `${s.name} (${unitShort(s.unit)})` })), { emptyText: 'Сначала заведите простые услуги' }) },
     numberField('position', 'Порядок в квитанции', { step: 1, inputmode: 'numeric', help: 'Меньше — выше. Пусто — 0' }),
     checkboxField('active', 'Услуга оказывается'),
     textareaField('comment', 'Комментарий', { full: true }),
+  ];
+};
+
+// Назначение услуги лицевому счёту. service — услуга, если она уже известна (карточка услуги: выбирается счёт);
+// иначе services — варианты для выбора (карточка счёта). Количество — только у услуг с ручным вводом.
+// Нужен watch: ['service_id'].
+export const accountServiceFields = ({ service = null, services = [] } = {}) => (values) => {
+  const chosen = service || services.find((s) => String(s.id) === String(values.service_id));
+  return [
+    service
+      ? { type: 'picker', name: 'account_id', label: 'Лицевой счёт', required: true, full: true, component: entityPicker('personal_account'),
+        help: 'Подходят счета того же типа, что у услуги, в помещениях подходящего вида' }
+      : selectField('service_id', 'Услуга', services.map((s) => ({ value: String(s.id), label: `${s.name} (${unitShort(s.unit)})` })), { required: true, numeric: true, placeholder: 'Выберите', full: true }),
+    dateField('valid_from', 'Действует с', { required: true }),
+    dateField('valid_to', 'Действует по', { help: 'Включительно. Пусто — продолжается. Разовая услуга — период в один месяц, например 01.10.2026 — 31.10.2026' }),
+    { ...numberField('quantity', `Количество${chosen && unitShort(chosen.unit) ? `, ${unitShort(chosen.unit)}` : ''}`, { required: true, min: 0.001, step: 0.001, inputmode: 'decimal' }), visible: () => !!chosen && chosen.calc_method === 'manual' },
+    textField('comment', 'Комментарий', { full: true }),
   ];
 };
 

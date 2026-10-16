@@ -4,10 +4,12 @@ import { openEntityForm } from '../../ui/entityForm.js';
 import { confirmDialog } from '../../ui/confirmDialog.js';
 import { toast } from '../../ui/toast.js';
 import { goTo } from '../../state/nav.js';
-import { organizationsApi, servicesApi, serviceTariffsApi } from '../../api/resources.js';
-import { serviceFields, serviceTariffFields } from '../fields.js';
-import { serviceKinds, serviceUnits, label } from '../../lib/labels.js';
-import { calcMethodText, formatMoney, formatPrice, tariffPeriod } from '../../lib/services.js';
+import { organizationsApi, servicesApi, serviceTariffsApi, accountServicesApi, buildingsApi } from '../../api/resources.js';
+import { serviceFields, serviceTariffFields, accountServiceFields } from '../fields.js';
+import { openBulkAssignDialog } from '../../ui/bulkAssignDialog.js';
+import { serviceKinds, serviceUnits, accountPurposes, premisesKinds, label } from '../../lib/labels.js';
+import { assignmentPeriod, calcMethodText, formatMoney, formatPrice, premisesKindsText, receiptName, tariffPeriod } from '../../lib/services.js';
+import { formatReading } from '../../lib/meters.js';
 import { formatDate, todayIso } from '../../lib/format.js';
 import { describeApiError } from '../../lib/apiErrors.js';
 import { canWrite } from '../../lib/permissions.js';
@@ -19,9 +21,10 @@ export async function servicePage(container, { id }) {
   let service;
   let organizations;
   let services;
+  let buildings;
   try {
-    [service, { items: organizations }, { items: services }] = await Promise.all([
-      servicesApi.get(id), organizationsApi.list({ limit: 200 }), servicesApi.list({ limit: 200 }),
+    [service, { items: organizations }, { items: services }, { items: buildings }] = await Promise.all([
+      servicesApi.get(id), organizationsApi.list({ limit: 200 }), servicesApi.list({ limit: 200 }), buildingsApi.list({ limit: 200 }),
     ]);
   } catch (err) {
     container.replaceChildren(notFoundView(describeApiError(err).message, '/services', 'К списку услуг'));
@@ -41,6 +44,9 @@ export async function servicePage(container, { id }) {
       ['Вид', label(serviceKinds, service.kind)],
       ['Как считается', calcMethodText(service, byId)],
       ['Единица измерения', label(serviceUnits, service.unit)],
+      ['На какой лицевой счёт', label(accountPurposes, service.account_purpose)],
+      ['Для помещений', premisesKindsText(service.premises_kinds, premisesKinds)],
+      ['Название в квитанции', service.receipt_name ? receiptName(service) : null],
       ['Состав', components.length ? el('span', {}, components.flatMap((c, i) => [i ? ', ' : '', el('a', { href: `/services/${c.id}` }, c.name)])) : null],
       ['Цена сейчас', service.current_price === null || service.current_price === undefined ? el('span', { class: 'badge badge-warning' }, 'Нет тарифа на сегодня') : formatPrice(service.current_price, service.unit)],
       ['Состояние', el('span', { class: `badge badge-${service.active ? 'success' : 'neutral'}` }, service.active ? 'Оказывается' : 'Не оказывается')],
@@ -131,12 +137,42 @@ export async function servicePage(container, { id }) {
     deleteMessage: (t) => `Удалить тариф ${tariffPeriod(t.valid_from, t.valid_to, formatDate)}?`,
   });
 
+  // Лицевые счета, которым назначена услуга.
+  const assignments = createCrudList({
+    entityTitle: 'Назначение',
+    addLabel: 'Назначить счёту',
+    api: accountServicesApi,
+    fields: accountServiceFields({ service }),
+    fixedQuery: { service_id: service.id },
+    fixed: { service_id: service.id },
+    filters: [
+      { name: 'building_id', label: 'Дом', type: 'select', options: buildings.map((b) => ({ value: String(b.id), label: b.address })) },
+      { name: 'active_on', label: 'Действует на', type: 'date' },
+    ],
+    columns: [
+      { key: 'premises', label: 'Помещение', primary: true, render: (x) => el('div', {}, [
+        el('a', { href: `/premises/${x.premises_id}` }, `${label(premisesKinds, x.premises_kind)} № ${x.premises_number}`),
+        el('div', { class: 'text-muted' }, x.building_address)]) },
+      { key: 'account', label: 'Лицевой счёт', render: (x) => `№ ${x.account_number}` },
+      { key: 'period', label: 'Период', render: (x) => assignmentPeriod(x.valid_from, x.valid_to, formatDate) },
+      { key: 'quantity', label: 'Количество', render: (x) => (x.quantity === null || x.quantity === undefined ? '' : formatReading(x.quantity)) },
+      { key: 'comment', label: 'Комментарий' },
+    ],
+    emptyMessage: 'Услуга пока не назначена ни одному счёту',
+    deleteMessage: (x) => `Убрать услугу у счёта № ${x.account_number}?`,
+  });
+
+  function bulkAssign() {
+    openBulkAssignDialog({ service, buildings, onDone: () => assignments.reload() });
+  }
+
   renderInfo();
   container.replaceChildren(el('div', { class: 'page' }, [
     breadcrumbs(),
     el('div', { class: 'section-header' }, [
       title,
       canWrite() ? el('div', { class: 'header-actions' }, [
+        service.active ? el('button', { type: 'button', class: 'btn', onclick: bulkAssign }, 'Назначить счетам') : null,
         el('button', { type: 'button', class: 'btn', onclick: edit }, 'Изменить'),
         el('button', { type: 'button', class: 'btn btn-ghost btn-danger-text', onclick: remove }, 'Удалить'),
       ]) : null,
@@ -144,5 +180,7 @@ export async function servicePage(container, { id }) {
     info,
     el('h2', { class: 'section-title' }, 'Тарифы'),
     tariffs ? tariffs.element : el('p', { class: 'text-muted' }, 'У составной услуги своих тарифов нет: цена — сумма цен входящих в неё услуг на выбранную дату.'),
+    el('h2', { class: 'section-title' }, 'Назначена счетам'),
+    assignments.element,
   ]));
 }

@@ -57,6 +57,13 @@ export const accountHoldersApi = resource('account-holders');
 export const metersApi = resource('meters');
 export const servicesApi = resource('services');
 export const serviceTariffsApi = resource('service-tariffs');
+// Назначения услуг лицевым счетам. bulk*: массовое назначение услуги подходящим счетам (preview ничего не пишет), bulkClose — закрыть датой.
+export const accountServicesApi = {
+  ...resource('account-services'),
+  bulkPreview: (body) => client.post('/api/v1/account-services/bulk/preview', body),
+  bulkApply: (body) => client.post('/api/v1/account-services/bulk', body),
+  bulkClose: (body) => client.post('/api/v1/account-services/bulk-close', body),
+};
 export const meterReadingsApi = {
   ...resource('meter-readings'),
   // Загрузка показаний одного ресурса дома из xlsx на дату readingDate; installedAt задан — неизвестные счётчики создаются.

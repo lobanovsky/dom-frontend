@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { formatMoney, formatPrice, meterText, calcMethodText, tariffPeriod } from './services.js';
+import { formatMoney, formatPrice, meterText, calcMethodText, tariffPeriod, receiptName, assignmentPeriod, premisesKindsText } from './services.js';
 
 const nbsp = (s) => s.replace(/\s/g, ' ');
 
@@ -35,4 +35,26 @@ test('tariffPeriod', () => {
   assert.equal(tariffPeriod('2026-01-01', null, f), 'с 01.01.2026');
   assert.equal(tariffPeriod('2025-01-01', '2025-12-31', f), '01.01.2025 — 31.12.2025');
   assert.equal(tariffPeriod(null, null, f), '');
+});
+
+test('receiptName: название в квитанции или из справочника', () => {
+  assert.equal(receiptName({ name: 'Содержание — квартиры', receipt_name: 'Содержание и ремонт' }), 'Содержание и ремонт');
+  assert.equal(receiptName({ name: 'ХВС', receipt_name: null }), 'ХВС');
+  assert.equal(receiptName({ name: 'ХВС', receipt_name: '  ' }), 'ХВС');
+});
+
+test('assignmentPeriod: целый месяц называется по имени', () => {
+  const f = (iso) => iso.split('-').reverse().join('.');
+  assert.equal(assignmentPeriod('2026-10-01', '2026-10-31', f), 'Октябрь 2026');
+  assert.equal(assignmentPeriod('2024-02-01', '2024-02-29', f), 'Февраль 2024');
+  assert.equal(assignmentPeriod('2026-10-01', '2026-10-28', f), '01.10.2026 — 28.10.2026');
+  assert.equal(assignmentPeriod('2026-10-01', null, f), 'с 01.10.2026');
+  assert.equal(assignmentPeriod(null, null, f), '');
+});
+
+test('premisesKindsText', () => {
+  const labels = { apartment: 'Квартира', parking_space: 'Машиноместо' };
+  assert.equal(premisesKindsText([], labels), 'любые');
+  assert.equal(premisesKindsText(null, labels), 'любые');
+  assert.equal(premisesKindsText(['apartment', 'parking_space'], labels), 'Квартира, Машиноместо');
 });

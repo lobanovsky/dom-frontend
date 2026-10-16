@@ -48,3 +48,25 @@ export function tariffPeriod(from, to, formatDate) {
   if (!from) return '';
   return to ? `${formatDate(from)} — ${formatDate(to)}` : `с ${formatDate(from)}`;
 }
+
+// Название услуги в квитанции: receipt_name, а если пусто — название из справочника.
+export const receiptName = (service) => (service.receipt_name && service.receipt_name.trim()) || service.name;
+
+const MONTHS = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+
+// Период назначения услуги: целый календарный месяц — «Октябрь 2026», иначе «с 01.10.2026» или «01.10.2026 — 15.12.2026».
+export function assignmentPeriod(from, to, formatDate) {
+  if (!from) return '';
+  if (to) {
+    const [fy, fm, fd] = from.slice(0, 10).split('-').map(Number);
+    const [ty, tm, td] = to.slice(0, 10).split('-').map(Number);
+    const lastDay = new Date(Date.UTC(fy, fm, 0)).getUTCDate();
+    if (fy === ty && fm === tm && fd === 1 && td === lastDay) return `${MONTHS[fm - 1]} ${fy}`;
+  }
+  return tariffPeriod(from, to, formatDate);
+}
+
+// Виды помещений услуги: пустой список — «любые».
+export function premisesKindsText(kinds, kindLabels) {
+  return kinds && kinds.length ? kinds.map((k) => kindLabels[k] || k).join(', ') : 'любые';
+}

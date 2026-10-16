@@ -18,6 +18,7 @@ import { activeShareSum, describeShareSum } from '../../lib/shares.js';
 import { describeApiError } from '../../lib/apiErrors.js';
 import { canWrite } from '../../lib/permissions.js';
 import { createMetersList } from '../meters/metersList.js';
+import { createAccountServices } from '../accounts/accountServices.js';
 import { notFoundView, definitionList, deletedBanner } from '../common.js';
 
 // Карточка помещения: сведения, собственники с долями, жители, лицевые счета
@@ -233,6 +234,23 @@ export async function premisesPage(container, { id }) {
       },
     }, 'Оплаты');
 
+    // Услуги, по которым выставляется квитанция этого счёта.
+    const servicesBody = el('div', { class: 'account-payments' });
+    servicesBody.hidden = true;
+    let servicesLoaded = false;
+    const servicesToggle = el('button', {
+      type: 'button', class: 'btn btn-ghost btn-sm', 'aria-expanded': 'false',
+      onclick: async () => {
+        servicesBody.hidden = !servicesBody.hidden;
+        servicesToggle.setAttribute('aria-expanded', String(!servicesBody.hidden));
+        servicesToggle.textContent = servicesBody.hidden ? 'Услуги' : 'Скрыть услуги';
+        if (!servicesBody.hidden && !servicesLoaded) {
+          servicesLoaded = true;
+          servicesBody.replaceChildren(await createAccountServices({ account, premises }));
+        }
+      },
+    }, 'Услуги');
+
     return el('div', { class: 'card account-card' }, [
       el('div', { class: 'account-card-header' }, [
         el('div', {}, [
@@ -245,12 +263,14 @@ export async function premisesPage(container, { id }) {
           el('div', { class: 'account-holder' }, holdersLine(account.holder_names)),
         ]),
         el('div', { class: 'row-actions' }, [
+          servicesToggle,
           paymentsToggle,
           toggle,
           canWrite() ? editButton(() => accountForm(account)) : null,
           canWrite() ? deleteButton(() => removeRow(`Удалить лицевой счёт № ${account.number}? Удалить можно только счёт без плательщиков.`, () => accountsApi.remove(account.id), loadAccounts)) : null,
         ]),
       ]),
+      servicesBody,
       paymentsBody,
       holdersBody,
     ]);

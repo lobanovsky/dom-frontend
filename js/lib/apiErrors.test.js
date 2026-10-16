@@ -198,6 +198,18 @@ test('ошибки услуг и тарифов', async () => {
   assert.match(msg('already exists: service_tariffs_no_overlap', 409), /пересекается с другим тарифом/);
   assert.match(msg('already exists: services_org_kind_name_key', 409), /Услуга с таким названием/);
   assert.equal(msg('component_ids: must contain at least 1 item'), 'Выберите хотя бы 1');
-  assert.match(msg('component_ids: components must be plain services of the same organization and unit'), /простые/);
+  assert.match(msg('component_ids: components must be plain services of the same organization, unit and account purpose'), /простые/);
   assert.match(msg('cannot delete: has active composite services'), /составные услуги/);
+});
+
+test('ошибки назначения услуг счетам', async () => {
+  const { describeApiError } = await import('./apiErrors.js');
+  const err = (raw, status = 422) => describeApiError(Object.assign(new Error(raw), { status }));
+  assert.match(err('already exists: account_services_no_overlap', 409).message, /пересекающийся период/);
+  assert.match(err('service purpose does not match account purpose').message, /Тип лицевого счёта/);
+  assert.match(err('service is not available for this premises kind').message, /виду помещений|видов помещений|виду/);
+  assert.match(err('service is not active').message, /выключена/);
+  assert.equal(err('quantity is required for this service').field, 'quantity');
+  assert.match(err('cannot delete: has active account services').message, /назначения услуг/);
+  assert.match(err('cannot save: service is deleted').message, /услуга/);
 });

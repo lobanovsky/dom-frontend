@@ -2,8 +2,8 @@ import { el } from '../../lib/dom.js';
 import { createCrudList } from '../../ui/crudList.js';
 import { organizationsApi, servicesApi } from '../../api/resources.js';
 import { serviceFields } from '../fields.js';
-import { serviceKinds, serviceUnits, label, options } from '../../lib/labels.js';
-import { calcMethodText, formatPrice } from '../../lib/services.js';
+import { serviceKinds, serviceUnits, accountPurposes, premisesKinds, label, options } from '../../lib/labels.js';
+import { calcMethodText, formatPrice, premisesKindsText } from '../../lib/services.js';
 import { describeApiError } from '../../lib/apiErrors.js';
 
 // Справочник услуг: коммунальные, эксплуатационные и дополнительные услуги организации с текущей ценой.
@@ -43,10 +43,11 @@ export async function servicesPage(container) {
     api: catalogApi,
     fields: (values) => serviceFields({ organizations, services })(values),
     watch: ['calc_method', 'meter_resource'],
-    newDefaults: { active: true, ...(organizations.length === 1 ? { organization_id: String(organizations[0].id) } : {}) },
+    newDefaults: { active: true, account_purpose: 'utilities', ...(organizations.length === 1 ? { organization_id: String(organizations[0].id) } : {}) },
     filters: [
       { name: 'organization_id', label: 'Организация', type: 'select', options: organizations.map((o) => ({ value: String(o.id), label: o.name })) },
       { name: 'kind', label: 'Вид', type: 'select', options: options(serviceKinds) },
+      { name: 'account_purpose', label: 'Счёт', type: 'select', options: options(accountPurposes) },
       { name: 'active', label: 'Состояние', type: 'select', allLabel: 'Все', options: [{ value: 'true', label: 'Оказываются' }, { value: 'false', label: 'Не оказываются' }], defaultValue: 'true' },
       { name: 'q', label: 'Поиск', type: 'search', placeholder: 'Название услуги' },
     ],
@@ -54,6 +55,8 @@ export async function servicesPage(container) {
     columns: [
       { key: 'name', label: 'Услуга', primary: true, render: (s) => el('a', { href: `/services/${s.id}` }, s.name) },
       { key: 'kind', label: 'Вид', render: (s) => label(serviceKinds, s.kind) },
+      { key: 'account_purpose', label: 'Счёт', render: (s) => label(accountPurposes, s.account_purpose) },
+      { key: 'premises', label: 'Помещения', render: (s) => premisesKindsText(s.premises_kinds, premisesKinds) },
       { key: 'calc', label: 'Как считается', render: (s) => calcMethodText(s, byId) },
       { key: 'unit', label: 'Единица', render: (s) => label(serviceUnits, s.unit) },
       { key: 'price', label: 'Цена сейчас', render: (s) => (s.current_price === null || s.current_price === undefined

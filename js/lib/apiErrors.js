@@ -43,7 +43,8 @@ const REASONS = [
   [/^is required for this calculation method$/, 'Обязательно для этого способа расчёта'],
   [/^must be m2 for a per-area service$/, 'При расчёте по площади единица — м²'],
   [/^must contain at least (\d+) items?$/, (m) => `Выберите хотя бы ${m[1]}`],
-  [/^components must be plain services of the same organization and unit$/, 'В состав входят только простые (не составные) услуги той же организации и с той же единицей измерения'],
+  [/^components must be plain services of the same organization, unit and account purpose$/, 'В состав входят только простые (не составные) услуги той же организации, с той же единицей измерения и типом лицевого счёта'],
+  [/^cannot be changed while accounts have this service assigned incompatibly$/, 'Нельзя менять: у уже назначенных счетов тип счёта или вид помещения не подойдёт. Сначала уберите назначения'],
   [/^a sum service cannot have tariffs$/, 'У составной услуги нет своих тарифов: сначала удалите их'],
   [/^a sum service has no tariffs of its own$/, 'У составной услуги нет своих тарифов: цена — сумма цен входящих услуг'],
   [/^must not be before valid_from$/, 'Раньше даты начала действия'],
@@ -81,6 +82,7 @@ const CONFLICTS = {
   meters_serial_number_key: 'Счётчик с таким номером и видом ресурса уже есть',
   meter_readings_meter_date_key: 'Показание на эту дату уже есть',
   services_org_kind_name_key: 'Услуга с таким названием и видом уже есть у этой организации',
+  account_services_no_overlap: 'У этого счёта услуга уже назначена на пересекающийся период. Измените период существующего назначения',
   service_tariffs_no_overlap: 'Период пересекается с другим тарифом этой услуги. Закройте предыдущий тариф датой окончания',
   users_username_key: 'Пользователь с таким логином уже есть',
 };
@@ -101,6 +103,7 @@ const ACTIVE_CHILDREN = {
   meters: 'счётчики',
   readings: 'показания',
   tariffs: 'тарифы',
+  'account services': 'назначения услуг',
   services: 'услуги',
   'composite services': 'составные услуги, в которые она входит',
 };
@@ -236,6 +239,11 @@ export function describeApiError(err, { action = 'save' } = {}) {
   m = raw.match(/^row (\d+): (.+)$/);
   if (m) return { field: null, message: `Строка ${m[1]}: ${describeApiError(new Error(m[2])).message}` };
   if (raw === 'not found') return { field: null, message: 'Запись не найдена' };
+  if (raw === 'service purpose does not match account purpose') return { field: null, message: 'Тип лицевого счёта не подходит услуге (например, услуга капремонта для счёта ЖКУ)' };
+  if (raw === 'service is not available for this premises kind') return { field: null, message: 'Услуга не применяется к этому виду помещений' };
+  if (raw === 'service is not active') return { field: null, message: 'Услуга выключена: её нельзя назначать' };
+  if (raw === 'quantity is required for this service') return { field: 'quantity', message: 'Для этой услуги укажите количество' };
+  if (raw === 'quantity must be empty for this service') return { field: 'quantity', message: 'У этой услуги количество не указывается' };
   m = raw.match(/^meter "(.*)" not found$/);
   if (m) return { field: null, message: `счётчик «${m[1]}» не найден: включите создание новых счётчиков` };
   m = raw.match(/^meter "(.*)" belongs to another premises$/);
