@@ -57,6 +57,8 @@ export const accountHoldersApi = resource('account-holders');
 export const metersApi = resource('meters');
 export const servicesApi = resource('services');
 export const serviceTariffsApi = resource('service-tariffs');
+// Нормативы услуг «площадь × норматив» (Гкал на м²) по домам и периодам.
+export const serviceNormsApi = resource('service-norms');
 // Назначения услуг лицевым счетам. bulk*: массовое назначение услуги подходящим счетам (preview ничего не пишет), bulkClose — закрыть датой.
 export const accountServicesApi = {
   ...resource('account-services'),

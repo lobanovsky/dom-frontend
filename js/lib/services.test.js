@@ -1,8 +1,19 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { isSumMethod, formatMoney, formatPrice, meterText, calcMethodText, tariffPeriod, receiptName, assignmentPeriod, premisesKindsText } from './services.js';
+import { isSumMethod, formatNorm, formatMoney, formatPrice, meterText, calcMethodText, tariffPeriod, receiptName, assignmentPeriod, premisesKindsText } from './services.js';
 
 const nbsp = (s) => s.replace(/\s/g, ' ');
+
+test('formatNorm: до пяти знаков, без лишних нулей', () => {
+  assert.equal(formatNorm(0.011), '0,011');
+  assert.equal(formatNorm('0.01625'), '0,01625');
+  assert.equal(formatNorm(0.016), '0,016');
+  assert.equal(formatNorm(null), '');
+});
+
+test('calcMethodText: площадь × норматив', () => {
+  assert.equal(calcMethodText({ calc_method: 'per_area_norm' }), 'Площадь × норматив дома (отопление)');
+});
 
 test('formatMoney: от двух до четырёх знаков', () => {
   assert.equal(nbsp(formatMoney(5.8)), '5,80 ₽');

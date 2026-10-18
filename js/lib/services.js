@@ -12,6 +12,12 @@ export function formatMoney(value) {
   return `${Number(value).toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 4 })} ₽`;
 }
 
+// Норматив, Гкал на м²: 0.011 -> «0,011»; до пяти знаков после запятой; пустое значение -> ''.
+export function formatNorm(value) {
+  if (value === null || value === undefined || value === '') return '';
+  return Number(value).toLocaleString('ru-RU', { maximumFractionDigits: 5 });
+}
+
 // Цена за единицу услуги: «5,89 ₽ / кВт·ч».
 export function formatPrice(value, unit) {
   const money = formatMoney(value);

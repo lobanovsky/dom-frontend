@@ -42,6 +42,8 @@ const REASONS = [
   [/^service not found$/, 'Услуга не найдена'],
   [/^is required for this calculation method$/, 'Обязательно для этого способа расчёта'],
   [/^must be m2 for a per-area service$/, 'При расчёте по площади единица — м²'],
+  [/^must be gcal for an area-norm service$/, 'При расчёте «площадь × норматив» единица — Гкал'],
+  [/^a service with norms must stay an area-norm service$/, 'Нельзя менять способ расчёта: у услуги есть нормативы домов. Сначала удалите их'],
   [/^must contain at least (\d+) items?$/, (m) => `Выберите хотя бы ${m[1]}`],
   [/^components must be plain services of the same organization, unit and account purpose$/, 'В состав входят только простые (не составные) услуги той же организации, с той же единицей измерения и типом лицевого счёта'],
   [/^cannot be changed while accounts have this service assigned incompatibly$/, 'Нельзя менять: у уже назначенных счетов тип счёта или вид помещения не подойдёт. Сначала уберите назначения'],
@@ -83,6 +85,7 @@ const CONFLICTS = {
   meter_readings_meter_date_key: 'Показание на эту дату уже есть',
   services_org_kind_name_key: 'Услуга с таким названием и видом уже есть у этой организации',
   account_services_no_overlap: 'У этого счёта услуга уже назначена на пересекающийся период. Измените период существующего назначения',
+  service_norms_no_overlap: 'Период пересекается с другим нормативом этого дома. Закройте предыдущий норматив датой окончания',
   service_tariffs_no_overlap: 'Период пересекается с другим тарифом этой услуги. Закройте предыдущий тариф датой окончания',
   users_username_key: 'Пользователь с таким логином уже есть',
 };
@@ -103,6 +106,8 @@ const ACTIVE_CHILDREN = {
   meters: 'счётчики',
   readings: 'показания',
   tariffs: 'тарифы',
+  norms: 'нормативы',
+  'service norms': 'нормативы услуг',
   'account services': 'назначения услуг',
   services: 'услуги',
   'composite services': 'составные услуги, в которые она входит',
@@ -241,6 +246,8 @@ export function describeApiError(err, { action = 'save' } = {}) {
   if (raw === 'not found') return { field: null, message: 'Запись не найдена' };
   if (raw === 'service purpose does not match account purpose') return { field: null, message: 'Тип лицевого счёта не подходит услуге (например, услуга капремонта для счёта ЖКУ)' };
   if (raw === 'service is not available for this premises kind') return { field: null, message: 'Услуга не применяется к этому виду помещений' };
+  if (raw === 'service has no norms') return { field: null, message: 'Нормативы бывают только у услуги «площадь × норматив»' };
+  if (raw === 'building belongs to another organization') return { field: 'building_id', message: 'Дом принадлежит другой организации, не той, что у услуги' };
   if (raw === 'service is not active') return { field: null, message: 'Услуга выключена: её нельзя назначать' };
   if (raw === 'quantity is required for this service') return { field: 'quantity', message: 'Для этой услуги укажите количество' };
   if (raw === 'quantity must be empty for this service') return { field: 'quantity', message: 'У этой услуги количество не указывается' };

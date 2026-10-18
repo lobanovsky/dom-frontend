@@ -200,6 +200,12 @@ test('ошибки услуг и тарифов', async () => {
   assert.equal(msg('component_ids: must contain at least 1 item'), 'Выберите хотя бы 1');
   assert.match(msg('component_ids: components must be plain services of the same organization, unit and account purpose'), /простые/);
   assert.match(msg('cannot delete: has active composite services'), /составные услуги/);
+  assert.match(msg('already exists: service_norms_no_overlap', 409), /другим нормативом/);
+  assert.match(msg('unit: must be gcal for an area-norm service'), /Гкал/);
+  assert.match(msg('service has no norms'), /только у услуги/);
+  assert.match(msg('building belongs to another organization'), /другой организации/);
+  assert.match(msg('cannot delete: has active norms'), /нормативы/);
+  assert.match(msg('cannot delete: has active service norms'), /нормативы услуг/);
 });
 
 test('ошибки назначения услуг счетам', async () => {

@@ -4,11 +4,11 @@ import { openEntityForm } from '../../ui/entityForm.js';
 import { confirmDialog } from '../../ui/confirmDialog.js';
 import { toast } from '../../ui/toast.js';
 import { goTo } from '../../state/nav.js';
-import { organizationsApi, servicesApi, serviceTariffsApi, accountServicesApi, buildingsApi } from '../../api/resources.js';
-import { serviceFields, serviceTariffFields, accountServiceFields } from '../fields.js';
+import { organizationsApi, servicesApi, serviceTariffsApi, serviceNormsApi, accountServicesApi, buildingsApi } from '../../api/resources.js';
+import { serviceFields, serviceTariffFields, serviceNormFields, accountServiceFields } from '../fields.js';
 import { openBulkAssignDialog } from '../../ui/bulkAssignDialog.js';
 import { serviceKinds, serviceUnits, accountPurposes, premisesKinds, label } from '../../lib/labels.js';
-import { assignmentPeriod, calcMethodText, formatMoney, formatPrice, premisesKindsText, receiptName, tariffPeriod } from '../../lib/services.js';
+import { assignmentPeriod, calcMethodText, formatMoney, formatNorm, formatPrice, premisesKindsText, receiptName, tariffPeriod } from '../../lib/services.js';
 import { formatReading } from '../../lib/meters.js';
 import { formatDate, todayIso } from '../../lib/format.js';
 import { describeApiError } from '../../lib/apiErrors.js';
@@ -137,6 +137,30 @@ export async function servicePage(container, { id }) {
     deleteMessage: (t) => `Удалить тариф ${tariffPeriod(t.valid_from, t.valid_to, formatDate)}?`,
   });
 
+  // Нормативы домов (Гкал на м²) — только у услуги «площадь × норматив»; цена за Гкал — в тарифах.
+  const norms = service.calc_method !== 'per_area_norm' ? null : createCrudList({
+    entityTitle: 'Норматив',
+    addLabel: 'Добавить норматив',
+    api: serviceNormsApi,
+    fields: serviceNormFields(buildings.filter((b) => b.organization_id === service.organization_id)),
+    fixedQuery: { service_id: service.id },
+    fixed: { service_id: service.id },
+    newDefaults: { valid_from: today },
+    filters: [
+      { name: 'building_id', label: 'Дом', type: 'select', options: buildings.map((b) => ({ value: String(b.id), label: b.address })) },
+    ],
+    rowClass: (n) => (n.valid_from <= today && (!n.valid_to || n.valid_to >= today) ? null : 'row-muted'),
+    columns: [
+      { key: 'building', label: 'Дом', primary: true, render: (n) => el('a', { href: `/buildings/${n.building_id}` }, n.building_address) },
+      { key: 'period', label: 'Период', render: (n) => tariffPeriod(n.valid_from, n.valid_to, formatDate) },
+      { key: 'value', label: 'Норматив, Гкал/м²', render: (n) => el('span', { class: 'nowrap' }, formatNorm(n.value)) },
+      { key: 'now', label: '', render: (n) => (n.valid_from <= today && (!n.valid_to || n.valid_to >= today) ? el('span', { class: 'badge badge-success' }, 'Действует') : '') },
+      { key: 'comment', label: 'Комментарий' },
+    ],
+    emptyMessage: 'Нормативов пока нет',
+    deleteMessage: (n) => `Удалить норматив ${formatNorm(n.value)} для дома «${n.building_address}» (${tariffPeriod(n.valid_from, n.valid_to, formatDate)})?`,
+  });
+
   // Лицевые счета, которым назначена услуга.
   const assignments = createCrudList({
     entityTitle: 'Назначение',
@@ -180,6 +204,9 @@ export async function servicePage(container, { id }) {
     info,
     el('h2', { class: 'section-title' }, 'Тарифы'),
     tariffs ? tariffs.element : el('p', { class: 'text-muted' }, 'У этой услуги своих тарифов нет: цена — сумма цен входящих в неё услуг на выбранную дату.'),
+    norms ? el('h2', { class: 'section-title' }, 'Нормативы домов') : null,
+    norms ? el('p', { class: 'text-muted' }, 'Объём = площадь помещения × норматив дома; сумма = объём × тариф за Гкал. Норматив у каждого дома свой и меняется по датам.') : null,
+    norms ? norms.element : null,
     el('h2', { class: 'section-title' }, 'Назначена счетам'),
     assignments.element,
   ]));

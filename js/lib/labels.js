@@ -47,6 +47,7 @@ export const serviceUnits = { kwh: 'кВт·ч', m3: 'м³', gcal: 'Гкал', m
 export const serviceCalcMethods = {
   fixed: 'Фиксированно за помещение',
   per_area: 'За м² площади помещения',
+  per_area_norm: 'Площадь × норматив дома (отопление)',
   individual_meter: 'По индивидуальному счётчику',
   common_meter: 'По общедомовому счётчику (делится по площади)',
   sum_volumes: 'Сумма объёмов других услуг (свой тариф)',

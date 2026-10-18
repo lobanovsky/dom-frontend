@@ -167,7 +167,7 @@ export const serviceFields = ({ organizations = [], services = [], selfId = null
     selectField('calc_method', 'Как считается', options(serviceCalcMethods), { required: true, placeholder: 'Выберите', full: true }),
     { ...selectField('meter_resource', 'Какой счётчик', options(meterResources), { required: true, placeholder: 'Выберите' }), visible: () => metered },
     { ...selectField('meter_tariff', 'Тариф счётчика', [1, 2, 3].map((n) => ({ value: String(n), label: `Т${n}` })), { required: true, numeric: true }), visible: () => metered && electric },
-    selectField('unit', 'Единица измерения', options(serviceUnits), { required: true, placeholder: 'Выберите' }),
+    selectField('unit', 'Единица измерения', options(serviceUnits), { required: true, placeholder: 'Выберите', help: 'При расчёте по площади — м², при «площадь × норматив» — Гкал (цена задаётся за Гкал)' }),
     selectField('account_purpose', 'На какой лицевой счёт', options(accountPurposes), { required: true, placeholder: 'Выберите', help: 'Квитанция выставляется по лицевому счёту: услуга попадёт только в квитанцию счёта этого типа' }),
     { type: 'picker', name: 'premises_kinds', label: 'Для каких помещений', full: true,
       help: 'Ничего не отмечено — для любых помещений. Услугу нельзя назначить счёту помещения другого вида',
@@ -198,6 +198,16 @@ export const accountServiceFields = ({ service = null, services = [] } = {}) => 
     textField('comment', 'Комментарий', { full: true }),
   ];
 };
+
+// Норматив услуги «площадь × норматив» для дома. Тариф (цена за Гкал) задаётся отдельно, в тарифах услуги.
+export const serviceNormFields = (buildings) => [
+  selectField('building_id', 'Дом', buildings.map((b) => ({ value: String(b.id), label: b.address })), { required: true, numeric: true, placeholder: 'Выберите', full: true,
+    help: 'Подходят дома организации услуги' }),
+  numberField('value', 'Норматив, Гкал на м²', { required: true, min: 0.00001, step: 0.00001, inputmode: 'decimal', help: 'Не больше пяти знаков после запятой, например 0,011' }),
+  dateField('valid_from', 'Действует с', { required: true }),
+  dateField('valid_to', 'Действует по', { help: 'Включительно. Пусто — действует до сих пор. Периоды норматива одного дома не пересекаются' }),
+  textField('comment', 'Комментарий', { full: true }),
+];
 
 export const serviceTariffFields = (service) => [
   numberField('price', `Цена, ₽${unitShort(service.unit) ? ` за ${unitShort(service.unit)}` : ''}`, { required: true, min: 0, step: 0.0001, inputmode: 'decimal', help: 'Не больше четырёх знаков после запятой' }),
