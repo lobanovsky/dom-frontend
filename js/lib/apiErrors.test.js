@@ -201,6 +201,14 @@ test('ошибки услуг и тарифов', async () => {
   assert.match(msg('component_ids: components must be plain services of the same organization, unit and account purpose'), /простые/);
   assert.match(msg('cannot delete: has active composite services'), /составные услуги/);
   assert.match(msg('already exists: service_norms_no_overlap', 409), /другим нормативом/);
+  assert.match(msg('already exists: tariffs_org_name_key', 409), /Тариф с таким названием/);
+  assert.match(msg('already exists: tariff_prices_no_overlap', 409), /другой ценой/);
+  assert.match(msg('tariff does not match service organization or unit'), /той же организации/);
+  assert.match(msg('service has own tariffs'), /собственные цены/);
+  assert.match(msg('service uses a catalog tariff'), /справочника тарифов/);
+  assert.match(msg('tariff is used by services'), /используют услуги/);
+  assert.match(msg('service_id: service already uses a catalog tariff'), /уже берёт цену/);
+  assert.match(msg('cannot delete: has active prices'), /цены/);
   assert.match(msg('unit: must be gcal for an area-norm service'), /Гкал/);
   assert.match(msg('service has no norms'), /только у услуги/);
   assert.match(msg('building belongs to another organization'), /другой организации/);

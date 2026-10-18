@@ -57,6 +57,13 @@ export const accountHoldersApi = resource('account-holders');
 export const metersApi = resource('meters');
 export const servicesApi = resource('services');
 export const serviceTariffsApi = resource('service-tariffs');
+// Справочник тарифов («Электроэнергия Т1») с ценами по периодам; услуги берут цену из тарифа вместо собственных.
+// fromService: вынести собственные цены услуги в новый тариф (услуга начнёт ссылаться на него).
+export const tariffsApi = {
+  ...resource('tariffs'),
+  fromService: (body) => client.post('/api/v1/tariffs/from-service', body),
+};
+export const tariffPricesApi = resource('tariff-prices');
 // Нормативы услуг «площадь × норматив» (Гкал на м²) по домам и периодам.
 export const serviceNormsApi = resource('service-norms');
 // Назначения услуг лицевым счетам. bulk*: массовое назначение услуги подходящим счетам (preview ничего не пишет), bulkClose — закрыть датой.

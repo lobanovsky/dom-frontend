@@ -4,7 +4,8 @@ import { openEntityForm } from '../../ui/entityForm.js';
 import { confirmDialog } from '../../ui/confirmDialog.js';
 import { toast } from '../../ui/toast.js';
 import { goTo } from '../../state/nav.js';
-import { organizationsApi, servicesApi, serviceTariffsApi, serviceNormsApi, accountServicesApi, buildingsApi } from '../../api/resources.js';
+import { organizationsApi, servicesApi, serviceTariffsApi, serviceNormsApi, accountServicesApi, buildingsApi, tariffsApi } from '../../api/resources.js';
+import { textField } from '../../lib/fields.js';
 import { serviceFields, serviceTariffFields, serviceNormFields, accountServiceFields } from '../fields.js';
 import { openBulkAssignDialog } from '../../ui/bulkAssignDialog.js';
 import { serviceKinds, serviceUnits, accountPurposes, premisesKinds, label } from '../../lib/labels.js';
@@ -15,16 +16,18 @@ import { describeApiError } from '../../lib/apiErrors.js';
 import { canWrite } from '../../lib/permissions.js';
 import { notFoundView, definitionList, deletedBanner } from '../common.js';
 
-// Карточка услуги: сведения и история тарифов. У составной услуги своих тарифов нет — показана цена по составу.
+// Карточка услуги: сведения и история тарифов. У составной услуги (сумма цен) своих тарифов нет — показана цена по составу;
+// у услуги с тарифом из справочника цены тоже не свои — ссылка на тариф.
 export async function servicePage(container, { id }) {
   container.replaceChildren(el('div', { class: 'table-status' }, 'Загрузка…'));
   let service;
   let organizations;
   let services;
   let buildings;
+  let catalog;
   try {
-    [service, { items: organizations }, { items: services }, { items: buildings }] = await Promise.all([
-      servicesApi.get(id), organizationsApi.list({ limit: 200 }), servicesApi.list({ limit: 200 }), buildingsApi.list({ limit: 200 }),
+    [service, { items: organizations }, { items: services }, { items: buildings }, { items: catalog }] = await Promise.all([
+      servicesApi.get(id), organizationsApi.list({ limit: 200 }), servicesApi.list({ limit: 200 }), buildingsApi.list({ limit: 200 }), tariffsApi.list({ limit: 200 }),
     ]);
   } catch (err) {
     container.replaceChildren(notFoundView(describeApiError(err).message, '/services', 'К списку услуг'));
@@ -48,6 +51,7 @@ export async function servicePage(container, { id }) {
       ['Для помещений', premisesKindsText(service.premises_kinds, premisesKinds)],
       ['Название в квитанции', service.receipt_name ? receiptName(service) : null],
       ['Состав', components.length ? el('span', {}, components.flatMap((c, i) => [i ? ', ' : '', el('a', { href: `/services/${c.id}` }, c.name)])) : null],
+      ['Тариф', service.tariff_id ? el('a', { href: `/tariffs/${service.tariff_id}` }, service.tariff_name) : null],
       ['Цена сейчас', service.current_price === null || service.current_price === undefined ? el('span', { class: 'badge badge-warning' }, 'Нет тарифа на сегодня') : formatPrice(service.current_price, service.unit)],
       ['Состояние', el('span', { class: `badge badge-${service.active ? 'success' : 'neutral'}` }, service.active ? 'Оказывается' : 'Не оказывается')],
       ['Порядок в квитанции', service.position || null],
@@ -85,7 +89,7 @@ export async function servicePage(container, { id }) {
       // карточка обновится при следующем открытии
     }
   }
-  const tariffsApi = {
+  const ownTariffsApi = {
     ...serviceTariffsApi,
     create: async (body) => { const r = await serviceTariffsApi.create(body); refreshService(); return r; },
     update: async (tid, body) => { const r = await serviceTariffsApi.update(tid, body); refreshService(); return r; },
@@ -96,11 +100,25 @@ export async function servicePage(container, { id }) {
   function edit() {
     openEntityForm({
       title: 'Услуга: редактирование',
-      fields: serviceFields({ organizations, services, selfId: service.id }),
-      watch: ['calc_method', 'meter_resource'],
+      fields: serviceFields({ organizations, services, tariffs: catalog, selfId: service.id }),
+      watch: ['calc_method', 'meter_resource', 'organization_id', 'unit'],
       entity: service,
       save: (body) => servicesApi.update(service.id, body),
       onSaved: (saved) => { service = saved; byId.set(saved.id, saved); renderInfo(); },
+    });
+  }
+
+  // Собственные цены услуги -> новый тариф справочника, на который услуга начнёт ссылаться.
+  function moveToCatalog() {
+    openEntityForm({
+      title: 'Вынести цены в справочник',
+      fields: [textField('name', 'Название тарифа', { required: true, full: true,
+        help: 'Например, «Электроэнергия Т1». Цены этой услуги перенесутся в новый тариф, а услуга станет брать цену из него. Тот же тариф потом можно выбрать в других услугах с такой же ценой (у них не должно быть своих цен)' })],
+      entity: { name: service.name },
+      submitLabel: 'Вынести',
+      successMessage: 'Тариф создан, услуга берёт цену из него',
+      save: (body) => tariffsApi.fromService({ service_id: service.id, name: body.name }),
+      onSaved: () => servicePage(container, { id }),
     });
   }
 
@@ -116,12 +134,12 @@ export async function servicePage(container, { id }) {
     }
   }
 
-  const noTariffs = service.calc_method === 'sum_prices';
+  const noTariffs = service.calc_method === 'sum_prices' || !!service.tariff_id;
   const today = todayIso();
   const tariffs = noTariffs ? null : createCrudList({
     entityTitle: 'Тариф',
     addLabel: 'Добавить тариф',
-    api: tariffsApi,
+    api: ownTariffsApi,
     fields: () => serviceTariffFields(service),
     fixedQuery: { service_id: service.id },
     fixed: { service_id: service.id },
@@ -197,13 +215,16 @@ export async function servicePage(container, { id }) {
       title,
       canWrite() ? el('div', { class: 'header-actions' }, [
         service.active ? el('button', { type: 'button', class: 'btn', onclick: bulkAssign }, 'Назначить счетам') : null,
+        service.calc_method !== 'sum_prices' && !service.tariff_id ? el('button', { type: 'button', class: 'btn', onclick: moveToCatalog }, 'Вынести цены в справочник') : null,
         el('button', { type: 'button', class: 'btn', onclick: edit }, 'Изменить'),
         el('button', { type: 'button', class: 'btn btn-ghost btn-danger-text', onclick: remove }, 'Удалить'),
       ]) : null,
     ]),
     info,
     el('h2', { class: 'section-title' }, 'Тарифы'),
-    tariffs ? tariffs.element : el('p', { class: 'text-muted' }, 'У этой услуги своих тарифов нет: цена — сумма цен входящих в неё услуг на выбранную дату.'),
+    tariffs ? tariffs.element : el('p', { class: 'text-muted' }, service.tariff_id
+      ? el('span', {}, ['Цена берётся из тарифа ', el('a', { href: `/tariffs/${service.tariff_id}` }, service.tariff_name), ': цены меняются там, для всех услуг с этим тарифом сразу.'])
+      : 'У этой услуги своих тарифов нет: цена — сумма цен входящих в неё услуг на выбранную дату.'),
     norms ? el('h2', { class: 'section-title' }, 'Нормативы домов') : null,
     norms ? el('p', { class: 'text-muted' }, 'Объём = площадь помещения × норматив дома; сумма = объём × тариф за Гкал. Норматив у каждого дома свой и меняется по датам.') : null,
     norms ? norms.element : null,

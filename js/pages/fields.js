@@ -155,8 +155,9 @@ export const meterReadingFields = (meter) => {
 // --- Услуги ---
 
 // Услуга организации. services — уже заведённые услуги (кандидаты в состав суммы; бэкенд проверит организацию и единицу).
-// Нужен watch: ['calc_method', 'meter_resource'] — состав и счётчик показываются только у своих способов расчёта.
-export const serviceFields = ({ organizations = [], services = [], selfId = null } = {}) => (values) => {
+// tariffs — справочник тарифов; в списке только тарифы той же организации и с той же единицей, что у услуги.
+// Нужен watch: ['calc_method', 'meter_resource', 'organization_id', 'unit'] — состав и счётчик показываются только у своих способов расчёта.
+export const serviceFields = ({ organizations = [], services = [], tariffs = [], selfId = null } = {}) => (values) => {
   const metered = values.calc_method === 'individual_meter' || values.calc_method === 'common_meter';
   const electric = values.meter_resource === 'electricity';
   const plain = services.filter((s) => !isSumMethod(s.calc_method) && s.id !== selfId);
@@ -168,6 +169,9 @@ export const serviceFields = ({ organizations = [], services = [], selfId = null
     { ...selectField('meter_resource', 'Какой счётчик', options(meterResources), { required: true, placeholder: 'Выберите' }), visible: () => metered },
     { ...selectField('meter_tariff', 'Тариф счётчика', [1, 2, 3].map((n) => ({ value: String(n), label: `Т${n}` })), { required: true, numeric: true }), visible: () => metered && electric },
     selectField('unit', 'Единица измерения', options(serviceUnits), { required: true, placeholder: 'Выберите', help: 'При расчёте по площади — м², при «площадь × норматив» — Гкал (цена задаётся за Гкал)' }),
+    { ...selectField('tariff_id', 'Тариф', tariffs.filter((t) => String(t.organization_id) === String(values.organization_id) && t.unit === values.unit).map((t) => ({ value: String(t.id), label: t.name })),
+      { numeric: true, placeholder: 'Свои цены у услуги', full: true, help: 'Цена берётся из справочника тарифов: так одну цену не нужно вводить в каждой услуге. Показаны тарифы организации с той же единицей измерения. Если выбран тариф, собственных цен у услуги нет' }),
+      visible: () => values.calc_method !== 'sum_prices' },
     selectField('account_purpose', 'На какой лицевой счёт', options(accountPurposes), { required: true, placeholder: 'Выберите', help: 'Квитанция выставляется по лицевому счёту: услуга попадёт только в квитанцию счёта этого типа' }),
     { type: 'picker', name: 'premises_kinds', label: 'Для каких помещений', full: true,
       help: 'Ничего не отмечено — для любых помещений. Услугу нельзя назначить счёту помещения другого вида',
@@ -206,6 +210,21 @@ export const serviceNormFields = (buildings) => [
   numberField('value', 'Норматив, Гкал на м²', { required: true, min: 0.00001, step: 0.00001, inputmode: 'decimal', help: 'Не больше пяти знаков после запятой, например 0,011' }),
   dateField('valid_from', 'Действует с', { required: true }),
   dateField('valid_to', 'Действует по', { help: 'Включительно. Пусто — действует до сих пор. Периоды норматива одного дома не пересекаются' }),
+  textField('comment', 'Комментарий', { full: true }),
+];
+
+// Тариф справочника: название и единица. Цены тарифа — tariffPriceFields.
+export const tariffFields = (organizations) => [
+  selectField('organization_id', 'Организация', organizations.map((o) => ({ value: String(o.id), label: o.name })), { required: true, numeric: true, placeholder: 'Выберите', full: true }),
+  textField('name', 'Название', { required: true, full: true, help: 'Например, «Электроэнергия Т1» или «ХВС». Организацию и единицу нельзя менять, пока тариф использует хотя бы одна услуга' }),
+  selectField('unit', 'Единица измерения', options(serviceUnits), { required: true, placeholder: 'Выберите', help: 'В услугах с этим тарифом должна быть такая же единица' }),
+  textField('comment', 'Комментарий', { full: true }),
+];
+
+export const tariffPriceFields = (tariff) => [
+  numberField('price', `Цена, ₽${unitShort(tariff.unit) ? ` за ${unitShort(tariff.unit)}` : ''}`, { required: true, min: 0, step: 0.0001, inputmode: 'decimal', help: 'Не больше четырёх знаков после запятой' }),
+  dateField('valid_from', 'Действует с', { required: true }),
+  dateField('valid_to', 'Действует по', { help: 'Включительно. Пусто — действует до сих пор. Периоды цен одного тарифа не пересекаются' }),
   textField('comment', 'Комментарий', { full: true }),
 ];
 

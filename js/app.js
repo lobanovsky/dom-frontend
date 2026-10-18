@@ -32,6 +32,8 @@ import { metersPage } from './pages/meters/metersPage.js';
 import { meterPage } from './pages/meters/meterPage.js';
 import { servicesPage } from './pages/services/servicesPage.js';
 import { servicePage } from './pages/services/servicePage.js';
+import { tariffsPage } from './pages/tariffs/tariffsPage.js';
+import { tariffPage } from './pages/tariffs/tariffPage.js';
 import { usersPage } from './pages/users/usersPage.js';
 
 const appRoot = document.getElementById('app');
@@ -57,6 +59,8 @@ const routes = [
   { pattern: '/meters/:id', mount: meterPage },
   { pattern: '/services', mount: servicesPage },
   { pattern: '/services/:id', mount: servicePage },
+  { pattern: '/tariffs', mount: tariffsPage },
+  { pattern: '/tariffs/:id', mount: tariffPage },
   { pattern: '/bank-accounts', mount: bankAccountsPage },
   { pattern: '/payments/incoming', mount: incomingPaymentsPage },
   { pattern: '/payment-registries', mount: paymentRegistriesPage },

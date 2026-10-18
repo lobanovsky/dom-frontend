@@ -48,6 +48,9 @@ const REASONS = [
   [/^components must be plain services of the same organization, unit and account purpose$/, 'В состав входят только простые (не составные) услуги той же организации, с той же единицей измерения и типом лицевого счёта'],
   [/^cannot be changed while accounts have this service assigned incompatibly$/, 'Нельзя менять: у уже назначенных счетов тип счёта или вид помещения не подойдёт. Сначала уберите назначения'],
   [/^a sum-of-prices service cannot have tariffs$/, 'У услуги «сумма цен» нет своих тарифов: сначала удалите их'],
+  [/^service already uses a catalog tariff$/, 'Услуга уже берёт цену из справочника тарифов'],
+  [/^service has no tariffs of its own$/, 'У услуги нет собственных цен, выносить нечего'],
+  [/^a sum-of-prices service has no tariff of its own$/, 'У услуги «сумма цен» тарифа нет: цена — сумма цен входящих услуг'],
   [/^a sum-of-prices service has no tariffs of its own$/, 'У услуги «сумма цен» нет своих тарифов: цена — сумма цен входящих услуг'],
   [/^must not be before valid_from$/, 'Раньше даты начала действия'],
   [/^apartment "(.*)" not found in this building$/, (m) => `квартира «${m[1]}» не найдена в этом доме`],
@@ -85,6 +88,8 @@ const CONFLICTS = {
   meter_readings_meter_date_key: 'Показание на эту дату уже есть',
   services_org_kind_name_key: 'Услуга с таким названием и видом уже есть у этой организации',
   account_services_no_overlap: 'У этого счёта услуга уже назначена на пересекающийся период. Измените период существующего назначения',
+  tariffs_org_name_key: 'Тариф с таким названием уже есть у этой организации',
+  tariff_prices_no_overlap: 'Период пересекается с другой ценой этого тарифа. Закройте предыдущую цену датой окончания',
   service_norms_no_overlap: 'Период пересекается с другим нормативом этого дома. Закройте предыдущий норматив датой окончания',
   service_tariffs_no_overlap: 'Период пересекается с другим тарифом этой услуги. Закройте предыдущий тариф датой окончания',
   users_username_key: 'Пользователь с таким логином уже есть',
@@ -107,6 +112,7 @@ const ACTIVE_CHILDREN = {
   readings: 'показания',
   tariffs: 'тарифы',
   norms: 'нормативы',
+  prices: 'цены',
   'service norms': 'нормативы услуг',
   'account services': 'назначения услуг',
   services: 'услуги',
@@ -246,6 +252,10 @@ export function describeApiError(err, { action = 'save' } = {}) {
   if (raw === 'not found') return { field: null, message: 'Запись не найдена' };
   if (raw === 'service purpose does not match account purpose') return { field: null, message: 'Тип лицевого счёта не подходит услуге (например, услуга капремонта для счёта ЖКУ)' };
   if (raw === 'service is not available for this premises kind') return { field: null, message: 'Услуга не применяется к этому виду помещений' };
+  if (raw === 'tariff does not match service organization or unit') return { field: 'tariff_id', message: 'Тариф должен быть той же организации и с той же единицей измерения, что у услуги' };
+  if (raw === 'service has own tariffs') return { field: 'tariff_id', message: 'У услуги есть собственные цены: сначала удалите их или нажмите «Вынести цены в справочник»' };
+  if (raw === 'service uses a catalog tariff') return { field: null, message: 'Услуга берёт цену из справочника тарифов: меняйте цены в самом тарифе' };
+  if (raw === 'tariff is used by services') return { field: null, message: 'Организацию и единицу нельзя менять: тариф используют услуги' };
   if (raw === 'service has no norms') return { field: null, message: 'Нормативы бывают только у услуги «площадь × норматив»' };
   if (raw === 'building belongs to another organization') return { field: 'building_id', message: 'Дом принадлежит другой организации, не той, что у услуги' };
   if (raw === 'service is not active') return { field: null, message: 'Услуга выключена: её нельзя назначать' };
