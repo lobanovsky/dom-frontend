@@ -51,6 +51,13 @@ export function createForm({ fields, initialValues = {}, submitLabel = 'Сохр
 
     let input;
     if (def.type === 'select') {
+      // Без пункта-заглушки браузер показывает первый вариант как выбранный: значение формы должно с ним совпадать,
+      // иначе обязательное поле считается пустым, хотя на экране заполнено.
+      const first = (def.options || [])[0];
+      const current = String(values[def.name] ?? '');
+      if (!def.placeholder && first && !(def.options || []).some((o) => String(o.value) === current)) {
+        values = { ...values, [def.name]: first.value };
+      }
       input = el(
         'select',
         { id: inputId, name: def.name, required: !!def.required, disabled: !!def.disabled },
