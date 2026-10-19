@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { resourceUnit, tariffColumns, formatReading, formatDelta, consumption, lastReadingText, meterStatus, verificationState, meterTitle, meterNumberText, previousReadingText } from './meters.js';
+import { resourceUnit, tariffColumns, formatReading, formatDelta, consumption, lastReadingText, meterStatus, verificationState, meterTitle, meterNumberText, previousReadingText, selectableCommonMeters, retiredNote } from './meters.js';
 
 test('units and tariff columns', () => {
   assert.equal(resourceUnit('electricity'), 'кВт·ч');
@@ -58,4 +58,17 @@ test('hint with the previous reading', () => {
   const m = { tariffs: 2, initial_t1: 10, initial_t2: 5.5 };
   assert.equal(previousReadingText(m), 'Начальное: 10 · 5,5');
   assert.equal(previousReadingText({ ...m, last_reading_date: '2026-02-01', last_t1: 12, last_t2: 6 }), 'Предыдущее на 01.02.2026: 12 · 6');
+});
+
+test('selectableCommonMeters: ресурс, выведенные в конце и не скрыты', () => {
+  const meters = [
+    { id: 1, resource: 'electricity', active: false, removed_at: '2026-03-01' },
+    { id: 2, resource: 'electricity', active: true },
+    { id: 3, resource: 'electricity', active: false, removed_at: null },
+    { id: 4, resource: 'cold_water', active: true },
+  ];
+  assert.deepEqual(selectableCommonMeters(meters, 'electricity').map((m) => m.id), [2, 3, 1]);
+  assert.equal(retiredNote(meters[0]), ' (выведен 01.03.2026)');
+  assert.equal(retiredNote(meters[1]), '');
+  assert.equal(retiredNote(meters[2]), '');
 });

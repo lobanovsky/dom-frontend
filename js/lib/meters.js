@@ -71,3 +71,14 @@ export function previousReadingText(meter) {
   if (meter.last_reading_date) return `Предыдущее на ${formatDate(meter.last_reading_date)}: ${lastReadingText(meter)}`;
   return `Начальное: ${cols.map((c) => formatReading(meter[`initial_${c.key}`] ?? 0)).join(' · ')}`;
 }
+
+const isRetired = (m) => !m.active && Boolean(m.removed_at);
+
+// Пометка выведенного из работы счётчика для списков выбора: « (выведен 01.03.2026)»; рабочему — ''.
+export const retiredNote = (m) => (isRetired(m) ? ` (выведен ${formatDate(m.removed_at)})` : '');
+
+// Общедомовые счётчики ресурса для выбора в услуге: работающие первыми, выведенные из работы в конце (с пометкой).
+// Выведенные не скрываются: расчёт за прошлый месяц берёт те счётчики услуги, что работали в этом месяце,
+// поэтому старый счётчик нужен услуге, пока по нему считают прошлые периоды.
+export const selectableCommonMeters = (meters, resource) =>
+  meters.filter((m) => m.resource === resource).sort((a, b) => Number(isRetired(a)) - Number(isRetired(b)));
