@@ -4,7 +4,7 @@ let activeModal = null;
 
 const FOCUSABLE_SELECTOR = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
-export function openModal({ title, content, onClose, wide = false } = {}) {
+export function openModal({ title, content, onClose, wide = false, extraWide = false } = {}) {
   if (activeModal) activeModal.close();
 
   const previouslyFocused = document.activeElement;
@@ -12,7 +12,7 @@ export function openModal({ title, content, onClose, wide = false } = {}) {
   const closeButton = el('button', { type: 'button', class: 'modal-close', 'aria-label': 'Закрыть', onclick: () => close() }, '×');
   const header = el('div', { class: 'modal-header' }, [el('h2', {}, title || ''), closeButton]);
   const body = el('div', { class: 'modal-body' }, content);
-  const dialog = el('div', { class: wide ? 'modal-dialog modal-dialog--wide' : 'modal-dialog', role: 'dialog', 'aria-modal': 'true' }, [header, body]);
+  const dialog = el('div', { class: extraWide ? 'modal-dialog modal-dialog--xl' : wide ? 'modal-dialog modal-dialog--wide' : 'modal-dialog', role: 'dialog', 'aria-modal': 'true' }, [header, body]);
   const backdrop = el('div', { class: 'modal-backdrop' }, dialog);
 
   function onKeydown(event) {

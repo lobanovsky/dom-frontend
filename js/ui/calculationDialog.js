@@ -33,7 +33,7 @@ export function openCalculationDialog({ account }) {
     el('div', { class: 'field' }, [el('label', {}, 'За какой месяц'), picker.element]),
     result,
   ]);
-  const modal = openModal({ title: `Расчёт по счёту № ${account.number}`, content, wide: true });
+  const modal = openModal({ title: `Расчёт по счёту № ${account.number}`, content, extraWide: true });
   load();
   return modal;
 }

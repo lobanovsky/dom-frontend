@@ -607,6 +607,11 @@ a.btn-primary {
   width: 640px;
 }
 
+/* Окна с таблицами (расчёт): вдвое шире обычного «wide» */
+.modal-dialog--xl {
+  width: 1280px;
+}
+
 /* Таблица-список: тулбар, пагинация */
 
 .table-toolbar-spacer {
@@ -821,7 +826,8 @@ a.btn-primary {
     grid-template-columns: 1fr;
   }
 
-  .modal-dialog--wide {
+  .modal-dialog--wide,
+  .modal-dialog--xl {
     width: 100%;
   }
 
