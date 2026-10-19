@@ -102,12 +102,12 @@ export function openBulkPeriodDialog({ service, buildings, onDone }) {
     if (r.to_change > r.sample.length) changes.push(el('li', { class: 'text-muted' }, `…и ещё ${r.to_change - r.sample.length}`));
     const conflicts = r.conflict_sample.map((s) => el('li', {}, rowText(s)));
     if (r.conflicts > r.conflict_sample.length) conflicts.push(el('li', { class: 'text-muted' }, `…и ещё ${r.conflicts - r.conflict_sample.length}`));
-    result.replaceChildren(
+    result.replaceChildren(...[
       el('p', {}, `Выбрано назначений: ${r.matched}. Изменятся: ${r.to_change}. Уже с таким периодом: ${r.unchanged}.`),
       changes.length ? el('ul', { class: 'import-errors' }, changes) : null,
       r.conflicts ? el('p', { class: 'form-error' }, `Новый период пересекается с другим назначением этой услуги у назначений: ${r.conflicts}. Пока они есть, изменить нельзя — сузьте выбор или исправьте эти назначения:`) : null,
       conflicts.length ? el('ul', { class: 'import-errors' }, conflicts) : null,
-    );
+    ].filter(Boolean));
     result.hidden = false;
   }
 

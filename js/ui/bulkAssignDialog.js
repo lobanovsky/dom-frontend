@@ -100,10 +100,10 @@ export function openBulkAssignDialog({ service, buildings, onDone }) {
   function showPreview(r) {
     const rows = r.sample.map((s) => el('li', {}, `${label(premisesKinds, s.premises_kind)} № ${s.premises_number} — счёт ${s.account_number}`));
     if (r.to_assign > r.sample.length) rows.push(el('li', { class: 'text-muted' }, `…и ещё ${r.to_assign - r.sample.length}`));
-    result.replaceChildren(
+    result.replaceChildren(...[
       el('p', {}, `Подходящих счетов: ${r.candidates}. Получат услугу: ${r.to_assign}. Уже назначена на этот период: ${r.skipped_existing}.`),
       rows.length ? el('ul', { class: 'import-errors' }, rows) : null,
-    );
+    ].filter(Boolean));
     result.hidden = false;
   }
 
