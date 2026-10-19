@@ -8,6 +8,7 @@ import { organizationsApi, servicesApi, serviceTariffsApi, serviceNormsApi, acco
 import { textField } from '../../lib/fields.js';
 import { serviceFields, serviceTariffFields, serviceNormFields, accountServiceFields } from '../fields.js';
 import { openBulkAssignDialog } from '../../ui/bulkAssignDialog.js';
+import { openBulkPeriodDialog } from '../../ui/bulkPeriodDialog.js';
 import { serviceKinds, serviceUnits, accountPurposes, premisesKinds, label } from '../../lib/labels.js';
 import { assignmentPeriod, calcMethodText, formatMoney, formatNorm, formatPrice, premisesKindsText, receiptName, tariffPeriod } from '../../lib/services.js';
 import { formatReading, meterNumberText } from '../../lib/meters.js';
@@ -219,6 +220,10 @@ export async function servicePage(container, { id }) {
     openBulkAssignDialog({ service, buildings, onDone: () => assignments.reload() });
   }
 
+  function bulkPeriod() {
+    openBulkPeriodDialog({ service, buildings, onDone: () => assignments.reload() });
+  }
+
   renderInfo();
   container.replaceChildren(el('div', { class: 'page' }, [
     breadcrumbs(),
@@ -226,6 +231,7 @@ export async function servicePage(container, { id }) {
       title,
       canWrite() ? el('div', { class: 'header-actions' }, [
         service.active ? el('button', { type: 'button', class: 'btn', onclick: bulkAssign }, 'Назначить счетам') : null,
+        el('button', { type: 'button', class: 'btn', onclick: bulkPeriod }, 'Изменить период'),
         service.calc_method !== 'sum_prices' && !service.tariff_id ? el('button', { type: 'button', class: 'btn', onclick: moveToCatalog }, 'Вынести цены в справочник') : null,
         el('button', { type: 'button', class: 'btn', onclick: edit }, 'Изменить'),
         el('button', { type: 'button', class: 'btn btn-ghost btn-danger-text', onclick: remove }, 'Удалить'),

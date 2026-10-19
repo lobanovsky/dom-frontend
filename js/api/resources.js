@@ -70,12 +70,14 @@ export const tariffsApi = {
 export const tariffPricesApi = resource('tariff-prices');
 // Нормативы услуг «площадь × норматив» (Гкал на м²) по домам и периодам.
 export const serviceNormsApi = resource('service-norms');
-// Назначения услуг лицевым счетам. bulk*: массовое назначение услуги подходящим счетам (preview ничего не пишет), bulkClose — закрыть датой.
+// Назначения услуг лицевым счетам. bulk*: массовое назначение услуги подходящим счетам (preview ничего не пишет), bulkClose — закрыть датой, bulkPeriod* — массово заменить период назначений.
 export const accountServicesApi = {
   ...resource('account-services'),
   bulkPreview: (body) => client.post('/api/v1/account-services/bulk/preview', body),
   bulkApply: (body) => client.post('/api/v1/account-services/bulk', body),
   bulkClose: (body) => client.post('/api/v1/account-services/bulk-close', body),
+  bulkPeriodPreview: (body) => client.post('/api/v1/account-services/bulk-period/preview', body),
+  bulkPeriodApply: (body) => client.post('/api/v1/account-services/bulk-period', body),
 };
 export const meterReadingsApi = {
   ...resource('meter-readings'),

@@ -231,6 +231,7 @@ test('ошибки назначения услуг счетам', async () => {
   assert.match(err('service purpose does not match account purpose').message, /Тип лицевого счёта/);
   assert.match(err('service is not available for this premises kind').message, /виду помещений|видов помещений|виду/);
   assert.match(err('service is not active').message, /выключена/);
+  assert.match(err('valid_from: the new period overlaps other assignments of the same service on 3 accounts').message, /пересекается.*: 3/);
   assert.equal(err('quantity is required for this service').field, 'quantity');
   assert.match(err('cannot delete: has active account services').message, /назначения услуг/);
   assert.match(err('cannot save: service is deleted').message, /услуга/);

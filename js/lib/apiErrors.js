@@ -261,6 +261,8 @@ export function describeApiError(err, { action = 'save' } = {}) {
   if (raw === 'tariff is used by services') return { field: null, message: 'Организацию и единицу нельзя менять: тариф используют услуги' };
   if (raw === 'service has no norms') return { field: null, message: 'Нормативы бывают только у услуги «площадь × норматив»' };
   if (raw === 'building belongs to another organization') return { field: 'building_id', message: 'Дом принадлежит другой организации, не той, что у услуги' };
+  m = raw.match(/^valid_from: the new period overlaps other assignments of the same service on (\d+) accounts$/);
+  if (m) return { field: null, message: `Новый период пересекается с другим назначением этой услуги у счетов: ${m[1]}. Ничего не изменено — нажмите «Показать» и посмотрите, у кого` };
   if (raw === 'service is not active') return { field: null, message: 'Услуга выключена: её нельзя назначать' };
   if (raw === 'quantity is required for this service') return { field: 'quantity', message: 'Для этой услуги укажите количество' };
   if (raw === 'quantity must be empty for this service') return { field: 'quantity', message: 'У этой услуги количество не указывается' };
