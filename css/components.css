@@ -1269,3 +1269,27 @@ a.account-link:hover { text-decoration: underline; }
   text-align: right;
   font-size: 1.05rem;
 }
+
+/* Выбор месяца: год со стрелками и сетка из 12 месяцев */
+.month-picker {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 100%;
+}
+.month-picker-year-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.month-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 6px;
+}
+@media (max-width: 480px) {
+  .month-picker-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}

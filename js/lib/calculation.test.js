@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { statusText, warningText, meterUseText, currentMonth, previousMonth } from './calculation.js';
+import { statusText, warningText, meterUseText, currentMonth, previousMonth, monthShortName, shiftYear } from './calculation.js';
 
 test('statusText: причина, по которой строка не считается', () => {
   assert.equal(statusText({ status: 'ok' }), '');
@@ -36,4 +36,12 @@ test('formatQuantity: до четырёх знаков', async () => {
   assert.equal(formatQuantity(0.6215).replace(/\s/g, ' '), '0,6215');
   assert.equal(formatQuantity(20.5), '20,5');
   assert.equal(formatQuantity(null), '');
+});
+
+test('monthShortName и shiftYear', () => {
+  assert.equal(monthShortName(1), 'янв');
+  assert.equal(monthShortName(12), 'дек');
+  assert.equal(monthShortName(13), '');
+  assert.equal(shiftYear(2026, -1), 2025);
+  assert.equal(shiftYear(2026, 1), 2027);
 });

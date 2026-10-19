@@ -51,6 +51,14 @@ export function currentMonth(now = new Date()) {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 }
 
+const MONTHS_SHORT = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+
+// Короткое название месяца (1–12) для кнопки выбора месяца.
+export const monthShortName = (month) => MONTHS_SHORT[month - 1] || '';
+
+// Год со сдвигом: shiftYear(2026, -1) -> 2025.
+export const shiftYear = (year, delta) => year + delta;
+
 // Показания месяца M берутся в расчёт за M; «предыдущий» месяц для подсказки.
 export function previousMonth(month) {
   const [y, m] = String(month).split('-').map(Number);

@@ -3,6 +3,7 @@ import { openModal } from './modal.js';
 import { renderTable } from './table.js';
 import { accountsApi } from '../api/resources.js';
 import { describeApiError } from '../lib/apiErrors.js';
+import { createMonthPicker } from './monthPicker.js';
 import { currentMonth, formatQuantity, meterUseText, statusText, warningText } from '../lib/calculation.js';
 import { formatMoney, unitShort } from '../lib/services.js';
 import { formatReading } from '../lib/meters.js';
@@ -11,16 +12,12 @@ import { monthLabel } from '../lib/format.js';
 // Окно «Расчёт за месяц» лицевого счёта: услуги, назначенные на месяц, их количество, цена и сумма. Ничего не сохраняет.
 // Что не удалось посчитать (нет показаний, цены…), показывается строкой с причиной и в итог не входит.
 export function openCalculationDialog({ account }) {
-  const monthInput = el('input', { id: 'calc-month', type: 'month', value: currentMonth(), required: true });
   const result = el('div', { class: 'calculation-result' });
   let requestId = 0;
+  const picker = createMonthPicker({ value: currentMonth(), onChange: () => load() });
 
   async function load() {
-    const month = monthInput.value;
-    if (!month) {
-      result.replaceChildren();
-      return;
-    }
+    const month = picker.value;
     const mine = ++requestId;
     result.replaceChildren(el('div', { class: 'table-status' }, 'Расчёт…'));
     try {
@@ -30,11 +27,10 @@ export function openCalculationDialog({ account }) {
       if (mine === requestId) result.replaceChildren(el('div', { class: 'table-status table-status-error' }, describeApiError(err).message));
     }
   }
-  monthInput.addEventListener('change', load);
 
   const content = el('div', { class: 'calculation' }, [
     el('p', { class: 'field-help' }, 'Услуги, назначенные счёту хотя бы на один день месяца, считаются за весь месяц. Расход по счётчикам — показание этого месяца минус показание предыдущего месяца, у которого есть показания. Ничего не сохраняется.'),
-    el('div', { class: 'field' }, [el('label', { for: 'calc-month' }, 'За какой месяц'), monthInput]),
+    el('div', { class: 'field' }, [el('label', {}, 'За какой месяц'), picker.element]),
     result,
   ]);
   const modal = openModal({ title: `Расчёт по счёту № ${account.number}`, content, wide: true });
