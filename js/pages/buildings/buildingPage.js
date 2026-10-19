@@ -13,6 +13,7 @@ import { describeApiError } from '../../lib/apiErrors.js';
 import { canWrite } from '../../lib/permissions.js';
 import { createMetersList } from '../meters/metersList.js';
 import { notFoundView, definitionList, deletedBanner } from '../common.js';
+import { buildingLabel } from '../../lib/buildings.js';
 
 export async function buildingPage(container, { id }) {
   container.replaceChildren(el('div', { class: 'table-status' }, 'Загрузка…'));
@@ -29,9 +30,11 @@ export async function buildingPage(container, { id }) {
   const title = el('h1', {});
 
   function renderInfo() {
-    title.textContent = building.address;
+    title.textContent = buildingLabel(building);
     const org = organizations.find((o) => o.id === building.organization_id);
     info.replaceChildren(definitionList([
+      ['Название', building.name],
+      ['Адрес', building.address],
       ['Тип', label(buildingKinds, building.kind)],
       ['Организация', org ? org.name : ''],
       ['Кадастровый номер', building.cadastral_number],
@@ -80,7 +83,7 @@ export async function buildingPage(container, { id }) {
   }
 
   async function remove() {
-    const ok = await confirmDialog({ title: 'Удаление', message: `Удалить дом «${building.address}»? Удалить можно только дом без помещений. Дом попадёт в «Удалённые», его можно будет восстановить.`, confirmLabel: 'Удалить', danger: true });
+    const ok = await confirmDialog({ title: 'Удаление', message: `Удалить дом «${buildingLabel(building)}»? Удалить можно только дом без помещений. Дом попадёт в «Удалённые», его можно будет восстановить.`, confirmLabel: 'Удалить', danger: true });
     if (!ok) return;
     try {
       await buildingsApi.remove(building.id);

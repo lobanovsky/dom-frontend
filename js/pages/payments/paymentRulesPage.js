@@ -8,6 +8,7 @@ import { premisesKinds, accountPurposes, label } from '../../lib/labels.js';
 import { describeConditions, describeAction, defaultAction, directionTexts } from '../../lib/rules.js';
 import { describeApiError } from '../../lib/apiErrors.js';
 import { loadPaymentRefs } from './common.js';
+import { buildingLabel } from '../../lib/buildings.js';
 
 // Правила определения лицевых счетов (входящие) и категорий (исходящие): список по порядку применения;
 // первое подошедшее правило определяет платёж. Направление выбирается переключателем, ?direction=outgoing открывает исходящие.
@@ -28,7 +29,7 @@ export async function paymentRulesPage(container, _params, query = {}) {
   async function warm(rules) {
     if (!addresses) {
       const { items } = await buildingsApi.list({ limit: 200 });
-      addresses = new Map(items.map((b) => [b.id, b.address]));
+      addresses = new Map(items.map((b) => [b.id, buildingLabel(b)]));
     }
     const jobs = [];
     for (const r of rules) {

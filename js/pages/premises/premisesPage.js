@@ -21,6 +21,7 @@ import { createMetersList } from '../meters/metersList.js';
 import { createAccountServices } from '../accounts/accountServices.js';
 import { openCalculationDialog } from '../../ui/calculationDialog.js';
 import { notFoundView, definitionList, deletedBanner } from '../common.js';
+import { buildingLabel } from '../../lib/buildings.js';
 
 // Карточка помещения: сведения, собственники с долями, жители, лицевые счета
 // с плательщиками. Каждый блок перезагружается сам после изменений.
@@ -63,7 +64,7 @@ export async function premisesPage(container, { id }) {
   if (premises.deleted_at) {
     renderInfo();
     container.replaceChildren(el('div', { class: 'page' }, [
-      el('nav', { class: 'breadcrumbs' }, [el('a', { href: '/buildings' }, 'Дома'), ' / ', el('a', { href: `/buildings/${building.id}` }, building.address), ' /']),
+      el('nav', { class: 'breadcrumbs' }, [el('a', { href: '/buildings' }, 'Дома'), ' / ', el('a', { href: `/buildings/${building.id}` }, buildingLabel(building)), ' /']),
       el('div', { class: 'section-header' }, title),
       deletedBanner({
         deletedAt: premises.deleted_at,
@@ -390,7 +391,7 @@ export async function premisesPage(container, { id }) {
   container.replaceChildren(el('div', { class: 'page' }, [
     el('nav', { class: 'breadcrumbs' }, [
       el('a', { href: '/buildings' }, 'Дома'), ' / ',
-      el('a', { href: `/buildings/${building.id}` }, building.address), ' /',
+      el('a', { href: `/buildings/${building.id}` }, buildingLabel(building)), ' /',
     ]),
     el('div', { class: 'section-header' }, [
       title,

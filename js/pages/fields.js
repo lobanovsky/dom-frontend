@@ -12,6 +12,7 @@ import { categoryColorPicker, categoryIconPicker } from '../ui/categoryStyle.js'
 import { conditionsEditor, actionEditor } from '../ui/ruleEditors.js';
 import { MATCH_MODES } from '../lib/rules.js';
 import { ROLES } from '../lib/permissions.js';
+import { buildingLabel, buildingLabelOf } from '../lib/buildings.js';
 
 // Описание полей форм для каждой сущности. Имена совпадают с JSON-полями API.
 
@@ -45,6 +46,7 @@ export function buildingFields(organizations) {
   return [
     selectField('organization_id', 'Организация', organizations.map((o) => ({ value: String(o.id), label: o.name })), { required: true, numeric: true, placeholder: 'Выберите' }),
     selectField('kind', 'Тип', options(buildingKinds), { required: true, placeholder: 'Выберите' }),
+    textField('name', 'Название', { full: true, help: 'Необязательно. Короткое имя вместо длинного адреса в таблицах, например «Паркинг» или «Дом 1». Должно быть уникальным' }),
     textField('address', 'Адрес', { required: true, full: true }),
     textField('cadastral_number', 'Кадастровый номер'),
     numberField('year_built', 'Год постройки', { min: 1700, step: 1, inputmode: 'numeric' }),
@@ -123,7 +125,7 @@ export const meterFields = ({ target = 'fixed', buildings = [] } = {}) => (value
   const initial = (n) => (tariffs > 1 ? `Начальное показание Т${n}` : 'Начальное показание');
   return [
     target === 'premises' ? { type: 'picker', name: 'premises_id', label: 'Помещение', required: true, full: true, component: entityPicker('premises') } : null,
-    target === 'building' ? selectField('building_id', 'Дом', buildings.map((b) => ({ value: String(b.id), label: b.address })), { required: true, numeric: true, full: true, placeholder: 'Выберите' }) : null,
+    target === 'building' ? selectField('building_id', 'Дом', buildings.map((b) => ({ value: String(b.id), label: buildingLabel(b) })), { required: true, numeric: true, full: true, placeholder: 'Выберите' }) : null,
     selectField('resource', 'Что измеряет', options(meterResources), { required: true, placeholder: 'Выберите' }),
     { ...selectField('tariffs', 'Тарифность', options(meterTariffs), { required: true, numeric: true }), visible: (v) => v.resource === 'electricity' },
     textField('serial_number', 'Номер счётчика', { required: true }),
@@ -173,7 +175,7 @@ export const serviceFields = ({ organizations = [], services = [], tariffs = [],
     { ...selectField('meter_tariff', 'Тариф счётчика', [1, 2, 3].map((n) => ({ value: String(n), label: `Т${n}` })), { required: true, numeric: true }), visible: () => metered && electric },
     { type: 'picker', name: 'meter_ids', label: 'Общедомовые счётчики', full: true, visible: () => values.calc_method === 'common_meter',
       help: 'Расход выбранных счётчиков дома за месяц складывается и делится между помещениями по площади (между теми, у кого услуга назначена на этот месяц). Если в доме несколько счётчиков ресурса, выберите нужные: например, отдельный счётчик машиномест',
-      component: checkboxGroup(commonMeters.filter((m) => m.resource === values.meter_resource).map((m) => ({ value: m.id, label: `${m.building_address} — ${meterNumberText(m)}` })),
+      component: checkboxGroup(commonMeters.filter((m) => m.resource === values.meter_resource).map((m) => ({ value: m.id, label: `${buildingLabelOf(m)} — ${meterNumberText(m)}` })),
         { emptyText: 'Нет общедомовых счётчиков этого ресурса: заведите их в карточке дома' }) },
     selectField('unit', 'Единица измерения', options(serviceUnits), { required: true, placeholder: 'Выберите', help: 'При расчёте по площади — м², при «площадь × норматив» — Гкал (цена задаётся за Гкал)' }),
     { ...selectField('tariff_id', 'Тариф', tariffs.filter((t) => String(t.organization_id) === String(values.organization_id) && t.unit === values.unit).map((t) => ({ value: String(t.id), label: t.name })),
@@ -212,7 +214,7 @@ export const accountServiceFields = ({ service = null, services = [] } = {}) => 
 
 // Норматив услуги «площадь × норматив» для дома. Тариф (цена за Гкал) задаётся отдельно, в тарифах услуги.
 export const serviceNormFields = (buildings) => [
-  selectField('building_id', 'Дом', buildings.map((b) => ({ value: String(b.id), label: b.address })), { required: true, numeric: true, placeholder: 'Выберите', full: true,
+  selectField('building_id', 'Дом', buildings.map((b) => ({ value: String(b.id), label: buildingLabel(b) })), { required: true, numeric: true, placeholder: 'Выберите', full: true,
     help: 'Подходят дома организации услуги' }),
   numberField('value', 'Норматив, Гкал на м²', { required: true, min: 0.00001, step: 0.00001, inputmode: 'decimal', help: 'Не больше пяти знаков после запятой, например 0,011' }),
   dateField('valid_from', 'Действует с', { required: true }),

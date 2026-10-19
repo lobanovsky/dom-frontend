@@ -5,6 +5,7 @@ import { premisesKinds, label } from '../lib/labels.js';
 import { formatDate } from '../lib/format.js';
 import { describeApiError } from '../lib/apiErrors.js';
 import { assignmentPeriod } from '../lib/services.js';
+import { buildingLabel } from '../lib/buildings.js';
 
 // Окно «Изменить период»: массово заменить период уже назначенных услуг (например, начать с 1 августа вместо 16 октября).
 // Сначала «Показать» (сколько назначений изменится и нет ли пересечений), затем «Изменить».
@@ -15,7 +16,7 @@ export function openBulkPeriodDialog({ service, buildings, onDone }) {
 
   const kinds = service.premises_kinds && service.premises_kinds.length ? service.premises_kinds : Object.keys(premisesKinds);
 
-  const buildingSelect = el('select', { id: 'bp-building' }, [el('option', { value: '' }, 'Все дома'), ...buildings.map((b) => el('option', { value: String(b.id) }, b.address))]);
+  const buildingSelect = el('select', { id: 'bp-building' }, [el('option', { value: '' }, 'Все дома'), ...buildings.map((b) => el('option', { value: String(b.id) }, buildingLabel(b)))]);
   const kindBoxes = kinds.map((k) => {
     const box = el('input', { type: 'checkbox', value: k });
     box.checked = true;

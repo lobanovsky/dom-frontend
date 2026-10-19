@@ -16,6 +16,7 @@ import { formatDate, todayIso } from '../../lib/format.js';
 import { describeApiError } from '../../lib/apiErrors.js';
 import { canWrite } from '../../lib/permissions.js';
 import { notFoundView, definitionList, deletedBanner } from '../common.js';
+import { buildingLabel, buildingLabelOf } from '../../lib/buildings.js';
 
 // Карточка услуги: сведения и история тарифов. У составной услуги (сумма цен) своих тарифов нет — показана цена по составу;
 // у услуги с тарифом из справочника цены тоже не свои — ссылка на тариф.
@@ -47,7 +48,7 @@ export async function servicePage(container, { id }) {
     if (service.calc_method !== 'common_meter') return null;
     const chosen = commonMeters.filter((m) => (service.meter_ids || []).includes(m.id));
     if (!chosen.length) return el('span', { class: 'badge badge-warning' }, 'Не выбраны — расчёт невозможен');
-    return el('span', {}, chosen.flatMap((m, i) => [i ? ', ' : '', el('a', { href: `/buildings/${m.building_id}` }, `${m.building_address} — ${meterNumberText(m)}`)]));
+    return el('span', {}, chosen.flatMap((m, i) => [i ? ', ' : '', el('a', { href: `/buildings/${m.building_id}` }, `${buildingLabelOf(m)} — ${meterNumberText(m)}`)]));
   }
 
   function renderInfo() {
@@ -177,18 +178,18 @@ export async function servicePage(container, { id }) {
     fixed: { service_id: service.id },
     newDefaults: { valid_from: today },
     filters: [
-      { name: 'building_id', label: 'Дом', type: 'select', options: buildings.map((b) => ({ value: String(b.id), label: b.address })) },
+      { name: 'building_id', label: 'Дом', type: 'select', options: buildings.map((b) => ({ value: String(b.id), label: buildingLabel(b) })) },
     ],
     rowClass: (n) => (n.valid_from <= today && (!n.valid_to || n.valid_to >= today) ? null : 'row-muted'),
     columns: [
-      { key: 'building', label: 'Дом', primary: true, render: (n) => el('a', { href: `/buildings/${n.building_id}` }, n.building_address) },
+      { key: 'building', label: 'Дом', primary: true, render: (n) => el('a', { href: `/buildings/${n.building_id}` }, buildingLabelOf(n)) },
       { key: 'period', label: 'Период', render: (n) => tariffPeriod(n.valid_from, n.valid_to, formatDate) },
       { key: 'value', label: 'Норматив, Гкал/м²', render: (n) => el('span', { class: 'nowrap' }, formatNorm(n.value)) },
       { key: 'now', label: '', render: (n) => (n.valid_from <= today && (!n.valid_to || n.valid_to >= today) ? el('span', { class: 'badge badge-success' }, 'Действует') : '') },
       { key: 'comment', label: 'Комментарий' },
     ],
     emptyMessage: 'Нормативов пока нет',
-    deleteMessage: (n) => `Удалить норматив ${formatNorm(n.value)} для дома «${n.building_address}» (${tariffPeriod(n.valid_from, n.valid_to, formatDate)})?`,
+    deleteMessage: (n) => `Удалить норматив ${formatNorm(n.value)} для дома «${buildingLabelOf(n)}» (${tariffPeriod(n.valid_from, n.valid_to, formatDate)})?`,
   });
 
   // Лицевые счета, которым назначена услуга.
@@ -200,13 +201,13 @@ export async function servicePage(container, { id }) {
     fixedQuery: { service_id: service.id },
     fixed: { service_id: service.id },
     filters: [
-      { name: 'building_id', label: 'Дом', type: 'select', options: buildings.map((b) => ({ value: String(b.id), label: b.address })) },
+      { name: 'building_id', label: 'Дом', type: 'select', options: buildings.map((b) => ({ value: String(b.id), label: buildingLabel(b) })) },
       { name: 'active_on', label: 'Действует на', type: 'date' },
     ],
     columns: [
       { key: 'premises', label: 'Помещение', primary: true, render: (x) => el('div', {}, [
         el('a', { href: `/premises/${x.premises_id}` }, `${label(premisesKinds, x.premises_kind)} № ${x.premises_number}`),
-        el('div', { class: 'text-muted' }, x.building_address)]) },
+        el('div', { class: 'text-muted' }, buildingLabelOf(x))]) },
       { key: 'account', label: 'Лицевой счёт', render: (x) => `№ ${x.account_number}` },
       { key: 'period', label: 'Период', render: (x) => assignmentPeriod(x.valid_from, x.valid_to, formatDate) },
       { key: 'quantity', label: 'Количество', render: (x) => (x.quantity === null || x.quantity === undefined ? '' : formatReading(x.quantity)) },

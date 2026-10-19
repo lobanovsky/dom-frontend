@@ -5,6 +5,7 @@ import { accountPurposes, premisesKinds, label } from '../lib/labels.js';
 import { todayIso } from '../lib/format.js';
 import { describeApiError } from '../lib/apiErrors.js';
 import { unitShort } from '../lib/services.js';
+import { buildingLabel } from '../lib/buildings.js';
 
 // Окно «Назначить счетам»: массовое назначение услуги подходящим лицевым счетам.
 // Сначала «Показать» (предпросмотр: сколько счетов получит услугу, сколько уже имеют), затем «Назначить».
@@ -17,7 +18,7 @@ export function openBulkAssignDialog({ service, buildings, onDone }) {
   const kinds = service.premises_kinds && service.premises_kinds.length ? service.premises_kinds : Object.keys(premisesKinds);
   const manual = service.calc_method === 'manual';
 
-  const buildingSelect = el('select', { id: 'ba-building' }, [el('option', { value: '' }, 'Все дома'), ...buildings.map((b) => el('option', { value: String(b.id) }, b.address))]);
+  const buildingSelect = el('select', { id: 'ba-building' }, [el('option', { value: '' }, 'Все дома'), ...buildings.map((b) => el('option', { value: String(b.id) }, buildingLabel(b)))]);
   const kindBoxes = kinds.map((k) => {
     const box = el('input', { type: 'checkbox', value: k });
     box.checked = true;

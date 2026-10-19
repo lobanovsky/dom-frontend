@@ -2,6 +2,7 @@ import { el } from '../../lib/dom.js';
 import { organizationsApi, buildingsApi } from '../../api/resources.js';
 import { organizationKinds, buildingKinds, label } from '../../lib/labels.js';
 import { describeApiError } from '../../lib/apiErrors.js';
+import { buildingLabel } from '../../lib/buildings.js';
 
 // Обзор: организации и их дома со ссылками на карточки.
 export async function dashboardPage(container) {
@@ -28,7 +29,7 @@ export async function dashboardPage(container) {
         ]),
         own.length
           ? el('ul', { class: 'org-buildings' }, own.map((b) => el('li', {}, [
-            el('a', { href: `/buildings/${b.id}` }, b.address),
+            el('a', { href: `/buildings/${b.id}` }, buildingLabel(b)),
             el('span', { class: 'text-muted' }, ` · ${label(buildingKinds, b.kind)}`),
           ])))
           : el('p', { class: 'text-muted' }, 'Домов пока нет'),

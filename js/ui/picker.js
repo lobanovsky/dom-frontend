@@ -3,6 +3,7 @@ import { personsApi, legalEntitiesApi, accountsApi, premisesApi, buildingsApi } 
 import { accountPurposes, premisesKinds, label } from '../lib/labels.js';
 import { personName } from '../lib/format.js';
 import { createPersonForm } from './personCreate.js';
+import { buildingLabel } from '../lib/buildings.js';
 
 // Поле выбора физлица или юрлица. Поиск по подстроке (q); для физлиц при
 // allowCreate сверху переключатель «Найти в базе / Новое физлицо» — новое
@@ -13,7 +14,7 @@ let buildingAddresses = null;
 async function addresses() {
   if (!buildingAddresses) {
     const { items } = await buildingsApi.list({ limit: 200 });
-    buildingAddresses = new Map(items.map((b) => [b.id, b.address]));
+    buildingAddresses = new Map(items.map((b) => [b.id, buildingLabel(b)]));
   }
   return buildingAddresses;
 }

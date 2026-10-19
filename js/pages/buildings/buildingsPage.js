@@ -3,6 +3,7 @@ import { createCrudList } from '../../ui/crudList.js';
 import { buildingsApi, organizationsApi } from '../../api/resources.js';
 import { buildingFields } from '../fields.js';
 import { buildingKinds, label, options } from '../../lib/labels.js';
+import { buildingLabel } from '../../lib/buildings.js';
 
 export async function buildingsPage(container) {
   container.replaceChildren(el('div', { class: 'table-status' }, 'Загрузка…'));
@@ -18,13 +19,13 @@ export async function buildingsPage(container) {
       { name: 'kind', label: 'Тип', type: 'select', options: options(buildingKinds) },
     ],
     columns: [
-      { key: 'address', label: 'Адрес', primary: true, render: (r) => el('a', { href: `/buildings/${r.id}` }, r.address) },
+      { key: 'name', label: 'Дом', primary: true, render: (r) => el('div', {}, [el('a', { href: `/buildings/${r.id}` }, buildingLabel(r)), r.name ? el('div', { class: 'text-muted' }, r.address) : null]) },
       { key: 'kind', label: 'Тип', render: (r) => label(buildingKinds, r.kind) },
       { key: 'organization_id', label: 'Организация', render: (r) => orgName.get(r.organization_id) || '' },
       { key: 'floors', label: 'Этажей' },
     ],
     emptyMessage: organizations.length ? 'Домов пока нет' : 'Сначала добавьте организацию',
-    deleteMessage: (r) => `Удалить дом «${r.address}»? Удалить можно только дом без помещений.`,
+    deleteMessage: (r) => `Удалить дом «${buildingLabel(r)}»? Удалить можно только дом без помещений.`,
   });
 
   container.replaceChildren(el('div', { class: 'page' }, [

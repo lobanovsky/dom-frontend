@@ -4,6 +4,7 @@ import { renderTable } from './table.js';
 import { describeApiError } from '../lib/apiErrors.js';
 import { premisesKinds, label } from '../lib/labels.js';
 import { formatArea, formatShare, formatPeriod } from '../lib/format.js';
+import { buildingLabelOf } from '../lib/buildings.js';
 
 // Окно «Недвижимость владельца»: помещения, которыми физлицо или юрлицо владеет сегодня.
 // load() -> Promise<{items}> (GET /persons|legal-entities/{id}/properties).
@@ -20,7 +21,7 @@ export function openPropertiesDialog({ title, load }) {
       renderTable({
         columns: [
           { key: 'premises', label: 'Помещение', primary: true, render: (r) => el('a', { href: `/premises/${r.premises_id}`, onclick: () => modal.close() }, `${label(premisesKinds, r.premises_kind)} № ${r.premises_number}`) },
-          { key: 'building_address', label: 'Дом' },
+          { key: 'building', label: 'Дом', render: (r) => buildingLabelOf(r) },
           { key: 'total_area', label: 'Площадь', render: (r) => formatArea(r.total_area) },
           { key: 'share', label: 'Доля', render: (r) => formatShare(r.share_num, r.share_den) },
           { key: 'period', label: 'Период', render: (r) => formatPeriod(r.valid_from, r.valid_to) },

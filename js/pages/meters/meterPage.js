@@ -12,6 +12,7 @@ import { consumption, formatDelta, formatReading, meterStatus, meterTitle, resou
 import { describeApiError } from '../../lib/apiErrors.js';
 import { canWrite } from '../../lib/permissions.js';
 import { notFoundView, definitionList, deletedBanner } from '../common.js';
+import { buildingLabelOf } from '../../lib/buildings.js';
 
 // Карточка счётчика: сведения и история показаний с расходом.
 export async function meterPage(container, { id }) {
@@ -30,16 +31,16 @@ export async function meterPage(container, { id }) {
   const unit = () => resourceUnit(meter.resource);
 
   const breadcrumbs = () => el('nav', { class: 'breadcrumbs' }, meter.premises_id
-    ? [el('a', { href: '/meters' }, 'Счётчики'), ' / ', el('a', { href: `/buildings/${meter.location_building_id}` }, meter.building_address), ' / ',
+    ? [el('a', { href: '/meters' }, 'Счётчики'), ' / ', el('a', { href: `/buildings/${meter.location_building_id}` }, buildingLabelOf(meter)), ' / ',
       el('a', { href: `/premises/${meter.premises_id}` }, `${label(premisesKinds, meter.premises_kind)} № ${meter.premises_number}`), ' /']
-    : [el('a', { href: '/meters' }, 'Счётчики'), ' / ', el('a', { href: `/buildings/${meter.location_building_id}` }, meter.building_address), ' /']);
+    : [el('a', { href: '/meters' }, 'Счётчики'), ' / ', el('a', { href: `/buildings/${meter.location_building_id}` }, buildingLabelOf(meter)), ' /']);
 
   function renderInfo() {
     title.textContent = meterTitle(meter);
     const status = meterStatus(meter);
     const verification = verificationState(meter, today);
     info.replaceChildren(definitionList([
-      ['Где', meter.premises_id ? `${label(premisesKinds, meter.premises_kind)} № ${meter.premises_number}, ${meter.building_address}` : `Общедомовой, ${meter.building_address}`],
+      ['Где', meter.premises_id ? `${label(premisesKinds, meter.premises_kind)} № ${meter.premises_number}, ${buildingLabelOf(meter)}` : `Общедомовой, ${buildingLabelOf(meter)}`],
       ['Состояние', el('span', { class: `badge badge-${status.kind}` }, status.text)],
       ['Тарифность', meter.resource === 'electricity' ? label(meterTariffs, meter.tariffs) : null],
       ['Модель', meter.model],

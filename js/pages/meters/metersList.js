@@ -6,6 +6,7 @@ import { meterFields, meterReadingFields } from '../fields.js';
 import { meterResources, meterTariffs, premisesKinds, label, options } from '../../lib/labels.js';
 import { formatDate, todayIso } from '../../lib/format.js';
 import { lastReadingText, meterStatus, meterTitle, resourceUnit, verificationState } from '../../lib/meters.js';
+import { buildingLabel, buildingLabelOf } from '../../lib/buildings.js';
 
 // Список счётчиков. Используется на странице «Счётчики», в карточке помещения (fixedQuery/fixed: premises_id)
 // и на странице дома (fixedQuery: {scope: 'common', building_id}, fixed: {building_id}).
@@ -27,7 +28,7 @@ export function createMetersList({ fixedQuery = {}, fixed = {}, target = 'fixed'
   }
 
   const filters = showFilters ? [
-    { name: 'building_id', label: 'Дом', type: 'select', options: buildings.map((b) => ({ value: String(b.id), label: b.address })) },
+    { name: 'building_id', label: 'Дом', type: 'select', options: buildings.map((b) => ({ value: String(b.id), label: buildingLabel(b) })) },
     { name: 'resource', label: 'Ресурс', type: 'select', options: options(meterResources) },
     { name: 'active', label: 'Состояние', type: 'select', allLabel: 'Все', options: [{ value: 'true', label: 'Работают' }, { value: 'false', label: 'Не работают' }], defaultValue: 'true' },
     { name: 'q', label: 'Поиск', type: 'search', placeholder: 'Номер, название счётчика или номер помещения' },
@@ -63,10 +64,10 @@ function locationCell(m) {
   if (m.premises_id) {
     return el('div', {}, [
       el('a', { href: `/premises/${m.premises_id}` }, `${label(premisesKinds, m.premises_kind)} № ${m.premises_number}`),
-      el('div', { class: 'text-muted' }, m.building_address),
+      el('div', { class: 'text-muted' }, buildingLabelOf(m)),
     ]);
   }
-  return el('div', {}, [el('span', { class: 'badge badge-neutral' }, 'Общедомовой'), el('div', { class: 'text-muted' }, m.building_address)]);
+  return el('div', {}, [el('span', { class: 'badge badge-neutral' }, 'Общедомовой'), el('div', { class: 'text-muted' }, buildingLabelOf(m))]);
 }
 
 function lastCell(m) {

@@ -75,6 +75,7 @@ const REASONS = [
 const CONFLICTS = {
   premises_building_id_kind_number_key: 'Помещение с таким видом и номером уже есть в этом доме',
   premises_cadastral_number_uq: 'Помещение с таким кадастровым номером уже есть',
+  buildings_name_uq: 'Дом с таким названием уже есть',
   buildings_cadastral_number_uq: 'Дом с таким кадастровым номером уже есть',
   personal_accounts_number_key: 'Лицевой счёт с таким номером уже есть',
   legal_entities_inn_kpp_uq: 'Юрлицо с таким ИНН и КПП уже есть',

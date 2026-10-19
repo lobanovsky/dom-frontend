@@ -3,6 +3,7 @@ import { openModal } from './modal.js';
 import { meterReadingsApi } from '../api/resources.js';
 import { meterResources, options } from '../lib/labels.js';
 import { describeApiError, describeImportRowError } from '../lib/apiErrors.js';
+import { buildingLabel } from '../lib/buildings.js';
 
 const MAX_SHOWN_ERRORS = 50;
 
@@ -13,7 +14,7 @@ export function openMeterImportDialog({ buildings, onImported }) {
   let submitting = false;
 
   const buildingSelect = el('select', { id: 'mi-building', required: true },
-    buildings.map((b) => el('option', { value: String(b.id) }, b.address)));
+    buildings.map((b) => el('option', { value: String(b.id) }, buildingLabel(b))));
   const resourceSelect = el('select', { id: 'mi-resource', required: true },
     options(meterResources).map((o) => el('option', { value: o.value }, o.label)));
   const dateInput = el('input', { id: 'mi-date', type: 'date', required: true });
