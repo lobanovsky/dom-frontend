@@ -1,0 +1,62 @@
+// Тексты расчёта стоимости услуг счёта за месяц. Статусы и предупреждения приходят от бэкенда кодами. Покрыто тестами.
+
+// Почему строку нельзя посчитать: статус -> объяснение.
+const STATUS_TEXT = {
+  no_price: 'на начало месяца нет цены (тарифа)',
+  no_area: 'не указана площадь помещения (или не из чего считать долю)',
+  no_norm: 'у дома нет норматива на этот месяц',
+  no_meters: 'не найден подходящий счётчик',
+  no_reading: 'показания за этот месяц не переданы',
+  no_previous: 'нет предыдущего показания: первое показание счётчика служит точкой отсчёта, расход считается со следующего месяца',
+  negative: 'показание меньше предыдущего',
+  no_quantity: 'не задано количество',
+  component_failed: 'не посчиталась входящая услуга',
+};
+
+const WARNING_TEXT = {
+  price_changes: 'цена меняется внутри месяца: взята цена на первое число',
+  norm_changes: 'норматив меняется внутри месяца: взят норматив на первое число',
+  area_missing: 'у части помещений, между которыми делится расход, не указана площадь',
+};
+
+// Объяснение строки, которую нельзя посчитать; у составной услуги — какая из входящих не посчиталась.
+export function statusText(line) {
+  if (!line || line.status === 'ok') return '';
+  const base = STATUS_TEXT[line.status] || line.status;
+  if (line.failed_component) {
+    return line.status === 'component_failed' ? `${line.failed_component}: ${componentProblem(line)}` : `${line.failed_component}: ${base}`;
+  }
+  return base;
+}
+
+// У составной услуги причина — в счётчиках слагаемого: показывает, чего именно не хватает.
+function componentProblem(line) {
+  const bad = (line.meters || []).find((m) => m.status !== 'ok');
+  return bad ? STATUS_TEXT[bad.status] || bad.status : STATUS_TEXT.component_failed;
+}
+
+export const warningText = (code) => WARNING_TEXT[code] || code;
+
+// Расход одного счётчика одной строкой: «№ 123: 100 → 120,5 = 20,5» или причина.
+export function meterUseText(use, formatNumber) {
+  if (use.status !== 'ok') return `№ ${use.serial_number}: ${STATUS_TEXT[use.status] || use.status}`;
+  return `№ ${use.serial_number}: ${formatNumber(use.previous)} → ${formatNumber(use.current)} = ${formatNumber(use.consumption)}`;
+}
+
+// Расчётный месяц по умолчанию — текущий: «2026-10» из даты (локальной).
+export function currentMonth(now = new Date()) {
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+}
+
+// Показания месяца M берутся в расчёт за M; «предыдущий» месяц для подсказки.
+export function previousMonth(month) {
+  const [y, m] = String(month).split('-').map(Number);
+  if (!y || !m) return '';
+  return m === 1 ? `${y - 1}-12` : `${y}-${String(m - 1).padStart(2, '0')}`;
+}
+
+// Количество в строке расчёта: до четырёх знаков после запятой; пустое значение -> ''.
+export function formatQuantity(value) {
+  if (value === null || value === undefined || value === '') return '';
+  return Number(value).toLocaleString('ru-RU', { maximumFractionDigits: 4 });
+}

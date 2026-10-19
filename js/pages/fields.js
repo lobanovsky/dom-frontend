@@ -145,6 +145,7 @@ export const meterReadingFields = (meter) => {
   const unit = resourceUnit(meter.resource);
   return [
     dateField('reading_date', 'Дата показаний', { required: true }),
+    dateField('period', 'За какой месяц', { help: 'В расчёт за этот месяц войдёт показание. Пусто — месяц даты показаний. Можно указать любую дату нужного месяца, например, показание от 28 сентября для расчёта за октябрь. В месяце одно показание счётчика' }),
     ...tariffColumns(meter.tariffs).map((c, i) => numberField(c.key, `${c.label}, ${unit}`, {
       required: true, min: 0, step: 0.001, inputmode: 'decimal', help: i === 0 ? previousReadingText(meter) : undefined,
     })),
@@ -155,9 +156,10 @@ export const meterReadingFields = (meter) => {
 // --- Услуги ---
 
 // Услуга организации. services — уже заведённые услуги (кандидаты в состав суммы; бэкенд проверит организацию и единицу).
+// commonMeters — общедомовые счётчики (услуга «по общедомовому счётчику» берёт выбранные); показываются счётчики ресурса услуги.
 // tariffs — справочник тарифов; в списке только тарифы той же организации и с той же единицей, что у услуги.
 // Нужен watch: ['calc_method', 'meter_resource', 'organization_id', 'unit'] — состав и счётчик показываются только у своих способов расчёта.
-export const serviceFields = ({ organizations = [], services = [], tariffs = [], selfId = null } = {}) => (values) => {
+export const serviceFields = ({ organizations = [], services = [], tariffs = [], commonMeters = [], selfId = null } = {}) => (values) => {
   const metered = values.calc_method === 'individual_meter' || values.calc_method === 'common_meter';
   const electric = values.meter_resource === 'electricity';
   const plain = services.filter((s) => !isSumMethod(s.calc_method) && s.id !== selfId);
@@ -168,6 +170,10 @@ export const serviceFields = ({ organizations = [], services = [], tariffs = [],
     selectField('calc_method', 'Как считается', options(serviceCalcMethods), { required: true, placeholder: 'Выберите', full: true }),
     { ...selectField('meter_resource', 'Какой счётчик', options(meterResources), { required: true, placeholder: 'Выберите' }), visible: () => metered },
     { ...selectField('meter_tariff', 'Тариф счётчика', [1, 2, 3].map((n) => ({ value: String(n), label: `Т${n}` })), { required: true, numeric: true }), visible: () => metered && electric },
+    { type: 'picker', name: 'meter_ids', label: 'Общедомовые счётчики', full: true, visible: () => values.calc_method === 'common_meter',
+      help: 'Расход выбранных счётчиков дома за месяц складывается и делится между помещениями по площади (между теми, у кого услуга назначена на этот месяц). Если в доме несколько счётчиков ресурса, выберите нужные: например, отдельный счётчик машиномест',
+      component: checkboxGroup(commonMeters.filter((m) => m.resource === values.meter_resource).map((m) => ({ value: m.id, label: `${m.building_address} — № ${m.serial_number}` })),
+        { emptyText: 'Нет общедомовых счётчиков этого ресурса: заведите их в карточке дома' }) },
     selectField('unit', 'Единица измерения', options(serviceUnits), { required: true, placeholder: 'Выберите', help: 'При расчёте по площади — м², при «площадь × норматив» — Гкал (цена задаётся за Гкал)' }),
     { ...selectField('tariff_id', 'Тариф', tariffs.filter((t) => String(t.organization_id) === String(values.organization_id) && t.unit === values.unit).map((t) => ({ value: String(t.id), label: t.name })),
       { numeric: true, placeholder: 'Свои цены у услуги', full: true, help: 'Цена берётся из справочника тарифов: так одну цену не нужно вводить в каждой услуге. Показаны тарифы организации с той же единицей измерения. Если выбран тариф, собственных цен у услуги нет' }),

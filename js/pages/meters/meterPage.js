@@ -7,7 +7,7 @@ import { goTo } from '../../state/nav.js';
 import { metersApi, meterReadingsApi } from '../../api/resources.js';
 import { meterFields, meterReadingFields } from '../fields.js';
 import { meterTariffs, premisesKinds, label } from '../../lib/labels.js';
-import { formatDate, todayIso } from '../../lib/format.js';
+import { formatDate, monthLabel, todayIso } from '../../lib/format.js';
 import { consumption, formatDelta, formatReading, meterStatus, meterTitle, resourceUnit, tariffColumns, verificationState } from '../../lib/meters.js';
 import { describeApiError } from '../../lib/apiErrors.js';
 import { canWrite } from '../../lib/permissions.js';
@@ -131,6 +131,7 @@ export async function meterPage(container, { id }) {
     ],
     columns: [
       { key: 'reading_date', label: 'Дата', primary: true, render: (r) => formatDate(r.reading_date) },
+      { key: 'period', label: 'За месяц', render: (r) => monthLabel(r.period) },
       ...cols.map((c) => ({ key: c.key, label: c.label, render: (r) => el('span', { class: 'nowrap' }, formatReading(r[c.key])) })),
       { key: 'delta', label: `Расход, ${unit()}`, render: (r) => consumptionCell(r) },
       { key: 'source', label: 'Источник', render: (r) => (r.source === 'import' ? 'Из файла' : 'Вручную') },

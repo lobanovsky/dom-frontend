@@ -1258,3 +1258,14 @@ a.account-link:hover { text-decoration: underline; }
 
 /* Счётчики: выведенные из работы или ещё не введённые */
 .data-table tbody tr.row-muted td { color: var(--color-text-muted); }
+
+/* Расчёт стоимости услуг счёта за месяц */
+.text-warning {
+  color: var(--color-warning);
+}
+
+.calculation-total {
+  margin-top: 12px;
+  text-align: right;
+  font-size: 1.05rem;
+}

@@ -50,7 +50,11 @@ export const legalEntitiesApi = {
 };
 export const ownershipsApi = resource('ownerships');
 export const residenciesApi = resource('residencies');
-export const accountsApi = resource('accounts');
+// calculation: расчёт стоимости услуг счёта за месяц (period — «2026-10»), ничего не сохраняет.
+export const accountsApi = {
+  ...resource('accounts'),
+  calculation: (id, period) => client.get(`/api/v1/accounts/${id}/calculation`, { query: { period } }),
+};
 export const accountHoldersApi = resource('account-holders');
 
 // Счётчики воды и электроэнергии (индивидуальные у помещений, общедомовые у дома) и их показания.
@@ -75,12 +79,13 @@ export const accountServicesApi = {
 };
 export const meterReadingsApi = {
   ...resource('meter-readings'),
-  // Загрузка показаний одного ресурса дома из xlsx на дату readingDate; installedAt задан — неизвестные счётчики создаются.
-  importFile: ({ buildingId, resource: kind, readingDate, installedAt, file }) => {
+  // Загрузка показаний одного ресурса дома из xlsx на дату readingDate за расчётный месяц period («2026-10», пусто — месяц даты); installedAt задан — неизвестные счётчики создаются.
+  importFile: ({ buildingId, resource: kind, readingDate, period, installedAt, file }) => {
     const body = new FormData();
     body.set('building_id', String(buildingId));
     body.set('resource', kind);
     body.set('reading_date', readingDate);
+    if (period) body.set('period', period);
     if (installedAt) body.set('installed_at', installedAt);
     body.set('file', file);
     return client.post('/api/v1/meter-readings/import', body);

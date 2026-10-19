@@ -17,6 +17,13 @@ export function openMeterImportDialog({ buildings, onImported }) {
   const resourceSelect = el('select', { id: 'mi-resource', required: true },
     options(meterResources).map((o) => el('option', { value: o.value }, o.label)));
   const dateInput = el('input', { id: 'mi-date', type: 'date', required: true });
+  // Расчётный месяц показаний: по умолчанию месяц даты, пока его не выбрали вручную.
+  const periodInput = el('input', { id: 'mi-period', type: 'month' });
+  let periodTouched = false;
+  periodInput.addEventListener('change', () => { periodTouched = true; });
+  dateInput.addEventListener('change', () => {
+    if (!periodTouched) periodInput.value = dateInput.value.slice(0, 7);
+  });
   const createBox = el('input', { id: 'mi-create', type: 'checkbox' });
   const installedInput = el('input', { id: 'mi-installed', type: 'date' });
   const installedField = el('div', { class: 'field' }, [el('label', { for: 'mi-installed' }, 'Дата ввода новых счётчиков в эксплуатацию'), installedInput]);
@@ -63,6 +70,7 @@ export function openMeterImportDialog({ buildings, onImported }) {
         buildingId: buildingSelect.value,
         resource: resourceSelect.value,
         readingDate: dateInput.value,
+        period: periodInput.value,
         installedAt: createBox.checked ? installedInput.value : '',
         file,
       });
@@ -84,7 +92,7 @@ export function openMeterImportDialog({ buildings, onImported }) {
     el('p', { class: 'field-help' }, [
       'Первый лист файла .xlsx, первая строка — заголовок. Колонки: «Квартира», номер счётчика, показания ',
       '(у электричества три колонки: Т1, Т2, Т3; у однотарифного счётчика заполняется только Т1). ',
-      'Если в квартире несколько счётчиков, квартира повторяется в нескольких строках. Все показания файла записываются на одну дату. ',
+      'Если в квартире несколько счётчиков, квартира повторяется в нескольких строках. Все показания файла записываются на одну дату и за один месяц. ',
       'Показания округляются до трёх знаков. Если в файле есть ошибка, не загружается ничего.',
     ]),
     message,
@@ -92,6 +100,8 @@ export function openMeterImportDialog({ buildings, onImported }) {
     el('div', { class: 'field' }, [el('label', { for: 'mi-building' }, 'Дом'), buildingSelect]),
     el('div', { class: 'field' }, [el('label', { for: 'mi-resource' }, 'Ресурс'), resourceSelect]),
     el('div', { class: 'field' }, [el('label', { for: 'mi-date' }, 'Дата показаний'), dateInput]),
+    el('div', { class: 'field' }, [el('label', { for: 'mi-period' }, 'За какой месяц'), periodInput,
+      el('div', { class: 'field-help' }, 'В расчёт за этот месяц войдут показания файла. По умолчанию — месяц даты показаний.')]),
     el('label', { class: 'field-checkbox-label' }, [createBox, 'Создавать счётчики, которых ещё нет']),
     installedField,
     el('div', { class: 'field' }, [el('label', { for: 'mi-file' }, 'Файл xlsx'), fileInput]),

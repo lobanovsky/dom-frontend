@@ -216,6 +216,14 @@ test('ошибки услуг и тарифов', async () => {
   assert.match(msg('cannot delete: has active service norms'), /нормативы услуг/);
 });
 
+test('ошибки расчёта и показаний по месяцам', async () => {
+  const { describeApiError } = await import('./apiErrors.js');
+  const msg = (raw, status = 422) => describeApiError(Object.assign(new Error(raw), { status })).message;
+  assert.match(msg('already exists: meter_readings_meter_period_key', 409), /за этот месяц/);
+  assert.match(msg('meter_ids: meters must be common meters of the service resource, with the service tariff, in a building of the service organization'), /общедомовые счётчики/);
+  assert.match(msg('period: month must be YYYY-MM'), /ГГГГ-ММ/);
+});
+
 test('ошибки назначения услуг счетам', async () => {
   const { describeApiError } = await import('./apiErrors.js');
   const err = (raw, status = 422) => describeApiError(Object.assign(new Error(raw), { status }));

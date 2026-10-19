@@ -4,7 +4,7 @@ import { openEntityForm } from '../../ui/entityForm.js';
 import { confirmDialog } from '../../ui/confirmDialog.js';
 import { toast } from '../../ui/toast.js';
 import { goTo } from '../../state/nav.js';
-import { organizationsApi, servicesApi, serviceTariffsApi, serviceNormsApi, accountServicesApi, buildingsApi, tariffsApi } from '../../api/resources.js';
+import { organizationsApi, servicesApi, serviceTariffsApi, serviceNormsApi, accountServicesApi, buildingsApi, tariffsApi, metersApi } from '../../api/resources.js';
 import { textField } from '../../lib/fields.js';
 import { serviceFields, serviceTariffFields, serviceNormFields, accountServiceFields } from '../fields.js';
 import { openBulkAssignDialog } from '../../ui/bulkAssignDialog.js';
@@ -25,9 +25,11 @@ export async function servicePage(container, { id }) {
   let services;
   let buildings;
   let catalog;
+  let commonMeters;
   try {
-    [service, { items: organizations }, { items: services }, { items: buildings }, { items: catalog }] = await Promise.all([
+    [service, { items: organizations }, { items: services }, { items: buildings }, { items: catalog }, { items: commonMeters }] = await Promise.all([
       servicesApi.get(id), organizationsApi.list({ limit: 200 }), servicesApi.list({ limit: 200 }), buildingsApi.list({ limit: 200 }), tariffsApi.list({ limit: 200 }),
+      metersApi.list({ scope: 'common', limit: 200 }),
     ]);
   } catch (err) {
     container.replaceChildren(notFoundView(describeApiError(err).message, '/services', 'К списку услуг'));
@@ -38,6 +40,14 @@ export async function servicePage(container, { id }) {
   const info = el('div', { class: 'card' });
   const title = el('h1', {});
   const breadcrumbs = () => el('nav', { class: 'breadcrumbs' }, [el('a', { href: '/services' }, 'Услуги'), ' / ']);
+
+  // Общедомовые счётчики услуги «по общедомовому счётчику»; не выбраны — расчёт не сможет взять расход.
+  function metersRow() {
+    if (service.calc_method !== 'common_meter') return null;
+    const chosen = commonMeters.filter((m) => (service.meter_ids || []).includes(m.id));
+    if (!chosen.length) return el('span', { class: 'badge badge-warning' }, 'Не выбраны — расчёт невозможен');
+    return el('span', {}, chosen.flatMap((m, i) => [i ? ', ' : '', el('a', { href: `/buildings/${m.building_id}` }, `${m.building_address} — № ${m.serial_number}`)]));
+  }
 
   function renderInfo() {
     title.textContent = service.name;
@@ -51,6 +61,7 @@ export async function servicePage(container, { id }) {
       ['Для помещений', premisesKindsText(service.premises_kinds, premisesKinds)],
       ['Название в квитанции', service.receipt_name ? receiptName(service) : null],
       ['Состав', components.length ? el('span', {}, components.flatMap((c, i) => [i ? ', ' : '', el('a', { href: `/services/${c.id}` }, c.name)])) : null],
+      ['Общедомовые счётчики', metersRow()],
       ['Тариф', service.tariff_id ? el('a', { href: `/tariffs/${service.tariff_id}` }, service.tariff_name) : null],
       ['Цена сейчас', service.current_price === null || service.current_price === undefined ? el('span', { class: 'badge badge-warning' }, 'Нет тарифа на сегодня') : formatPrice(service.current_price, service.unit)],
       ['Состояние', el('span', { class: `badge badge-${service.active ? 'success' : 'neutral'}` }, service.active ? 'Оказывается' : 'Не оказывается')],
@@ -100,7 +111,7 @@ export async function servicePage(container, { id }) {
   function edit() {
     openEntityForm({
       title: 'Услуга: редактирование',
-      fields: serviceFields({ organizations, services, tariffs: catalog, selfId: service.id }),
+      fields: serviceFields({ organizations, services, tariffs: catalog, commonMeters, selfId: service.id }),
       watch: ['calc_method', 'meter_resource', 'organization_id', 'unit'],
       entity: service,
       save: (body) => servicesApi.update(service.id, body),

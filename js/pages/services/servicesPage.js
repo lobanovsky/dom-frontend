@@ -1,6 +1,6 @@
 import { el } from '../../lib/dom.js';
 import { createCrudList } from '../../ui/crudList.js';
-import { organizationsApi, servicesApi, tariffsApi } from '../../api/resources.js';
+import { organizationsApi, servicesApi, tariffsApi, metersApi } from '../../api/resources.js';
 import { serviceFields } from '../fields.js';
 import { serviceKinds, serviceUnits, accountPurposes, premisesKinds, label, options } from '../../lib/labels.js';
 import { calcMethodText, formatPrice, premisesKindsText } from '../../lib/services.js';
@@ -12,8 +12,11 @@ export async function servicesPage(container) {
   let organizations;
   let services;
   let tariffs;
+  let commonMeters;
   try {
-    [{ items: organizations }, { items: services }, { items: tariffs }] = await Promise.all([organizationsApi.list({ limit: 200 }), servicesApi.list({ limit: 200 }), tariffsApi.list({ limit: 200 })]);
+    [{ items: organizations }, { items: services }, { items: tariffs }, { items: commonMeters }] = await Promise.all([
+      organizationsApi.list({ limit: 200 }), servicesApi.list({ limit: 200 }), tariffsApi.list({ limit: 200 }), metersApi.list({ scope: 'common', limit: 200 }),
+    ]);
   } catch (err) {
     container.replaceChildren(el('div', { class: 'table-status table-status-error' }, describeApiError(err).message));
     return;
@@ -42,7 +45,7 @@ export async function servicesPage(container) {
     entityTitle: 'Услуга',
     addLabel: 'Добавить услугу',
     api: catalogApi,
-    fields: (values) => serviceFields({ organizations, services, tariffs })(values),
+    fields: (values) => serviceFields({ organizations, services, tariffs, commonMeters })(values),
     watch: ['calc_method', 'meter_resource', 'organization_id', 'unit'],
     newDefaults: { active: true, account_purpose: 'utilities', ...(organizations.length === 1 ? { organization_id: String(organizations[0].id) } : {}) },
     filters: [

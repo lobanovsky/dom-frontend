@@ -19,6 +19,7 @@ import { describeApiError } from '../../lib/apiErrors.js';
 import { canWrite } from '../../lib/permissions.js';
 import { createMetersList } from '../meters/metersList.js';
 import { createAccountServices } from '../accounts/accountServices.js';
+import { openCalculationDialog } from '../../ui/calculationDialog.js';
 import { notFoundView, definitionList, deletedBanner } from '../common.js';
 
 // Карточка помещения: сведения, собственники с долями, жители, лицевые счета
@@ -251,6 +252,8 @@ export async function premisesPage(container, { id }) {
       },
     }, 'Услуги');
 
+    const calculationButton = el('button', { type: 'button', class: 'btn btn-ghost btn-sm', onclick: () => openCalculationDialog({ account }) }, 'Расчёт');
+
     return el('div', { class: 'card account-card' }, [
       el('div', { class: 'account-card-header' }, [
         el('div', {}, [
@@ -264,6 +267,7 @@ export async function premisesPage(container, { id }) {
         ]),
         el('div', { class: 'row-actions' }, [
           servicesToggle,
+          calculationButton,
           paymentsToggle,
           toggle,
           canWrite() ? editButton(() => accountForm(account)) : null,
