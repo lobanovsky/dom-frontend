@@ -41,7 +41,11 @@ export function lastReadingText(meter) {
   return tariffColumns(meter.tariffs).map((c) => formatReading(meter[`last_${c.key}`])).join(' · ');
 }
 
-export const meterTitle = (meter) => `${label(meterResources, meter.resource)} № ${meter.serial_number}`;
+// «№ 42» или, если у счётчика есть название, «ИТП, № 42».
+export const meterNumberText = (meter) => `${meter.name ? `${meter.name}, ` : ''}№ ${meter.serial_number}`;
+
+// «ИТП · Холодная вода № 42»; без названия — «Холодная вода № 42».
+export const meterTitle = (meter) => `${meter.name ? `${meter.name} · ` : ''}${label(meterResources, meter.resource)} № ${meter.serial_number}`;
 
 // Состояние счётчика по дням работы: {text, kind} для бейджа (kind — суффикс badge-*).
 export function meterStatus(meter) {

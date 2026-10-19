@@ -1,5 +1,7 @@
 // Тексты расчёта стоимости услуг счёта за месяц. Статусы и предупреждения приходят от бэкенда кодами. Покрыто тестами.
 
+import { meterNumberText } from './meters.js';
+
 // Почему строку нельзя посчитать: статус -> объяснение.
 const STATUS_TEXT = {
   no_price: 'на начало месяца нет цены (тарифа)',
@@ -39,8 +41,9 @@ export const warningText = (code) => WARNING_TEXT[code] || code;
 
 // Расход одного счётчика одной строкой: «№ 123: 100 → 120,5 = 20,5» или причина.
 export function meterUseText(use, formatNumber) {
-  if (use.status !== 'ok') return `№ ${use.serial_number}: ${STATUS_TEXT[use.status] || use.status}`;
-  return `№ ${use.serial_number}: ${formatNumber(use.previous)} → ${formatNumber(use.current)} = ${formatNumber(use.consumption)}`;
+  const who = meterNumberText(use);
+  if (use.status !== 'ok') return `${who}: ${STATUS_TEXT[use.status] || use.status}`;
+  return `${who}: ${formatNumber(use.previous)} → ${formatNumber(use.current)} = ${formatNumber(use.consumption)}`;
 }
 
 // Расчётный месяц по умолчанию — текущий: «2026-10» из даты (локальной).

@@ -3,7 +3,7 @@ import {
   options, bankLabel, organizationKinds, buildingKinds, premisesKinds, relations, accountPurposes, accountStatuses, ownerKinds,
   meterResources, meterTariffs, serviceKinds, serviceUnits, serviceCalcMethods,
 } from '../lib/labels.js';
-import { tariffColumns, resourceUnit, previousReadingText } from '../lib/meters.js';
+import { tariffColumns, resourceUnit, previousReadingText, meterNumberText } from '../lib/meters.js';
 import { entityPicker } from '../ui/picker.js';
 import { listInput } from '../ui/listInput.js';
 import { checkboxGroup } from '../ui/checkboxGroup.js';
@@ -127,6 +127,7 @@ export const meterFields = ({ target = 'fixed', buildings = [] } = {}) => (value
     selectField('resource', 'Что измеряет', options(meterResources), { required: true, placeholder: 'Выберите' }),
     { ...selectField('tariffs', 'Тарифность', options(meterTariffs), { required: true, numeric: true }), visible: (v) => v.resource === 'electricity' },
     textField('serial_number', 'Номер счётчика', { required: true }),
+    textField('name', 'Название', { help: 'Необязательно. Чтобы различать счётчики, например общедомовые: «ИТП», «Машиноместа». Названия могут повторяться' }),
     textField('model', 'Модель'),
     dateField('installed_at', 'Введён в эксплуатацию', { required: true }),
     dateField('removed_at', 'Окончание работы', { help: 'Пусто — работает. После этой даты счётчик считается неактивным (замена, снятие). Сам счётчик остаётся в системе' }),
@@ -172,7 +173,7 @@ export const serviceFields = ({ organizations = [], services = [], tariffs = [],
     { ...selectField('meter_tariff', 'Тариф счётчика', [1, 2, 3].map((n) => ({ value: String(n), label: `Т${n}` })), { required: true, numeric: true }), visible: () => metered && electric },
     { type: 'picker', name: 'meter_ids', label: 'Общедомовые счётчики', full: true, visible: () => values.calc_method === 'common_meter',
       help: 'Расход выбранных счётчиков дома за месяц складывается и делится между помещениями по площади (между теми, у кого услуга назначена на этот месяц). Если в доме несколько счётчиков ресурса, выберите нужные: например, отдельный счётчик машиномест',
-      component: checkboxGroup(commonMeters.filter((m) => m.resource === values.meter_resource).map((m) => ({ value: m.id, label: `${m.building_address} — № ${m.serial_number}` })),
+      component: checkboxGroup(commonMeters.filter((m) => m.resource === values.meter_resource).map((m) => ({ value: m.id, label: `${m.building_address} — ${meterNumberText(m)}` })),
         { emptyText: 'Нет общедомовых счётчиков этого ресурса: заведите их в карточке дома' }) },
     selectField('unit', 'Единица измерения', options(serviceUnits), { required: true, placeholder: 'Выберите', help: 'При расчёте по площади — м², при «площадь × норматив» — Гкал (цена задаётся за Гкал)' }),
     { ...selectField('tariff_id', 'Тариф', tariffs.filter((t) => String(t.organization_id) === String(values.organization_id) && t.unit === values.unit).map((t) => ({ value: String(t.id), label: t.name })),

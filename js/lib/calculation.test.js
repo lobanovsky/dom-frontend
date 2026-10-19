@@ -21,6 +21,7 @@ test('warningText и meterUseText', () => {
   const fmt = (v) => String(v).replace('.', ',');
   assert.equal(meterUseText({ serial_number: '77', status: 'ok', previous: 100, current: 120.5, consumption: 20.5 }, fmt), '№ 77: 100 → 120,5 = 20,5');
   assert.match(meterUseText({ serial_number: '77', status: 'no_reading' }, fmt), /№ 77: показания/);
+  assert.equal(meterUseText({ serial_number: '77', name: 'ИТП', status: 'ok', previous: 100, current: 120.5, consumption: 20.5 }, fmt), 'ИТП, № 77: 100 → 120,5 = 20,5');
 });
 
 test('currentMonth и previousMonth', () => {

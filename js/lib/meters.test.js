@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { resourceUnit, tariffColumns, formatReading, formatDelta, consumption, lastReadingText, meterStatus, verificationState, meterTitle, previousReadingText } from './meters.js';
+import { resourceUnit, tariffColumns, formatReading, formatDelta, consumption, lastReadingText, meterStatus, verificationState, meterTitle, meterNumberText, previousReadingText } from './meters.js';
 
 test('units and tariff columns', () => {
   assert.equal(resourceUnit('electricity'), 'кВт·ч');
@@ -39,6 +39,9 @@ test('meter status and title', () => {
   assert.deepEqual(meterStatus({ active: false, removed_at: '2026-03-01' }), { text: 'Выведен 01.03.2026', kind: 'neutral' });
   assert.equal(meterStatus({ active: false, removed_at: null }).text, 'Не введён в эксплуатацию');
   assert.equal(meterTitle({ resource: 'cold_water', serial_number: '42' }), 'Холодная вода № 42');
+  assert.equal(meterTitle({ resource: 'cold_water', serial_number: '42', name: 'ИТП' }), 'ИТП · Холодная вода № 42');
+  assert.equal(meterNumberText({ serial_number: '42', name: 'ИТП' }), 'ИТП, № 42');
+  assert.equal(meterNumberText({ serial_number: '42', name: null }), '№ 42');
 });
 
 test('verification state', () => {

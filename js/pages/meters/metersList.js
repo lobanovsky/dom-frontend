@@ -30,7 +30,7 @@ export function createMetersList({ fixedQuery = {}, fixed = {}, target = 'fixed'
     { name: 'building_id', label: 'Дом', type: 'select', options: buildings.map((b) => ({ value: String(b.id), label: b.address })) },
     { name: 'resource', label: 'Ресурс', type: 'select', options: options(meterResources) },
     { name: 'active', label: 'Состояние', type: 'select', allLabel: 'Все', options: [{ value: 'true', label: 'Работают' }, { value: 'false', label: 'Не работают' }], defaultValue: 'true' },
-    { name: 'q', label: 'Поиск', type: 'search', placeholder: 'Номер счётчика или помещения' },
+    { name: 'q', label: 'Поиск', type: 'search', placeholder: 'Номер, название счётчика или номер помещения' },
   ] : [];
 
   list = createCrudList({

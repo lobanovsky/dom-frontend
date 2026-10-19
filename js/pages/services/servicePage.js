@@ -10,7 +10,7 @@ import { serviceFields, serviceTariffFields, serviceNormFields, accountServiceFi
 import { openBulkAssignDialog } from '../../ui/bulkAssignDialog.js';
 import { serviceKinds, serviceUnits, accountPurposes, premisesKinds, label } from '../../lib/labels.js';
 import { assignmentPeriod, calcMethodText, formatMoney, formatNorm, formatPrice, premisesKindsText, receiptName, tariffPeriod } from '../../lib/services.js';
-import { formatReading } from '../../lib/meters.js';
+import { formatReading, meterNumberText } from '../../lib/meters.js';
 import { formatDate, todayIso } from '../../lib/format.js';
 import { describeApiError } from '../../lib/apiErrors.js';
 import { canWrite } from '../../lib/permissions.js';
@@ -46,7 +46,7 @@ export async function servicePage(container, { id }) {
     if (service.calc_method !== 'common_meter') return null;
     const chosen = commonMeters.filter((m) => (service.meter_ids || []).includes(m.id));
     if (!chosen.length) return el('span', { class: 'badge badge-warning' }, 'Не выбраны — расчёт невозможен');
-    return el('span', {}, chosen.flatMap((m, i) => [i ? ', ' : '', el('a', { href: `/buildings/${m.building_id}` }, `${m.building_address} — № ${m.serial_number}`)]));
+    return el('span', {}, chosen.flatMap((m, i) => [i ? ', ' : '', el('a', { href: `/buildings/${m.building_id}` }, `${m.building_address} — ${meterNumberText(m)}`)]));
   }
 
   function renderInfo() {
