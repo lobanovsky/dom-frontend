@@ -29,8 +29,6 @@ export const relations = {
 export const accountPurposes = {
   utilities: 'ЖКУ',
   capital_repair: 'Капремонт',
-  parking: 'Паркинг',
-  other: 'Другое',
 };
 
 export const accountStatuses = { active: 'Открыт', closed: 'Закрыт' };
