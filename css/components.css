@@ -607,11 +607,6 @@ a.btn-primary {
   width: 640px;
 }
 
-/* Окна с таблицами (расчёт): вдвое шире обычного «wide» */
-.modal-dialog--xl {
-  width: 1280px;
-}
-
 /* Таблица-список: тулбар, пагинация */
 
 .table-toolbar-spacer {
@@ -826,8 +821,7 @@ a.btn-primary {
     grid-template-columns: 1fr;
   }
 
-  .modal-dialog--wide,
-  .modal-dialog--xl {
+  .modal-dialog--wide {
     width: 100%;
   }
 
@@ -1161,6 +1155,11 @@ a.btn-primary {
   text-decoration: none;
 }
 a.account-link:hover { text-decoration: underline; }
+/* Лицевой счёт капремонта: серая метка с каской, чтобы отличать от счёта ЖКУ */
+.account-link--capital {
+  background: var(--color-border);
+  color: var(--color-text-muted);
+}
 
 /* Платёж с флагом «обратить внимание»: красноватая строка с полосой слева (перекрывает цвет времени года) */
 .data-table tbody tr.row-attention { background: #fde2dd; box-shadow: inset 4px 0 0 var(--color-danger); }

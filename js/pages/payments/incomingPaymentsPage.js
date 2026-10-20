@@ -79,9 +79,11 @@ function linkCell(r, refs) {
 
 // Лицевой счёт: цветная метка-ссылка на страницу помещения, к которому он привязан.
 function accountLink(r) {
-  const text = `ЛС ${r.personal_account_number}`;
-  if (!r.premises_id) return el('span', { class: 'account-link' }, text);
-  return el('a', { class: 'account-link', href: `/premises/${r.premises_id}`, title: 'Открыть помещение' }, text);
+  const capital = r.personal_account_purpose === 'capital_repair';
+  const text = `${capital ? '⛑ ' : ''}ЛС ${r.personal_account_number}`;
+  const cls = capital ? 'account-link account-link--capital' : 'account-link';
+  if (!r.premises_id) return el('span', { class: cls, title: capital ? 'Лицевой счёт капремонта' : null }, text);
+  return el('a', { class: cls, href: `/premises/${r.premises_id}`, title: capital ? 'Лицевой счёт капремонта. Открыть помещение' : 'Открыть помещение' }, text);
 }
 
 // Кнопка «Скачать в Excel»: все платежи по текущим фильтрам списка (на сервере есть предел по числу строк).
