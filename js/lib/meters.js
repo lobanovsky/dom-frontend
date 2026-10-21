@@ -82,3 +82,10 @@ export const retiredNote = (m) => (isRetired(m) ? ` (выведен ${formatDate
 // поэтому старый счётчик нужен услуге, пока по нему считают прошлые периоды.
 export const selectableCommonMeters = (meters, resource) =>
   meters.filter((m) => m.resource === resource).sort((a, b) => Number(isRetired(a)) - Number(isRetired(b)));
+
+// Метка группы общедомовых счётчиков: «Холодная вода»; withBuilding — с домом: «Паркинг · Холодная вода».
+export const meterGroup = (meter, withBuilding = false) => {
+  const resource = label(meterResources, meter.resource);
+  const building = withBuilding ? (meter.building_name || meter.building_address) : '';
+  return building ? `${building} · ${resource}` : resource;
+};

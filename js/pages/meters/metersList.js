@@ -5,7 +5,7 @@ import { metersApi, meterReadingsApi } from '../../api/resources.js';
 import { meterFields, meterReadingFields } from '../fields.js';
 import { meterResources, meterTariffs, premisesKinds, label, options } from '../../lib/labels.js';
 import { formatDate, todayIso } from '../../lib/format.js';
-import { lastReadingText, meterStatus, meterTitle, resourceUnit, verificationState } from '../../lib/meters.js';
+import { lastReadingText, meterGroup, meterStatus, meterTitle, resourceUnit, verificationState } from '../../lib/meters.js';
 import { buildingLabel, buildingLabelOf } from '../../lib/buildings.js';
 
 // Список счётчиков. Используется на странице «Счётчики», в карточке помещения (fixedQuery/fixed: premises_id)
@@ -44,6 +44,8 @@ export function createMetersList({ fixedQuery = {}, fixed = {}, target = 'fixed'
     fixed,
     newDefaults: { installed_at: today, tariffs: '3', coefficient: '1', ...(target === 'building' && buildings.length === 1 ? { building_id: String(buildings[0].id) } : {}) },
     filters,
+    // Общедомовые счётчики сгруппированы по ресурсу (сервер отдаёт их по дому, ресурсу и названию); индивидуальные — без групп.
+    groupBy: (m) => (m.premises_id ? null : meterGroup(m, showLocation)),
     rowClass: (m) => (m.active ? null : 'row-muted'),
     columns: [
       { key: 'serial_number', label: 'Счётчик', primary: true, render: (m) => el('a', { href: `/meters/${m.id}` }, meterTitle(m)) },

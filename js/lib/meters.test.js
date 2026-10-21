@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { resourceUnit, tariffColumns, formatReading, formatDelta, consumption, lastReadingText, meterStatus, verificationState, meterTitle, meterNumberText, previousReadingText, selectableCommonMeters, retiredNote } from './meters.js';
+import { resourceUnit, tariffColumns, formatReading, formatDelta, consumption, lastReadingText, meterStatus, verificationState, meterTitle, meterNumberText, previousReadingText, selectableCommonMeters, retiredNote, meterGroup } from './meters.js';
 
 test('units and tariff columns', () => {
   assert.equal(resourceUnit('electricity'), 'кВт·ч');
@@ -71,4 +71,11 @@ test('selectableCommonMeters: ресурс, выведенные в конце �
   assert.equal(retiredNote(meters[0]), ' (выведен 01.03.2026)');
   assert.equal(retiredNote(meters[1]), '');
   assert.equal(retiredNote(meters[2]), '');
+});
+
+test('meterGroup: ресурс, при необходимости с домом', () => {
+  const m = { resource: 'cold_water', building_name: 'Паркинг', building_address: 'длинный адрес' };
+  assert.equal(meterGroup(m), 'Холодная вода');
+  assert.equal(meterGroup(m, true), 'Паркинг · Холодная вода');
+  assert.equal(meterGroup({ resource: 'electricity', building_name: null, building_address: 'адрес' }, true), 'адрес · Электроэнергия');
 });
