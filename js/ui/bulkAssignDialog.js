@@ -1,7 +1,7 @@
 import { el } from '../lib/dom.js';
 import { openModal } from './modal.js';
 import { accountServicesApi } from '../api/resources.js';
-import { accountPurposes, premisesKinds, label } from '../lib/labels.js';
+import { accountPurposes, premisesKinds, premisesKindChoices, label } from '../lib/labels.js';
 import { todayIso } from '../lib/format.js';
 import { describeApiError } from '../lib/apiErrors.js';
 import { unitShort } from '../lib/services.js';
@@ -15,7 +15,7 @@ export function openBulkAssignDialog({ service, buildings, onDone }) {
   let busy = false;
   let previewed = false;
 
-  const kinds = service.premises_kinds && service.premises_kinds.length ? service.premises_kinds : Object.keys(premisesKinds);
+  const kinds = service.premises_kinds && service.premises_kinds.length ? service.premises_kinds : premisesKindChoices;
   const manual = service.calc_method === 'manual';
 
   const buildingSelect = el('select', { id: 'ba-building' }, [el('option', { value: '' }, 'Все дома'), ...buildings.map((b) => el('option', { value: String(b.id) }, buildingLabel(b)))]);

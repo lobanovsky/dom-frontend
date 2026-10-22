@@ -17,6 +17,10 @@ export const premisesKinds = {
   storage: 'Кладовая',
 };
 
+// Виды помещений, доступные для выбора (фильтры, формы, правила). Остальные из premisesKinds
+// остаются только для подписей уже существующих записей.
+export const premisesKindChoices = ['apartment', 'commercial', 'parking_space'];
+
 export const relations = {
   spouse: 'Супруг(а)',
   child: 'Ребёнок',
@@ -57,6 +61,10 @@ export const ownerKinds = { person: 'Физлицо', legal_entity: 'Юрлиц�
 
 export function label(dict, value) {
   return dict[value] ?? value ?? '';
+}
+
+export function premisesKindOptions() {
+  return premisesKindChoices.map((value) => ({ value, label: premisesKinds[value] }));
 }
 
 export function options(dict) {

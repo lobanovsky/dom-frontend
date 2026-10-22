@@ -1,6 +1,6 @@
 import { textField, numberField, dateField, textareaField, selectField, checkboxField } from '../lib/fields.js';
 import {
-  options, bankLabel, organizationKinds, buildingKinds, premisesKinds, relations, accountPurposes, accountStatuses, ownerKinds,
+  options, bankLabel, organizationKinds, buildingKinds, premisesKinds, premisesKindOptions, relations, accountPurposes, accountStatuses, ownerKinds,
   meterResources, meterTariffs, serviceKinds, serviceUnits, serviceCalcMethods,
 } from '../lib/labels.js';
 import { tariffColumns, resourceUnit, previousReadingText, meterNumberText, selectableCommonMeters, retiredNote } from '../lib/meters.js';
@@ -57,7 +57,7 @@ export function buildingFields(organizations) {
 }
 
 export const premisesFields = [
-  selectField('kind', 'Вид', options(premisesKinds), { required: true, placeholder: 'Выберите' }),
+  selectField('kind', 'Вид', premisesKindOptions(), { required: true, placeholder: 'Выберите' }),
   textField('number', 'Номер', { required: true }),
   numberField('entrance', 'Подъезд', { step: 1, inputmode: 'numeric' }),
   numberField('floor', 'Этаж', { step: 1, inputmode: 'numeric' }),
@@ -184,7 +184,7 @@ export const serviceFields = ({ organizations = [], services = [], tariffs = [],
     selectField('account_purpose', 'На какой лицевой счёт', options(accountPurposes), { required: true, placeholder: 'Выберите', help: 'Квитанция выставляется по лицевому счёту: услуга попадёт только в квитанцию счёта этого типа' }),
     { type: 'picker', name: 'premises_kinds', label: 'Для каких помещений', full: true,
       help: 'Ничего не отмечено — для любых помещений. Услугу нельзя назначить счёту помещения другого вида',
-      component: checkboxGroup(options(premisesKinds)) },
+      component: checkboxGroup(premisesKindOptions()) },
     textField('receipt_name', 'Название в квитанции', { full: true, help: 'Пусто — как в справочнике. Удобно, когда услуги для квартир и машиномест называются в квитанции одинаково' }),
     { type: 'picker', name: 'component_ids', label: 'Из каких услуг состоит', full: true, visible: () => isSumMethod(values.calc_method),
       help: 'Сумма объёмов: объём услуги равен сумме объёмов выбранных (например, водоотведение = ХВС + ХВС для ГВС), цена — свой тариф. Сумма цен: цена равна сумме цен выбранных, своих тарифов нет. Подходят простые услуги той же организации, с той же единицей и типом счёта',

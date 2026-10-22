@@ -1,7 +1,7 @@
 import { el } from '../lib/dom.js';
 import { listInput } from './listInput.js';
 import { entityPicker } from './picker.js';
-import { premisesKinds, options } from '../lib/labels.js';
+import { premisesKindOptions } from '../lib/labels.js';
 import {
   conditionFields, textFieldNames, actionTypes, opsFor, newCondition, changeField, normalizeConditions, normalizeAction, defaultAction,
 } from '../lib/rules.js';
@@ -104,7 +104,7 @@ export function actionEditor({ categories = [], direction = 'incoming' } = {}) {
         case 'link_account':
           return [accountPicker({ id: `${id}-account`, value: a.personal_account_id ?? null, onChange: (v) => { a.personal_account_id = v; emit(); } })];
         case 'premises_from_text':
-          return [select(options(premisesKinds), a.premises_kind || 'apartment', (v) => { a.premises_kind = v; emit(); }, { 'aria-label': 'Вид помещения' }), fieldSelect(),
+          return [select(premisesKindOptions(), a.premises_kind || 'apartment', (v) => { a.premises_kind = v; emit(); }, { 'aria-label': 'Вид помещения' }), fieldSelect(),
             ...patternField('Выражение с группой захвата: номер помещения. Пример для машиномест: м/м\\s*(\\d+)'), ignoreSpaces()];
         case 'set_category':
           return [select([{ value: '', label: 'Выберите категорию' }, ...categories.map((c) => ({ value: String(c.id), label: c.name }))], a.category_id ?? '',

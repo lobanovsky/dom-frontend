@@ -1,6 +1,6 @@
 // Число строк на странице списков: выбирает пользователь, выбор запоминается в браузере. Без DOM, покрыто тестами.
 
-export const PAGE_SIZES = [10, 20, 50, 100];
+export const PAGE_SIZES = [10, 50, 100];
 export const DEFAULT_PAGE_SIZE = 10;
 
 const STORAGE_KEY = 'dom.page-size';

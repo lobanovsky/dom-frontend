@@ -1,7 +1,7 @@
 import { el } from '../lib/dom.js';
 import { openModal } from './modal.js';
 import { buildingsApi } from '../api/resources.js';
-import { premisesKinds, options } from '../lib/labels.js';
+import { premisesKindOptions } from '../lib/labels.js';
 import { describeApiError, describeImportRowError } from '../lib/apiErrors.js';
 
 const MAX_SHOWN_ERRORS = 50;
@@ -13,7 +13,7 @@ export function openImportDialog({ buildingId, onImported }) {
   let submitting = false;
 
   const kindSelect = el('select', { id: 'import-kind', required: true },
-    options(premisesKinds).map((o) => el('option', { value: o.value }, o.label)));
+    premisesKindOptions().map((o) => el('option', { value: o.value }, o.label)));
   const fileInput = el('input', { id: 'import-file', type: 'file', accept: '.xlsx', required: true });
   const message = el('div', { role: 'alert' });
   message.hidden = true;

@@ -7,7 +7,7 @@ import { toast } from '../../ui/toast.js';
 import { goTo } from '../../state/nav.js';
 import { buildingsApi, organizationsApi, premisesApi } from '../../api/resources.js';
 import { buildingFields, premisesFields } from '../fields.js';
-import { buildingKinds, premisesKinds, label, options } from '../../lib/labels.js';
+import { buildingKinds, premisesKinds, premisesKindOptions, label, options } from '../../lib/labels.js';
 import { formatArea } from '../../lib/format.js';
 import { describeApiError } from '../../lib/apiErrors.js';
 import { canWrite } from '../../lib/permissions.js';
@@ -102,7 +102,7 @@ export async function buildingPage(container, { id }) {
     fixedQuery: { building_id: building.id },
     fixed: { building_id: building.id },
     filters: [
-      { name: 'kind', label: 'Вид', type: 'select', options: options(premisesKinds) },
+      { name: 'kind', label: 'Вид', type: 'select', options: premisesKindOptions() },
       { name: 'number', label: 'Номер', type: 'search', placeholder: 'Точный номер' },
     ],
     columns: [

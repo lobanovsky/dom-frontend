@@ -8,7 +8,7 @@ const memory = () => {
 };
 
 test('допустимые значения и значение по умолчанию', () => {
-  assert.deepEqual(PAGE_SIZES, [10, 20, 50, 100]);
+  assert.deepEqual(PAGE_SIZES, [10, 50, 100]);
   assert.equal(DEFAULT_PAGE_SIZE, 10);
   assert.equal(normalizePageSize('50'), 50);
   assert.equal(normalizePageSize('7'), 10);
@@ -27,5 +27,5 @@ test('выбор запоминается', () => {
 test('недоступное хранилище не ломает', () => {
   const broken = { getItem() { throw new Error('denied'); }, setItem() { throw new Error('denied'); } };
   assert.equal(loadPageSize(broken), 10);
-  assert.doesNotThrow(() => savePageSize(20, broken));
+  assert.doesNotThrow(() => savePageSize(50, broken));
 });
