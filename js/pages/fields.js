@@ -57,7 +57,8 @@ export function buildingFields(organizations) {
 }
 
 export const premisesFields = [
-  selectField('kind', 'Вид', premisesKindOptions(), { required: true, placeholder: 'Выберите' }),
+  // Виды — справочник, который загружается после загрузки модуля: варианты читаются при открытии формы.
+  { ...selectField('kind', 'Вид', [], { required: true, placeholder: 'Выберите' }), get options() { return premisesKindOptions(); } },
   textField('number', 'Номер', { required: true }),
   numberField('entrance', 'Подъезд', { step: 1, inputmode: 'numeric' }),
   numberField('floor', 'Этаж', { step: 1, inputmode: 'numeric' }),
@@ -258,6 +259,14 @@ export const bankAccountFields = (organizations) => [
     help: 'Для банков, которые не пишут номер счёта в имя файла реестра. У ВТБ файл 040126_VTB_231068_001.txt → код VTB_231068_001 (без даты в начале и без .txt). Кодов может быть несколько: имена файлов у банка меняются (например, ещё 311023_VTB_224416 → VTB_224416)',
     component: listInput({ placeholder: 'VTB_231068_001', addLabel: '+ Добавить код', autocomplete: 'off' }) },
   textField('description', 'Описание', { full: true }),
+];
+
+// Вид помещения. Код — идентификатор, на который ссылаются помещения и услуги, после создания он не меняется
+// (при редактировании поле уже заполнено; форма строится один раз по начальным значениям).
+export const premisesKindFields = (values) => [
+  textField('name', 'Название', { required: true, full: true, help: 'Так вид показывается в списках и карточках' }),
+  textField('code', 'Код', { required: true, disabled: !!values.code, help: 'Латиница, цифры и «_», начинается с буквы, до 40 символов, например garage. Потом изменить нельзя' }),
+  numberField('position', 'Порядок', { step: 1, inputmode: 'numeric', help: 'Меньше — выше в списках. Пусто — 0' }),
 ];
 
 export const paymentCategoryFields = [

@@ -9,6 +9,9 @@ export const buildingKinds = {
   other: 'Другое',
 };
 
+// Виды помещений — справочник (`/premises-kinds`). Объект изменяемый: после входа и после правок справочника
+// его заполняет setPremisesKinds, порядок ключей — порядок в списках выбора. Начальные значения — на случай,
+// если справочник не загрузился.
 export const premisesKinds = {
   apartment: 'Квартира',
   non_residential: 'Нежилое помещение',
@@ -17,9 +20,15 @@ export const premisesKinds = {
   storage: 'Кладовая',
 };
 
-// Виды помещений, доступные для выбора (фильтры, формы, правила). Остальные из premisesKinds
-// остаются только для подписей уже существующих записей.
-export const premisesKindChoices = ['apartment', 'commercial', 'parking_space'];
+// Заменяет содержимое premisesKinds действующими видами из справочника (в порядке position).
+export function setPremisesKinds(items) {
+  for (const key of Object.keys(premisesKinds)) delete premisesKinds[key];
+  for (const k of items) premisesKinds[k.code] = k.name;
+}
+
+export function premisesKindOptions() {
+  return Object.entries(premisesKinds).map(([value, text]) => ({ value, label: text }));
+}
 
 export const relations = {
   spouse: 'Супруг(а)',
@@ -61,10 +70,6 @@ export const ownerKinds = { person: 'Физлицо', legal_entity: 'Юрлиц�
 
 export function label(dict, value) {
   return dict[value] ?? value ?? '';
-}
-
-export function premisesKindOptions() {
-  return premisesKindChoices.map((value) => ({ value, label: premisesKinds[value] }));
 }
 
 export function options(dict) {

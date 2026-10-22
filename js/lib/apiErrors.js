@@ -11,6 +11,8 @@ const REASONS = [
   [/^must be #rrggbb$/, 'Цвет в формате #rrggbb'],
   [/^must be 1 to 16 characters$/, 'От 1 до 16 символов'],
   [/^must be one of/, 'Недопустимое значение'],
+  [/^must be a code of 1 to 40 latin lowercase letters/, 'Латинские строчные буквы, цифры и «_», начинается с буквы, до 40 символов'],
+  [/^cannot be changed$/, 'Код менять нельзя: на него ссылаются помещения'],
   [/^must not be before valid_from$/, 'Окончание раньше начала'],
   [/^must not be before opened_at$/, 'Дата закрытия раньше даты открытия'],
   [/^must not exceed total_area$/, 'Больше общей площади'],
@@ -75,6 +77,8 @@ const REASONS = [
 const CONFLICTS = {
   premises_building_id_kind_number_key: 'Помещение с таким видом и номером уже есть в этом доме',
   premises_cadastral_number_uq: 'Помещение с таким кадастровым номером уже есть',
+  premises_kinds_code_uq: 'Вид помещения с таким кодом уже есть (в том числе среди удалённых)',
+  premises_kinds_name_uq: 'Вид помещения с таким названием уже есть',
   buildings_name_uq: 'Дом с таким названием уже есть',
   buildings_cadastral_number_uq: 'Дом с таким кадастровым номером уже есть',
   personal_accounts_number_key: 'Лицевой счёт с таким номером уже есть',
@@ -186,6 +190,9 @@ export function describeApiError(err, { action = 'save' } = {}) {
         ? 'Нельзя удалить: на запись ссылаются другие данные'
         : 'Связанная запись не найдена',
     };
+  }
+  if (raw === 'cannot save: premises kind is unknown or deleted') {
+    return { field: null, message: 'Вид помещения не найден или удалён. Выберите другой или восстановите его в «Справочники → Виды помещений»' };
   }
   let m = raw.match(/^cannot delete: has active (.+)$/);
   if (m) {

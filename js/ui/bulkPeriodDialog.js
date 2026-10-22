@@ -1,7 +1,7 @@
 import { el } from '../lib/dom.js';
 import { openModal } from './modal.js';
 import { accountServicesApi } from '../api/resources.js';
-import { premisesKinds, premisesKindChoices, label } from '../lib/labels.js';
+import { premisesKinds, label } from '../lib/labels.js';
 import { formatDate } from '../lib/format.js';
 import { describeApiError } from '../lib/apiErrors.js';
 import { assignmentPeriod } from '../lib/services.js';
@@ -14,7 +14,7 @@ export function openBulkPeriodDialog({ service, buildings, onDone }) {
   let modal;
   let busy = false;
 
-  const kinds = service.premises_kinds && service.premises_kinds.length ? service.premises_kinds : premisesKindChoices;
+  const kinds = service.premises_kinds && service.premises_kinds.length ? service.premises_kinds : Object.keys(premisesKinds);
 
   const buildingSelect = el('select', { id: 'bp-building' }, [el('option', { value: '' }, 'Все дома'), ...buildings.map((b) => el('option', { value: String(b.id) }, buildingLabel(b)))]);
   const kindBoxes = kinds.map((k) => {

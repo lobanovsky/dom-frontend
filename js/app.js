@@ -16,6 +16,8 @@ import { buildingsPage } from './pages/buildings/buildingsPage.js';
 import { buildingPage } from './pages/buildings/buildingPage.js';
 import { premisesPage } from './pages/premises/premisesPage.js';
 import { bankAccountsPage } from './pages/payments/bankAccountsPage.js';
+import { premisesKindsPage } from './pages/premisesKinds/premisesKindsPage.js';
+import { refreshPremisesKinds } from './api/resources.js';
 import { paymentCategoriesPage } from './pages/payments/paymentCategoriesPage.js';
 import { incomingPaymentsPage } from './pages/payments/incomingPaymentsPage.js';
 import { outgoingPaymentsPage } from './pages/payments/outgoingPaymentsPage.js';
@@ -72,6 +74,7 @@ const routes = [
   { pattern: '/mail', mount: mailSyncPage },
   { pattern: '/payments/outgoing', mount: outgoingPaymentsPage },
   { pattern: '/payment-categories', mount: paymentCategoriesPage },
+  { pattern: '/premises-kinds', mount: premisesKindsPage },
   { pattern: '/payment-rules', mount: adminOnly(paymentRulesPage) },
   { pattern: '/users', mount: adminOnly(usersPage) },
   { pattern: '/counterparties', mount: counterpartiesPage },
@@ -113,6 +116,7 @@ function showAuth() {
       return;
     }
     window.history.replaceState(null, '', returnTo);
+    await refreshPremisesKinds();
     showShell();
   };
   const authRoutes = [{ pattern: '/login', mount: (c) => renderLoginPage(c, { onSuccess }) }];
@@ -152,6 +156,7 @@ onUnauthenticated(() => {
 async function bootstrap() {
   try {
     setUser(await me());
+    await refreshPremisesKinds();
     showShell();
   } catch (err) {
     if (!(err instanceof ApiError && err.status === 401)) notifyGlobalError(err);

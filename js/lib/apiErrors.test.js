@@ -236,3 +236,14 @@ test('ошибки назначения услуг счетам', async () => {
   assert.match(err('cannot delete: has active account services').message, /назначения услуг/);
   assert.match(err('cannot save: service is deleted').message, /услуга/);
 });
+
+test('справочник видов помещений', () => {
+  assert.match(describeApiError(err('already exists: premises_kinds_code_uq')).message, /таким кодом/);
+  assert.match(describeApiError(err('already exists: premises_kinds_name_uq')).message, /таким названием/);
+  const changed = describeApiError(err('code: cannot be changed'));
+  assert.equal(changed.field, 'code');
+  assert.match(changed.message, /менять нельзя/);
+  assert.equal(describeApiError(err('code: must be a code of 1 to 40 latin lowercase letters, digits or underscores, starting with a letter')).field, 'code');
+  assert.match(describeApiError(err('cannot save: premises kind is unknown or deleted')).message, /Вид помещения/);
+  assert.match(describeApiError(err('cannot delete: has active premises'), { action: 'delete' }).message, /помещения/);
+});

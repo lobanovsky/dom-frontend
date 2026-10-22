@@ -1,5 +1,6 @@
 import { client } from './client.js';
 import { maybeGzip } from '../lib/gzip.js';
+import { setPremisesKinds } from '../lib/labels.js';
 
 // Тонкая обёртка над CRUD-маршрутами бэкенда: /api/v1/<name>[/<id>].
 function resource(name) {
@@ -92,6 +93,31 @@ export const meterReadingsApi = {
     body.set('file', file);
     return client.post('/api/v1/meter-readings/import', body);
   },
+};
+
+// Справочник видов помещений. Подписи и списки выбора по всему интерфейсу берутся из lib/labels.js#premisesKinds,
+// поэтому после входа и после любой правки справочника его содержимое перезагружается.
+export async function refreshPremisesKinds() {
+  try {
+    const { items } = await client.get('/api/v1/premises-kinds', { query: { limit: 200 } });
+    setPremisesKinds(items);
+  } catch {
+    // остаются прежние значения; ошибку сети уже показал общий обработчик
+  }
+}
+
+const premisesKindsResource = resource('premises-kinds');
+const thenRefresh = (call) => async (...args) => {
+  const result = await call(...args);
+  await refreshPremisesKinds();
+  return result;
+};
+export const premisesKindsApi = {
+  ...premisesKindsResource,
+  create: thenRefresh(premisesKindsResource.create),
+  update: thenRefresh(premisesKindsResource.update),
+  remove: thenRefresh(premisesKindsResource.remove),
+  restore: thenRefresh(premisesKindsResource.restore),
 };
 
 // Платежи. Банковский счёт организации (bank-accounts) — не лицевой счёт помещения (accounts).
