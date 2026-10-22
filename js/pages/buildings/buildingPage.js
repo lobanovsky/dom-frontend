@@ -111,6 +111,7 @@ export async function buildingPage(container, { id }) {
       { key: 'floor', label: 'Этаж' },
       { key: 'total_area', label: 'Площадь', render: (r) => formatArea(r.total_area) },
       { key: 'rooms', label: 'Комнат' },
+      { key: 'owner_names', label: 'Собственник', render: (r) => (r.owner_names || []).join(', ') },
     ],
     emptyMessage: 'Помещений пока нет',
     deleteMessage: (r) => `Удалить помещение № ${r.number}? Удалить можно только помещение без собственников, жителей и счетов.`,
