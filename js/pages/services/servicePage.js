@@ -4,13 +4,12 @@ import { openEntityForm } from '../../ui/entityForm.js';
 import { confirmDialog } from '../../ui/confirmDialog.js';
 import { toast } from '../../ui/toast.js';
 import { goTo } from '../../state/nav.js';
-import { organizationsApi, servicesApi, serviceTariffsApi, serviceNormsApi, accountServicesApi, buildingsApi, tariffsApi, metersApi } from '../../api/resources.js';
-import { textField } from '../../lib/fields.js';
-import { serviceFields, serviceTariffFields, serviceNormFields, accountServiceFields } from '../fields.js';
+import { organizationsApi, servicesApi, tariffPricesApi, serviceNormsApi, accountServicesApi, buildingsApi, tariffsApi, metersApi } from '../../api/resources.js';
+import { serviceFields, serviceNormFields, accountServiceFields } from '../fields.js';
 import { openBulkAssignDialog } from '../../ui/bulkAssignDialog.js';
 import { openBulkPeriodDialog } from '../../ui/bulkPeriodDialog.js';
 import { serviceKinds, serviceUnits, accountPurposes, premisesKinds, label } from '../../lib/labels.js';
-import { assignmentPeriod, calcMethodText, formatMoney, formatNorm, formatPrice, premisesKindsText, receiptName, tariffPeriod } from '../../lib/services.js';
+import { assignmentPeriod, calcMethodText, formatNorm, formatPrice, premisesKindsText, receiptName, tariffPeriod } from '../../lib/services.js';
 import { formatReading, meterNumberText } from '../../lib/meters.js';
 import { formatDate, todayIso } from '../../lib/format.js';
 import { describeApiError } from '../../lib/apiErrors.js';
@@ -18,8 +17,8 @@ import { canWrite } from '../../lib/permissions.js';
 import { notFoundView, definitionList, deletedBanner } from '../common.js';
 import { buildingLabel, buildingLabelOf } from '../../lib/buildings.js';
 
-// Карточка услуги: сведения и история тарифов. У составной услуги (сумма цен) своих тарифов нет — показана цена по составу;
-// у услуги с тарифом из справочника цены тоже не свои — ссылка на тариф.
+// Карточка услуги: сведения и тариф. Цены ведутся только в справочнике тарифов: здесь ссылка на тариф, цена сейчас и история цен
+// (только чтение). У услуги «сумма цен» тарифа нет — цена по составу.
 export async function servicePage(container, { id }) {
   container.replaceChildren(el('div', { class: 'table-status' }, 'Загрузка…'));
   let service;
@@ -94,22 +93,6 @@ export async function servicePage(container, { id }) {
     return;
   }
 
-  async function refreshService() {
-    try {
-      service = await servicesApi.get(id);
-      renderInfo();
-    } catch {
-      // карточка обновится при следующем открытии
-    }
-  }
-  const ownTariffsApi = {
-    ...serviceTariffsApi,
-    create: async (body) => { const r = await serviceTariffsApi.create(body); refreshService(); return r; },
-    update: async (tid, body) => { const r = await serviceTariffsApi.update(tid, body); refreshService(); return r; },
-    remove: async (tid) => { await serviceTariffsApi.remove(tid); refreshService(); },
-    restore: async (tid) => { const r = await serviceTariffsApi.restore(tid); refreshService(); return r; },
-  };
-
   function edit() {
     openEntityForm({
       title: 'Услуга: редактирование',
@@ -118,20 +101,6 @@ export async function servicePage(container, { id }) {
       entity: service,
       save: (body) => servicesApi.update(service.id, body),
       onSaved: (saved) => { service = saved; byId.set(saved.id, saved); renderInfo(); },
-    });
-  }
-
-  // Собственные цены услуги -> новый тариф справочника, на который услуга начнёт ссылаться.
-  function moveToCatalog() {
-    openEntityForm({
-      title: 'Вынести цены в справочник',
-      fields: [textField('name', 'Название тарифа', { required: true, full: true,
-        help: 'Например, «Электроэнергия Т1». Цены этой услуги перенесутся в новый тариф, а услуга станет брать цену из него. Тот же тариф потом можно выбрать в других услугах с такой же ценой (у них не должно быть своих цен)' })],
-      entity: { name: service.name },
-      submitLabel: 'Вынести',
-      successMessage: 'Тариф создан, услуга берёт цену из него',
-      save: (body) => tariffsApi.fromService({ service_id: service.id, name: body.name }),
-      onSaved: () => servicePage(container, { id }),
     });
   }
 
@@ -147,26 +116,33 @@ export async function servicePage(container, { id }) {
     }
   }
 
-  const noTariffs = service.calc_method === 'sum_prices' || !!service.tariff_id;
+  // История цен тарифа услуги — только чтение: менять цены нужно в самом тарифе.
   const today = todayIso();
-  const tariffs = noTariffs ? null : createCrudList({
-    entityTitle: 'Тариф',
-    addLabel: 'Добавить тариф',
-    api: ownTariffsApi,
-    fields: () => serviceTariffFields(service),
-    fixedQuery: { service_id: service.id },
-    fixed: { service_id: service.id },
-    newDefaults: { valid_from: today },
-    rowClass: (t) => (t.valid_from <= today && (!t.valid_to || t.valid_to >= today) ? null : 'row-muted'),
+  const isCurrent = (p) => p.valid_from <= today && (!p.valid_to || p.valid_to >= today);
+  const prices = !service.tariff_id ? null : createCrudList({
+    entityTitle: 'Цена',
+    api: tariffPricesApi,
+    canEdit: false,
+    fixedQuery: { tariff_id: service.tariff_id },
+    rowClass: (p) => (isCurrent(p) ? null : 'row-muted'),
     columns: [
-      { key: 'period', label: 'Период', primary: true, render: (t) => tariffPeriod(t.valid_from, t.valid_to, formatDate) },
-      { key: 'price', label: 'Цена', render: (t) => el('span', { class: 'nowrap' }, formatMoney(t.price)) },
-      { key: 'now', label: '', render: (t) => (t.valid_from <= today && (!t.valid_to || t.valid_to >= today) ? el('span', { class: 'badge badge-success' }, 'Действует') : '') },
+      { key: 'period', label: 'Период', primary: true, render: (p) => tariffPeriod(p.valid_from, p.valid_to, formatDate) },
+      { key: 'price', label: 'Цена', render: (p) => el('span', { class: 'nowrap' }, formatPrice(p.price, service.unit)) },
+      { key: 'now', label: '', render: (p) => (isCurrent(p) ? el('span', { class: 'badge badge-success' }, 'Действует') : '') },
       { key: 'comment', label: 'Комментарий' },
     ],
-    emptyMessage: 'Тарифов пока нет',
-    deleteMessage: (t) => `Удалить тариф ${tariffPeriod(t.valid_from, t.valid_to, formatDate)}?`,
+    emptyMessage: 'В тарифе пока нет цен',
   });
+
+  function tariffNote() {
+    if (!service.tariff_id) return el('p', { class: 'text-muted' }, 'У этой услуги своего тарифа нет: цена — сумма цен входящих в неё услуг на выбранную дату.');
+    const hasPrice = service.current_price !== null && service.current_price !== undefined;
+    return el('p', {}, [
+      'Цена берётся из тарифа ', el('a', { href: `/tariffs/${service.tariff_id}` }, service.tariff_name), ': ',
+      hasPrice ? el('strong', {}, `${formatPrice(service.current_price, service.unit)} сейчас`) : el('span', { class: 'badge badge-warning' }, 'на сегодня цены нет'),
+      '. Цены меняются в тарифе, для всех услуг с этим тарифом сразу.',
+    ]);
+  }
 
   // Нормативы домов (Гкал на м²) — только у услуги «площадь × норматив»; цена за Гкал — в тарифах.
   const norms = service.calc_method !== 'per_area_norm' ? null : createCrudList({
@@ -233,16 +209,14 @@ export async function servicePage(container, { id }) {
       canWrite() ? el('div', { class: 'header-actions' }, [
         service.active ? el('button', { type: 'button', class: 'btn', onclick: bulkAssign }, 'Назначить счетам') : null,
         el('button', { type: 'button', class: 'btn', onclick: bulkPeriod }, 'Изменить период'),
-        service.calc_method !== 'sum_prices' && !service.tariff_id ? el('button', { type: 'button', class: 'btn', onclick: moveToCatalog }, 'Вынести цены в справочник') : null,
         el('button', { type: 'button', class: 'btn', onclick: edit }, 'Изменить'),
         el('button', { type: 'button', class: 'btn btn-ghost btn-danger-text', onclick: remove }, 'Удалить'),
       ]) : null,
     ]),
     info,
-    el('h2', { class: 'section-title' }, 'Тарифы'),
-    tariffs ? tariffs.element : el('p', { class: 'text-muted' }, service.tariff_id
-      ? el('span', {}, ['Цена берётся из тарифа ', el('a', { href: `/tariffs/${service.tariff_id}` }, service.tariff_name), ': цены меняются там, для всех услуг с этим тарифом сразу.'])
-      : 'У этой услуги своих тарифов нет: цена — сумма цен входящих в неё услуг на выбранную дату.'),
+    el('h2', { class: 'section-title' }, 'Тариф'),
+    tariffNote(),
+    prices ? prices.element : null,
     norms ? el('h2', { class: 'section-title' }, 'Нормативы домов') : null,
     norms ? el('p', { class: 'text-muted' }, 'Объём = площадь помещения × норматив дома; сумма = объём × тариф за Гкал. Норматив у каждого дома свой и меняется по датам.') : null,
     norms ? norms.element : null,

@@ -264,7 +264,7 @@ export function describeApiError(err, { action = 'save' } = {}) {
   if (raw === 'service purpose does not match account purpose') return { field: null, message: 'Тип лицевого счёта не подходит услуге (например, услуга капремонта для счёта ЖКУ)' };
   if (raw === 'service is not available for this premises kind') return { field: null, message: 'Услуга не применяется к этому виду помещений' };
   if (raw === 'tariff does not match service organization or unit') return { field: 'tariff_id', message: 'Тариф должен быть той же организации и с той же единицей измерения, что у услуги' };
-  if (raw === 'service has own tariffs') return { field: 'tariff_id', message: 'У услуги есть собственные цены: сначала удалите их или нажмите «Вынести цены в справочник»' };
+  if (raw === 'service has own tariffs') return { field: 'tariff_id', message: 'У услуги есть собственные цены (архив): тариф можно выбрать только у услуги без них' };
   if (raw === 'service uses a catalog tariff') return { field: null, message: 'Услуга берёт цену из справочника тарифов: меняйте цены в самом тарифе' };
   if (raw === 'tariff is used by services') return { field: null, message: 'Организацию и единицу нельзя менять: тариф используют услуги' };
   if (raw === 'service has no norms') return { field: null, message: 'Нормативы бывают только у услуги «площадь × норматив»' };

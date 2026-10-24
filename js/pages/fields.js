@@ -180,7 +180,7 @@ export const serviceFields = ({ organizations = [], services = [], tariffs = [],
         { emptyText: 'Нет общедомовых счётчиков этого ресурса: заведите их в карточке дома' }) },
     selectField('unit', 'Единица измерения', options(serviceUnits), { required: true, placeholder: 'Выберите', help: 'При расчёте по площади — м², при «площадь × норматив» — Гкал (цена задаётся за Гкал)' }),
     { ...selectField('tariff_id', 'Тариф', tariffs.filter((t) => String(t.organization_id) === String(values.organization_id) && t.unit === values.unit).map((t) => ({ value: String(t.id), label: t.name })),
-      { numeric: true, placeholder: 'Свои цены у услуги', full: true, help: 'Цена берётся из справочника тарифов: так одну цену не нужно вводить в каждой услуге. Показаны тарифы организации с той же единицей измерения. Если выбран тариф, собственных цен у услуги нет' }),
+      { required: true, numeric: true, placeholder: 'Выберите', full: true, help: 'Цены ведутся только в справочнике тарифов («Справочники → Тарифы»): там их видно все и история изменений. Нужного тарифа нет — сначала заведите его там. Показаны тарифы организации с той же единицей измерения' }),
       visible: () => values.calc_method !== 'sum_prices' },
     selectField('account_purpose', 'На какой лицевой счёт', options(accountPurposes), { required: true, placeholder: 'Выберите', help: 'Квитанция выставляется по лицевому счёту: услуга попадёт только в квитанцию счёта этого типа' }),
     { type: 'picker', name: 'premises_kinds', label: 'Для каких помещений', full: true,
@@ -188,7 +188,7 @@ export const serviceFields = ({ organizations = [], services = [], tariffs = [],
       component: checkboxGroup(premisesKindOptions()) },
     textField('receipt_name', 'Название в квитанции', { full: true, help: 'Пусто — как в справочнике. Удобно, когда услуги для квартир и машиномест называются в квитанции одинаково' }),
     { type: 'picker', name: 'component_ids', label: 'Из каких услуг состоит', full: true, visible: () => isSumMethod(values.calc_method),
-      help: 'Сумма объёмов: объём услуги равен сумме объёмов выбранных (например, водоотведение = ХВС + ХВС для ГВС), цена — свой тариф. Сумма цен: цена равна сумме цен выбранных, своих тарифов нет. Подходят простые услуги той же организации, с той же единицей и типом счёта',
+      help: 'Сумма объёмов: объём услуги равен сумме объёмов выбранных (например, водоотведение = ХВС + ХВС для ГВС), цена — из тарифа услуги. Сумма цен: цена равна сумме цен выбранных, своих тарифов нет. Подходят простые услуги той же организации, с той же единицей и типом счёта',
       component: checkboxGroup(plain.map((s) => ({ value: s.id, label: `${s.name} (${unitShort(s.unit)})` })), { emptyText: 'Сначала заведите простые услуги' }) },
     numberField('position', 'Порядок в квитанции', { step: 1, inputmode: 'numeric', help: 'Меньше — выше. Пусто — 0' }),
     checkboxField('active', 'Услуга оказывается'),
@@ -235,13 +235,6 @@ export const tariffPriceFields = (tariff) => [
   numberField('price', `Цена, ₽${unitShort(tariff.unit) ? ` за ${unitShort(tariff.unit)}` : ''}`, { required: true, min: 0, step: 0.0001, inputmode: 'decimal', help: 'Не больше четырёх знаков после запятой' }),
   dateField('valid_from', 'Действует с', { required: true }),
   dateField('valid_to', 'Действует по', { help: 'Включительно. Пусто — действует до сих пор. Периоды цен одного тарифа не пересекаются' }),
-  textField('comment', 'Комментарий', { full: true }),
-];
-
-export const serviceTariffFields = (service) => [
-  numberField('price', `Цена, ₽${unitShort(service.unit) ? ` за ${unitShort(service.unit)}` : ''}`, { required: true, min: 0, step: 0.0001, inputmode: 'decimal', help: 'Не больше четырёх знаков после запятой' }),
-  dateField('valid_from', 'Действует с', { required: true }),
-  dateField('valid_to', 'Действует по', { help: 'Включительно. Пусто — действует до сих пор. Периоды тарифов одной услуги не пересекаются' }),
   textField('comment', 'Комментарий', { full: true }),
 ];
 

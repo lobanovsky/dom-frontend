@@ -61,13 +61,8 @@ export const accountHoldersApi = resource('account-holders');
 // Счётчики воды и электроэнергии (индивидуальные у помещений, общедомовые у дома) и их показания.
 export const metersApi = resource('meters');
 export const servicesApi = resource('services');
-export const serviceTariffsApi = resource('service-tariffs');
-// Справочник тарифов («Электроэнергия Т1») с ценами по периодам; услуги берут цену из тарифа вместо собственных.
-// fromService: вынести собственные цены услуги в новый тариф (услуга начнёт ссылаться на него).
-export const tariffsApi = {
-  ...resource('tariffs'),
-  fromService: (body) => client.post('/api/v1/tariffs/from-service', body),
-};
+// Справочник тарифов («Электроэнергия Т1») с ценами по периодам: цены услуг ведутся только здесь, услуга ссылается на тариф.
+export const tariffsApi = resource('tariffs');
 export const tariffPricesApi = resource('tariff-prices');
 // Нормативы услуг «площадь × норматив» (Гкал на м²) по домам и периодам.
 export const serviceNormsApi = resource('service-norms');
