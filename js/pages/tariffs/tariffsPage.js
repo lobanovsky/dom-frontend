@@ -3,7 +3,8 @@ import { createCrudList } from '../../ui/crudList.js';
 import { organizationsApi, tariffsApi } from '../../api/resources.js';
 import { tariffFields } from '../fields.js';
 import { serviceUnits, label, options } from '../../lib/labels.js';
-import { formatPrice } from '../../lib/services.js';
+import { formatPrice, tariffPeriod } from '../../lib/services.js';
+import { formatDate } from '../../lib/format.js';
 import { describeApiError } from '../../lib/apiErrors.js';
 
 // Справочник тарифов: цена, общая для нескольких услуг («Электроэнергия Т1» — для квартир, машиномест и т. д.).
@@ -33,6 +34,7 @@ export async function tariffsPage(container) {
       { key: 'unit', label: 'Единица', render: (t) => label(serviceUnits, t.unit) },
       { key: 'price', label: 'Цена сейчас', render: (t) => (t.current_price === null || t.current_price === undefined
         ? el('span', { class: 'badge badge-warning' }, 'Нет цены') : el('span', { class: 'nowrap' }, formatPrice(t.current_price, t.unit))) },
+      { key: 'price_period', label: 'Действует', render: (t) => (t.current_price_from ? el('span', { class: 'nowrap' }, tariffPeriod(t.current_price_from, t.current_price_to, formatDate)) : '') },
       { key: 'services_count', label: 'Услуг' },
     ],
     emptyMessage: 'Тарифов пока нет',
