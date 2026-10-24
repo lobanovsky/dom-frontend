@@ -4,10 +4,11 @@ import { renderTable } from './table.js';
 import { accountsApi } from '../api/resources.js';
 import { describeApiError } from '../lib/apiErrors.js';
 import { createMonthPicker } from './monthPicker.js';
-import { currentMonth, formatQuantity, meterUseText, statusText, warningText } from '../lib/calculation.js';
+import { currentMonth, formatQuantity, sortLinesByKind, meterUseText, statusText, warningText } from '../lib/calculation.js';
 import { formatMoney, unitShort } from '../lib/services.js';
 import { formatReading } from '../lib/meters.js';
 import { monthLabel } from '../lib/format.js';
+import { serviceKinds } from '../lib/labels.js';
 
 // Окно «Расчёт за месяц» лицевого счёта: услуги, назначенные на месяц, их количество, цена и сумма. Ничего не сохраняет.
 // Что не удалось посчитать (нет показаний, цены…), показывается строкой с причиной и в итог не входит.
@@ -71,6 +72,7 @@ function renderResult(data) {
     columns: [
       { key: 'name', label: 'Услуга', primary: true, render: (l) => el('div', {}, [
         el('div', {}, l.name),
+        serviceKinds[l.kind] ? el('div', { class: 'text-muted' }, serviceKinds[l.kind]) : null,
         ...details(l).map((d) => el('div', { class: 'text-muted' }, d)),
         ...(l.status === 'ok' ? l.warnings.map((w) => el('div', { class: 'text-warning' }, warningText(w))) : [problem(l)]),
       ]) },
@@ -78,7 +80,7 @@ function renderResult(data) {
       { key: 'price', label: 'Цена', render: (l) => (l.price === null ? '' : el('span', { class: 'nowrap' }, formatMoney(l.price))) },
       { key: 'amount', label: 'Сумма', render: (l) => (l.amount === null ? el('span', { class: 'badge badge-warning' }, 'Не посчитано') : el('strong', { class: 'nowrap' }, formatMoney(l.amount))) },
     ],
-    rows: data.lines,
+    rows: sortLinesByKind(data.lines),
     getRowKey: (l) => l.service_id,
   });
   const total = el('div', { class: 'calculation-total' }, [

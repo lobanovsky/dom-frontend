@@ -21,6 +21,15 @@ const WARNING_TEXT = {
   area_missing: 'у части помещений, между которыми делится расход, не указана площадь',
 };
 
+// Порядок видов услуг в расчёте: сначала дополнительные, затем коммунальные, затем эксплуатационные.
+const KIND_ORDER = ['additional', 'utility', 'maintenance'];
+
+// Строки расчёта, сгруппированные по виду услуги; внутри вида порядок бэкенда сохраняется. Неизвестные виды — в конце.
+export function sortLinesByKind(lines) {
+  const rank = (l) => { const i = KIND_ORDER.indexOf(l.kind); return i === -1 ? KIND_ORDER.length : i; };
+  return lines.map((l, i) => [l, i]).sort((a, b) => rank(a[0]) - rank(b[0]) || a[1] - b[1]).map(([l]) => l);
+}
+
 // Объяснение строки, которую нельзя посчитать; у составной услуги — какая из входящих не посчиталась.
 export function statusText(line) {
   if (!line || line.status === 'ok') return '';

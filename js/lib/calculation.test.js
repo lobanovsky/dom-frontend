@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { statusText, warningText, meterUseText, currentMonth, previousMonth, monthShortName, shiftYear } from './calculation.js';
+import { statusText, warningText, meterUseText, currentMonth, previousMonth, monthShortName, shiftYear, sortLinesByKind } from './calculation.js';
 
 test('statusText: причина, по которой строка не считается', () => {
   assert.equal(statusText({ status: 'ok' }), '');
@@ -44,4 +44,12 @@ test('monthShortName и shiftYear', () => {
   assert.equal(monthShortName(13), '');
   assert.equal(shiftYear(2026, -1), 2025);
   assert.equal(shiftYear(2026, 1), 2027);
+});
+
+test('sortLinesByKind: дополнительные, коммунальные, эксплуатационные; порядок внутри вида сохраняется', () => {
+  const lines = [
+    { id: 1, kind: 'maintenance' }, { id: 2, kind: 'utility' }, { id: 3, kind: 'additional' },
+    { id: 4, kind: 'utility' }, { id: 5, kind: 'other' }, { id: 6, kind: 'additional' },
+  ];
+  assert.deepEqual(sortLinesByKind(lines).map((l) => l.id), [3, 6, 2, 4, 1, 5]);
 });
