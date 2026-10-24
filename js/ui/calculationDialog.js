@@ -72,7 +72,6 @@ function renderResult(data) {
     columns: [
       { key: 'name', label: 'Услуга', primary: true, render: (l) => el('div', {}, [
         el('div', {}, l.name),
-        serviceKinds[l.kind] ? el('div', { class: 'text-muted' }, serviceKinds[l.kind]) : null,
         ...details(l).map((d) => el('div', { class: 'text-muted' }, d)),
         ...(l.status === 'ok' ? l.warnings.map((w) => el('div', { class: 'text-warning' }, warningText(w))) : [problem(l)]),
       ]) },
@@ -81,6 +80,7 @@ function renderResult(data) {
       { key: 'amount', label: 'Сумма', render: (l) => (l.amount === null ? el('span', { class: 'badge badge-warning' }, 'Не посчитано') : el('strong', { class: 'nowrap' }, formatMoney(l.amount))) },
     ],
     rows: sortLinesByKind(data.lines),
+    groupBy: (l) => (serviceKinds[l.kind] ? `${serviceKinds[l.kind]} услуги` : 'Прочие услуги'),
     getRowKey: (l) => l.service_id,
   });
   const total = el('div', { class: 'calculation-total' }, [
