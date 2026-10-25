@@ -53,3 +53,7 @@ test('sortLinesByKind: дополнительные, коммунальные, �
   ];
   assert.deepEqual(sortLinesByKind(lines).map((l) => l.id), [3, 6, 2, 4, 1, 7, 5]);
 });
+
+test('meterUseText: снятый счётчик без показаний', () => {
+  assert.match(meterUseText({ serial_number: '22006354', status: 'retired' }, String), /снят с учёта в этом месяце/);
+});

@@ -13,6 +13,7 @@ const STATUS_TEXT = {
   negative: 'показание меньше предыдущего',
   no_quantity: 'не задано количество',
   component_failed: 'не посчиталась входящая услуга',
+  retired: 'снят с учёта в этом месяце, показаний нет — не учтён',
 };
 
 const WARNING_TEXT = {
