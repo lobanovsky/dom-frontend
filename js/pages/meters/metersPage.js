@@ -21,7 +21,7 @@ export async function metersPage(container) {
     return;
   }
 
-  let mode = MODES[1];
+  let mode = MODES[0];
   const switcher = el('div', { class: 'segmented', role: 'tablist' });
   const host = el('div', {});
 
