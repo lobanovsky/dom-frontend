@@ -55,10 +55,10 @@ export async function servicesPage(container) {
       { name: 'active', label: 'Состояние', type: 'select', allLabel: 'Все', options: [{ value: 'true', label: 'Оказываются' }, { value: 'false', label: 'Не оказываются' }], defaultValue: 'true' },
       { name: 'q', label: 'Поиск', type: 'search', placeholder: 'Название услуги' },
     ],
+    groupBy: (s) => (serviceKinds[s.kind] ? `${serviceKinds[s.kind]} услуги` : 'Прочие услуги'),
     rowClass: (s) => (s.active ? null : 'row-muted'),
     columns: [
       { key: 'name', label: 'Услуга', primary: true, render: (s) => el('a', { href: `/services/${s.id}` }, s.name) },
-      { key: 'kind', label: 'Вид', render: (s) => label(serviceKinds, s.kind) },
       { key: 'account_purpose', label: 'Счёт', render: (s) => label(accountPurposes, s.account_purpose) },
       { key: 'premises', label: 'Помещения', render: (s) => premisesKindsText(s.premises_kinds, premisesKinds) },
       { key: 'calc', label: 'Как считается', render: (s) => calcMethodText(s, byId) },
