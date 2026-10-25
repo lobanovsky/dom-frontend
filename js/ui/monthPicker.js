@@ -1,11 +1,12 @@
 import { el } from '../lib/dom.js';
-import { monthShortName, shiftYear } from '../lib/calculation.js';
+import { currentMonth, monthShortName, shiftYear } from '../lib/calculation.js';
 
 // Выбор месяца без ввода с клавиатуры: стрелки меняют год, 12 кнопок — месяцы. Значение — «YYYY-MM».
+// Пустое value ('') — месяц не выбран (кнопки не подсвечены), год показывается текущий.
 // onChange(value) вызывается при выборе месяца. Возвращает {element, get value(), set value(v)}.
 export function createMonthPicker({ value, onChange }) {
   let current = value;
-  let year = Number(String(value).slice(0, 4));
+  let year = Number(String(value || currentMonth()).slice(0, 4));
 
   const yearLabel = el('strong', { class: 'month-picker-year', 'aria-live': 'polite' });
   const buttons = Array.from({ length: 12 }, (_, i) => {
@@ -17,7 +18,7 @@ export function createMonthPicker({ value, onChange }) {
 
   function render() {
     yearLabel.textContent = String(year);
-    const [cy, cm] = current.split('-').map(Number);
+    const [cy, cm] = current ? current.split('-').map(Number) : [0, 0];
     buttons.forEach((b, i) => {
       const on = cy === year && cm === i + 1;
       b.classList.toggle('btn-primary', on);
@@ -40,6 +41,19 @@ export function createMonthPicker({ value, onChange }) {
   return {
     element,
     get value() { return current; },
-    set value(v) { current = v; year = Number(v.slice(0, 4)); render(); },
+    set value(v) { current = v; year = Number((v || currentMonth()).slice(0, 4)); render(); },
+  };
+}
+
+// Компонент для поля формы (type: 'picker'): месяц кнопками, значение — первое число месяца «YYYY-MM-01» или null (не выбран).
+// Кнопка «Сбросить» убирает выбор: смысл пустого значения объясняет help поля.
+export function monthField({ clearText = 'Сбросить' } = {}) {
+  return ({ value, onChange }) => {
+    const picker = createMonthPicker({
+      value: value ? String(value).slice(0, 7) : '',
+      onChange: (m) => onChange(`${m}-01`),
+    });
+    const clear = el('button', { type: 'button', class: 'btn btn-sm btn-ghost', onclick: () => { picker.value = ''; onChange(null); } }, clearText);
+    return el('div', {}, [picker.element, clear]);
   };
 }

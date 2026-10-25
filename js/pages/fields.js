@@ -7,6 +7,7 @@ import { tariffColumns, resourceUnit, previousReadingText, meterNumberText, sele
 import { entityPicker } from '../ui/picker.js';
 import { listInput } from '../ui/listInput.js';
 import { checkboxGroup } from '../ui/checkboxGroup.js';
+import { monthField } from '../ui/monthPicker.js';
 import { unitShort, isSumMethod } from '../lib/services.js';
 import { categoryColorPicker, categoryIconPicker } from '../ui/categoryStyle.js';
 import { conditionsEditor, actionEditor } from '../ui/ruleEditors.js';
@@ -149,9 +150,10 @@ export const meterReadingFields = (meter) => {
   const unit = resourceUnit(meter.resource);
   return [
     dateField('reading_date', 'Дата показаний', { required: true }),
-    dateField('period', 'За какой месяц', { help: 'В расчёт за этот месяц войдёт показание. Пусто — месяц даты показаний. Можно указать любую дату нужного месяца, например, показание от 28 сентября для расчёта за октябрь. В месяце одно показание счётчика' }),
+    { type: 'picker', name: 'period', label: 'За какой месяц', full: true, component: monthField({ clearText: 'Месяц даты показаний' }),
+      help: 'В расчёт за этот месяц войдёт показание. Не выбран — месяц даты показаний. Например, показание от 28 сентября можно отнести к октябрю. В месяце одно показание счётчика' },
     ...tariffColumns(meter.tariffs).map((c, i) => numberField(c.key, `${c.label}, ${unit}`, {
-      required: true, min: 0, step: 0.001, inputmode: 'decimal', help: i === 0 ? previousReadingText(meter) : undefined,
+      required: true, full: true, min: 0, step: 0.001, inputmode: 'decimal', help: i === 0 ? previousReadingText(meter) : undefined,
     })),
     textField('comment', 'Комментарий', { full: true }),
   ];
