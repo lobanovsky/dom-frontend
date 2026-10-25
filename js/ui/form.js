@@ -1,5 +1,6 @@
 import { el } from '../lib/dom.js';
 import { validateFieldDef } from '../lib/validate.js';
+import { normalizeDecimal } from '../lib/decimal.js';
 
 function labelContent(def) {
   if (!def.required) return def.label;
@@ -97,6 +98,16 @@ export function createForm({ fields, initialValues = {}, submitLabel = 'Сохр
       });
       input.value = values[def.name] ?? '';
       input.addEventListener('input', () => setValue(def.name, input.value));
+      // Число с запятой из буфера («101,71») браузер вставляет в поле числа как 10171: подставляем с точкой сами.
+      if (def.type === 'number') {
+        input.addEventListener('paste', (e) => {
+          const text = normalizeDecimal(e.clipboardData?.getData('text'));
+          if (text === null) return;
+          e.preventDefault();
+          input.value = text;
+          setValue(def.name, input.value);
+        });
+      }
     }
 
     const wrapper = el('div', { class: def.full ? 'field field--full' : 'field' }, [
