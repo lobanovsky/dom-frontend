@@ -49,7 +49,7 @@ test('monthShortName и shiftYear', () => {
 test('sortLinesByKind: дополнительные, коммунальные, эксплуатационные; порядок внутри вида сохраняется', () => {
   const lines = [
     { id: 1, kind: 'maintenance' }, { id: 2, kind: 'utility' }, { id: 3, kind: 'additional' },
-    { id: 4, kind: 'utility' }, { id: 5, kind: 'other' }, { id: 6, kind: 'additional' },
+    { id: 4, kind: 'utility' }, { id: 5, kind: 'other' }, { id: 6, kind: 'additional' }, { id: 7, kind: 'capital_repair' },
   ];
-  assert.deepEqual(sortLinesByKind(lines).map((l) => l.id), [3, 6, 2, 4, 1, 5]);
+  assert.deepEqual(sortLinesByKind(lines).map((l) => l.id), [3, 6, 2, 4, 1, 7, 5]);
 });

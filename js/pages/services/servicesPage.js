@@ -2,7 +2,7 @@ import { el } from '../../lib/dom.js';
 import { createCrudList } from '../../ui/crudList.js';
 import { organizationsApi, servicesApi, tariffsApi, metersApi } from '../../api/resources.js';
 import { serviceFields } from '../fields.js';
-import { serviceKinds, serviceUnits, accountPurposes, premisesKinds, label, options } from '../../lib/labels.js';
+import { serviceKinds, serviceKindGroup, serviceUnits, accountPurposes, premisesKinds, label, options } from '../../lib/labels.js';
 import { calcMethodText, formatPrice, premisesKindsText } from '../../lib/services.js';
 import { describeApiError } from '../../lib/apiErrors.js';
 
@@ -55,7 +55,7 @@ export async function servicesPage(container) {
       { name: 'active', label: 'Состояние', type: 'select', allLabel: 'Все', options: [{ value: 'true', label: 'Оказываются' }, { value: 'false', label: 'Не оказываются' }], defaultValue: 'true' },
       { name: 'q', label: 'Поиск', type: 'search', placeholder: 'Название услуги' },
     ],
-    groupBy: (s) => (serviceKinds[s.kind] ? `${serviceKinds[s.kind]} услуги` : 'Прочие услуги'),
+    groupBy: (s) => serviceKindGroup(s.kind),
     rowClass: (s) => (s.active ? null : 'row-muted'),
     columns: [
       { key: 'name', label: 'Услуга', primary: true, render: (s) => el('a', { href: `/services/${s.id}` }, s.name) },

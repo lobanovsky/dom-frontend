@@ -8,7 +8,7 @@ import { currentMonth, formatQuantity, sortLinesByKind, meterUseText, statusText
 import { formatMoney, unitShort } from '../lib/services.js';
 import { formatReading } from '../lib/meters.js';
 import { monthLabel } from '../lib/format.js';
-import { serviceKinds } from '../lib/labels.js';
+import { serviceKindGroup } from '../lib/labels.js';
 
 // Окно «Расчёт за месяц» лицевого счёта: услуги, назначенные на месяц, их количество, цена и сумма. Ничего не сохраняет.
 // Что не удалось посчитать (нет показаний, цены…), показывается строкой с причиной и в итог не входит.
@@ -80,7 +80,7 @@ function renderResult(data) {
       { key: 'amount', label: 'Сумма', render: (l) => (l.amount === null ? el('span', { class: 'badge badge-warning' }, 'Не посчитано') : el('strong', { class: 'nowrap' }, formatMoney(l.amount))) },
     ],
     rows: sortLinesByKind(data.lines),
-    groupBy: (l) => (serviceKinds[l.kind] ? `${serviceKinds[l.kind]} услуги` : 'Прочие услуги'),
+    groupBy: (l) => serviceKindGroup(l.kind),
     getRowKey: (l) => l.service_id,
   });
   const total = el('div', { class: 'calculation-total' }, [

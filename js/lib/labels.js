@@ -51,7 +51,11 @@ export const meterResources = { cold_water: 'Холодная вода', hot_wat
 // Число тарифов электросчётчика (у водяного счётчика всегда один).
 export const meterTariffs = { 1: 'Однотарифный', 2: 'Двухтарифный (Т1, Т2)', 3: 'Трёхтарифный (Т1, Т2, Т3)' };
 
-export const serviceKinds = { utility: 'Коммунальная', maintenance: 'Эксплуатационная', additional: 'Дополнительная' };
+export const serviceKinds = { utility: 'Коммунальная', maintenance: 'Эксплуатационная', additional: 'Дополнительная', capital_repair: 'Взнос на капитальный ремонт' };
+
+// Заголовок группы услуг одного вида в таблицах.
+export const serviceKindGroups = { utility: 'Коммунальные услуги', maintenance: 'Эксплуатационные услуги', additional: 'Дополнительные услуги', capital_repair: 'Взносы на капитальный ремонт' };
+export const serviceKindGroup = (kind) => serviceKindGroups[kind] || 'Прочие услуги';
 
 export const serviceUnits = { kwh: 'кВт·ч', m3: 'м³', gcal: 'Гкал', m2: 'м² площади', piece: 'шт.', month: 'месяц (за помещение)' };
 
