@@ -45,15 +45,31 @@ export function createMonthPicker({ value, onChange }) {
   };
 }
 
-// Компонент для поля формы (type: 'picker'): месяц кнопками, значение — первое число месяца «YYYY-MM-01» или null (не выбран).
-// Кнопка «Сбросить» убирает выбор: смысл пустого значения объясняет help поля.
-export function monthField({ clearText = 'Сбросить' } = {}) {
+// Компонент для поля формы (type: 'picker'): месяц кнопками, значение — первое число месяца «YYYY-MM-01».
+// Месяц выбран всегда. Если задан followDate (имя поля с датой в той же форме), то у новой записи он сам подставляется
+// по этой дате, пока месяц не выбрали вручную; у записи, где месяц уже сохранён, остаётся сохранённый.
+export function monthField({ followDate } = {}) {
   return ({ value, onChange }) => {
-    const picker = createMonthPicker({
-      value: value ? String(value).slice(0, 7) : '',
-      onChange: (m) => onChange(`${m}-01`),
-    });
-    const clear = el('button', { type: 'button', class: 'btn btn-sm btn-ghost', onclick: () => { picker.value = ''; onChange(null); } }, clearText);
-    return el('div', {}, [picker.element, clear]);
+    const saved = value ? String(value).slice(0, 7) : '';
+    let touched = !!saved;
+    const emit = (m) => onChange(`${m}-01`);
+    const picker = createMonthPicker({ value: saved || currentMonth(), onChange: (m) => { touched = true; emit(m); } });
+    if (!saved) emit(picker.value);
+    if (followDate) {
+      // Поле даты есть в форме только после вставки компонента в страницу, поэтому ищем его позже.
+      setTimeout(() => {
+        const form = picker.element.closest('form');
+        const input = form?.querySelector(`[name="${followDate}"]`);
+        if (!input) return;
+        const follow = () => {
+          if (touched || !/^\d{4}-\d{2}/.test(input.value)) return;
+          picker.value = input.value.slice(0, 7);
+          emit(picker.value);
+        };
+        input.addEventListener('input', follow);
+        input.addEventListener('change', follow);
+      }, 0);
+    }
+    return picker.element;
   };
 }

@@ -150,8 +150,8 @@ export const meterReadingFields = (meter) => {
   const unit = resourceUnit(meter.resource);
   return [
     dateField('reading_date', 'Дата показаний', { required: true }),
-    { type: 'picker', name: 'period', label: 'За какой месяц', full: true, component: monthField({ clearText: 'Месяц даты показаний' }),
-      help: 'В расчёт за этот месяц войдёт показание. Не выбран — месяц даты показаний. Например, показание от 28 сентября можно отнести к октябрю. В месяце одно показание счётчика' },
+    { type: 'picker', name: 'period', label: 'За какой месяц', full: true, component: monthField({ followDate: 'reading_date' }), required: true,
+      help: 'В расчёт за этот месяц войдёт показание. По умолчанию — месяц даты показаний; можно выбрать другой, например показание от 28 сентября отнести к октябрю. В месяце одно показание счётчика' },
     ...tariffColumns(meter.tariffs).map((c, i) => numberField(c.key, `${c.label}, ${unit}`, {
       required: true, full: true, min: 0, step: 0.001, inputmode: 'decimal', help: i === 0 ? previousReadingText(meter) : undefined,
     })),
