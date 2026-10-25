@@ -23,21 +23,37 @@ export function openCalculationDialog({ account }) {
     result.replaceChildren(el('div', { class: 'table-status' }, 'Расчёт…'));
     try {
       const data = await accountsApi.calculation(account.id, month);
-      if (mine === requestId) result.replaceChildren(...renderResult(data));
+      if (mine === requestId) {
+        printPeriod.textContent = `Расчёт за ${monthLabel(data.period).toLowerCase()}`;
+        result.replaceChildren(...renderResult(data));
+      }
     } catch (err) {
       if (mine === requestId) result.replaceChildren(el('div', { class: 'table-status table-status-error' }, describeApiError(err).message));
     }
   }
 
+  // Для печати: месяц расчёта текстом (кнопки выбора месяца на бумагу не попадают).
+  const printPeriod = el('p', { class: 'print-only' });
   const content = el('div', { class: 'calculation' }, [
-    el('p', { class: 'field-help' }, 'Услуги, назначенные счёту хотя бы на один день месяца, считаются за весь месяц. Расход по счётчикам — показание этого месяца минус показание предыдущего месяца, у которого есть показания. Ничего не сохраняется.'),
-    el('div', { class: 'field' }, [el('label', {}, 'За какой месяц'), picker.element]),
+    el('p', { class: 'field-help no-print' }, 'Услуги, назначенные счёту хотя бы на один день месяца, считаются за весь месяц. Расход по счётчикам — показание этого месяца минус показание предыдущего месяца, у которого есть показания. Ничего не сохраняется.'),
+    el('div', { class: 'field no-print' }, [el('label', {}, 'За какой месяц'), picker.element]),
+    printPeriod,
     result,
+    el('div', { class: 'form-actions no-print' }, [
+      el('button', { type: 'button', class: 'btn', onclick: printDialog }, 'Печать / PDF'),
+    ]),
   ]);
   const modal = openModal({ title: `Расчёт по счёту № ${account.number}`, content, wide: true });
   modal.dialog.classList.add('modal-dialog--xl'); // таблица расчёта шире обычного окна
   load();
   return modal;
+}
+
+// Печать окна браузером: в диалоге печати можно выбрать «Сохранить как PDF». Остальная страница на бумагу не попадает.
+function printDialog() {
+  document.body.classList.add('print-modal');
+  window.addEventListener('afterprint', () => document.body.classList.remove('print-modal'), { once: true });
+  window.print();
 }
 
 function details(line) {

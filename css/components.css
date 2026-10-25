@@ -1298,3 +1298,37 @@ a.account-link:hover { text-decoration: underline; }
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
+
+/* Печать окна (расчёт по счёту): на бумаге только содержимое открытого окна, без управления. Класс на body ставит код перед печатью. */
+.print-only {
+  display: none;
+}
+@media print {
+  body.print-modal > *:not(.modal-backdrop) {
+    display: none !important;
+  }
+  body.print-modal .modal-backdrop {
+    position: static;
+    display: block;
+    background: none;
+    padding: 0;
+  }
+  body.print-modal .modal-dialog {
+    width: auto;
+    max-width: none;
+    max-height: none;
+    overflow: visible;
+    box-shadow: none;
+    border-radius: 0;
+  }
+  body.print-modal .modal-close,
+  body.print-modal .no-print {
+    display: none !important;
+  }
+  body.print-modal .print-only {
+    display: block;
+  }
+  body.print-modal .data-table tr {
+    break-inside: avoid;
+  }
+}
