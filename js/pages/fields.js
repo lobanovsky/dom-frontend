@@ -1,3 +1,4 @@
+import { el } from '../lib/dom.js';
 import { textField, numberField, dateField, textareaField, selectField, checkboxField } from '../lib/fields.js';
 import {
   options, bankLabel, organizationKinds, buildingKinds, premisesKinds, premisesKindOptions, relations, accountPurposes, accountStatuses, ownerKinds,
@@ -152,8 +153,11 @@ export const meterReadingFields = (meter) => {
     dateField('reading_date', 'Дата показаний', { required: true }),
     { type: 'picker', name: 'period', label: 'За какой месяц', full: true, component: monthField({ followDate: 'reading_date' }), required: true,
       help: 'В расчёт за этот месяц войдёт показание. По умолчанию — месяц даты показаний; можно выбрать другой, например показание от 28 сентября отнести к октябрю. В месяце одно показание счётчика' },
-    ...tariffColumns(meter.tariffs).map((c, i) => numberField(c.key, `${c.label}, ${unit}`, {
-      required: true, full: true, min: 0, step: 0.001, inputmode: 'decimal', help: i === 0 ? previousReadingText(meter) : undefined,
+    // Подсказка над полями показаний: что было последним. Не поле формы (virtual), в запрос не уходит.
+    { type: 'picker', name: 'previous_hint', label: '', virtual: true, full: true,
+      component: () => el('div', { class: 'field-help' }, previousReadingText(meter)) },
+    ...tariffColumns(meter.tariffs).map((c) => numberField(c.key, `${c.label}, ${unit}`, {
+      required: true, full: true, min: 0, step: 0.001, inputmode: 'decimal',
     })),
     textField('comment', 'Комментарий', { full: true }),
   ];
