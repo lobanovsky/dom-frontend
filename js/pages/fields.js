@@ -342,3 +342,14 @@ export const userEditFields = [
   checkboxField('active', 'Может входить в систему', { full: true, help: 'Если снять, пользователь сразу потеряет доступ, даже в уже открытом окне' }),
   passwordField({ label: 'Новый пароль', full: true, help: 'Оставьте пустым, чтобы не менять. Если задать, все входы этого пользователя завершатся' }),
 ];
+
+// Корректировочный реестр: условный платёж на лицевой счёт при смене собственника. banks — банковские счета организации.
+export const adjustmentRegistryFields = (banks) => [
+  { type: 'picker', name: 'personal_account_id', label: 'Лицевой счёт', required: true, full: true, component: entityPicker('personal_account'),
+    help: 'Введите начало номера счёта: в номере есть номер квартиры. ЖКУ и капремонт — разные лицевые счета' },
+  selectField('bank_account_id', 'Банковский счёт', banks.map((b) => ({ value: String(b.id), label: bankLabel(b) })),
+    { required: true, numeric: true, full: true, placeholder: 'Выберите', help: 'Из него берутся ИНН и номер счёта в имени файла. Для капремонта выберите спецсчёт' }),
+  numberField('amount', 'Сумма, ₽', { required: true, min: 0.01, step: 0.01, inputmode: 'decimal', help: 'Сколько долга закрыть' }),
+  textField('payer_name', 'Плательщик в реестре', { required: true, full: true, help: 'Так условный платёж будет подписан во внешней системе' }),
+  textField('comment', 'Комментарий', { full: true, help: 'Только для журнала, например «кв. 10, продажа, долг за август–сентябрь»' }),
+];

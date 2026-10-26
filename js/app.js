@@ -23,6 +23,7 @@ import { incomingPaymentsPage } from './pages/payments/incomingPaymentsPage.js';
 import { outgoingPaymentsPage } from './pages/payments/outgoingPaymentsPage.js';
 import { paymentRegistriesPage } from './pages/payments/paymentRegistriesPage.js';
 import { paymentExportsPage } from './pages/payments/paymentExportsPage.js';
+import { adjustmentRegistriesPage } from './pages/payments/adjustmentRegistriesPage.js';
 import { paymentRegistryPage } from './pages/payments/paymentRegistryPage.js';
 import { bankStatementsPage } from './pages/payments/bankStatementsPage.js';
 import { sberApiPage } from './pages/payments/sberApiPage.js';
@@ -67,6 +68,7 @@ const routes = [
   { pattern: '/payments/incoming', mount: incomingPaymentsPage },
   { pattern: '/payment-registries', mount: paymentRegistriesPage },
   { pattern: '/payment-exports', mount: paymentExportsPage },
+  { pattern: '/adjustment-registries', mount: adjustmentRegistriesPage },
   { pattern: '/payment-registries/:id', mount: paymentRegistryPage },
   { pattern: '/bank-statements', mount: bankStatementsPage },
   { pattern: '/bank-statements/:id', mount: bankStatementPage },

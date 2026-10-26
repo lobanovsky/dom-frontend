@@ -15,6 +15,7 @@ export const NAV = [
       { href: '/payments/outgoing', label: 'Исходящие', icon: '<path d="M12 21V9M7 14l5-5 5 5M4 3h16"/>' },
       { href: '/payment-registries', label: 'Реестры', icon: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8zM14 3v5h5M9 13h6M9 17h6"/>' },
       { href: '/payment-exports', label: 'Выгрузки', icon: '<path d="M12 15V3M7 8l5-5 5 5M4 21h16"/>' },
+      { href: '/adjustment-registries', label: 'Корректировки', icon: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8zM14 3v5h5M12 11v6M9 14h6"/>' },
       { href: '/bank-statements', label: 'Выписки', icon: '<path d="M6 2h9l5 5v15H6zM14 2v6h6M9 13h8M9 17h8M9 9h3"/>' },
       { href: '/sber-api', label: 'Банк (Сбер)', icon: '<path d="M3 10l9-6 9 6M5 10v8M19 10v8M9 10v8M15 10v8M3 21h18"/>' },
       { href: '/mail', label: 'Почта', icon: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>' },

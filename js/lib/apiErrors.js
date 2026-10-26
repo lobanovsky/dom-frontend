@@ -7,6 +7,8 @@ import { ApiError } from '../api/client.js';
 const REASONS = [
   [/^is required$/, 'Обязательное поле'],
   [/^must be positive$/, 'Должно быть больше нуля'],
+  [/^is too large$/, 'Слишком большое значение'],
+  [/^not found$/, 'Не найдено'],
   [/^is required when attention is set$/, 'Укажите, что не так: при флаге «Обратить внимание» комментарий обязателен'],
   [/^must be #rrggbb$/, 'Цвет в формате #rrggbb'],
   [/^must be 1 to 16 characters$/, 'От 1 до 16 символов'],

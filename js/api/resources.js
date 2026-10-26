@@ -157,6 +157,17 @@ export const paymentExportsApi = {
   fileUrl: (id) => `/api/v1/payment-exports/${id}/file`,
 };
 
+// Корректировочные реестры: файл с условным платежом на лицевой счёт (смена собственника), платежи в системе не создаются.
+export const adjustmentRegistriesApi = {
+  list: (query) => client.get('/api/v1/adjustment-registries', { query }),
+  create: (body) => client.post('/api/v1/adjustment-registries', body),
+  resolve: (id) => client.post(`/api/v1/adjustment-registries/${id}/resolve`),
+  unresolve: (id) => client.post(`/api/v1/adjustment-registries/${id}/unresolve`),
+  remove: (id) => client.delete(`/api/v1/adjustment-registries/${id}`),
+  filePath: (id) => `/api/v1/adjustment-registries/${id}/file`,
+  download: (id) => client.download(`/api/v1/adjustment-registries/${id}/file`),
+};
+
 // Банковские выписки (xlsx). Счёт определяется из шапки файла.
 export const bankStatementsApi = {
   list: (query) => client.get('/api/v1/bank-statements', { query }),
