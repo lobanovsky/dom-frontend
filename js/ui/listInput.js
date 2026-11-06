@@ -3,10 +3,11 @@ import { el } from '../lib/dom.js';
 // Поле-список строк (телефоны, email): по одной строке ввода на значение,
 // кнопка «+ Добавить» и крестик у каждой строки. Первое значение основное.
 // Возвращает компонент для form.js (type: 'list'): ({id, value, onChange}) -> Node.
-export function listInput({ inputType = 'text', inputmode, placeholder, addLabel = '+ Добавить', autocomplete } = {}) {
+// format(значение) -> строка: как показывать сохранённое значение в поле (например, телефон из цифр с форматированием).
+export function listInput({ inputType = 'text', inputmode, placeholder, addLabel = '+ Добавить', autocomplete, format = (s) => s } = {}) {
   return function createListInput({ id, value, onChange }) {
     // Пустой список — одна пустая строка ввода; пустые строки в API не уходят (lib/payload.js).
-    let items = Array.isArray(value) && value.length ? [...value] : [''];
+    let items = Array.isArray(value) && value.length ? value.map(format) : [''];
 
     const rows = el('div', { class: 'list-input-rows' });
     const addButton = el('button', { type: 'button', class: 'btn btn-ghost btn-sm', onclick: () => add() }, addLabel);

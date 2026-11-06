@@ -84,6 +84,8 @@ test('formatPhone: российские номера в одном виде, о�
   for (const raw of ['+79636110726', '89636110726', '9636110726', '7 963 611-07-26', '+7 (963) 611-07-26', '8 (963) 611 07 26']) {
     assert.equal(formatPhone(raw), '+7 (963) 611-07-26', raw);
   }
+  assert.equal(formatPhone('79636110726'), '+7 (963) 611-07-26');
+  assert.equal(formatPhone('14155552671'), '+14155552671');
   assert.equal(formatPhone('+1 415 555 2671'), '+1 415 555 2671');
   assert.equal(formatPhone('+442071838750'), '+442071838750');
   assert.equal(formatPhone('+7 (495) 123-45-67 доб. 12'), '+7 (495) 123-45-67 доб. 12');

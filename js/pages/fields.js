@@ -7,6 +7,7 @@ import {
 import { tariffColumns, resourceUnit, previousReadingText, meterNumberText, selectableCommonMeters, retiredNote } from '../lib/meters.js';
 import { entityPicker } from '../ui/picker.js';
 import { listInput } from '../ui/listInput.js';
+import { formatPhone } from '../lib/format.js';
 import { checkboxGroup } from '../ui/checkboxGroup.js';
 import { monthField } from '../ui/monthPicker.js';
 import { unitShort, isSumMethod } from '../lib/services.js';
@@ -39,7 +40,7 @@ export const personFields = [
   textField('middle_name', 'Отчество'),
   dateField('birth_date', 'Дата рождения'),
   { type: 'list', name: 'phones', label: 'Телефоны', help: 'Первый — основной',
-    component: listInput({ inputType: 'tel', inputmode: 'tel', placeholder: '+7 900 123-45-67', addLabel: '+ Добавить телефон', autocomplete: 'off' }) },
+    component: listInput({ inputType: 'tel', inputmode: 'tel', placeholder: '+7 900 123-45-67', addLabel: '+ Добавить телефон', autocomplete: 'off', format: formatPhone }) },
   { type: 'list', name: 'emails', label: 'Email', help: 'Первый — основной',
     component: listInput({ inputType: 'email', inputmode: 'email', placeholder: 'name@example.com', addLabel: '+ Добавить email', autocomplete: 'off' }) },
 ];

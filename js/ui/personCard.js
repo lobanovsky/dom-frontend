@@ -19,7 +19,11 @@ function contactList(items, hrefPrefix, hrefOf = (s) => s, textOf = (s) => s) {
   )));
 }
 
-const phoneHref = (s) => s.replace(/[^\d+]/g, '');
+// Ссылка tel: — цифры с «+» (в базе номер без плюса).
+const phoneHref = (s) => {
+  const d = s.replace(/[^\d+]/g, '');
+  return d.startsWith('+') || d.length < 10 ? d : `+${d}`;
+};
 
 // Карточка физлица: контакты и дата рождения, «Изменить» открывает форму.
 // onChanged(person) вызывается после сохранения, чтобы страница обновила имена и контакты.
