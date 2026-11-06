@@ -150,7 +150,6 @@ export async function premisesPage(container, { id }) {
           ],
           rows,
           getRowKey: (row) => row.key,
-          rowClass: (row) => (row.ownerships.some((o) => isActiveOn(o.valid_from, o.valid_to, today)) ? 'person-row--owner' : ''),
           emptyMessage: emptyMessages[peopleTab],
         }),
       ].filter(Boolean));

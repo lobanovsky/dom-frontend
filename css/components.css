@@ -1359,13 +1359,9 @@ a.account-link:hover { text-decoration: underline; }
   margin: 0 0 12px;
 }
 
-/* Люди помещения: собственники выделены зелёным (строка и бейдж) */
-.data-table tbody tr.person-row--owner,
-.data-table tbody tr.person-row--owner:hover { background: var(--color-owner-bg); }
-.data-table tbody tr.person-row--owner td:first-child { box-shadow: inset 4px 0 0 var(--color-success); }
+/* Люди помещения: собственник выделен зелёным бейджем */
 .badge-owner { background: var(--color-success); color: #fff; }
 .data-table td .badge.badge-owner { margin-left: 0; }
 .person-record { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-2); padding: 2px 0; }
 .add-person-options { display: flex; flex-direction: column; gap: var(--space-3); min-width: 280px; }
 .add-person-option { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: var(--space-3) var(--space-4); text-align: left; }
-.data-table tbody tr.person-row--owner td:first-child { padding-left: calc(var(--space-3) + 4px); }
