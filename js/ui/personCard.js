@@ -6,16 +6,16 @@ import { personsApi } from '../api/resources.js';
 import { personFields } from '../pages/fields.js';
 import { definitionList } from '../pages/common.js';
 import { describeApiError } from '../lib/apiErrors.js';
-import { formatDate, personName } from '../lib/format.js';
+import { formatDate, formatPhone, personName } from '../lib/format.js';
 import { canWrite } from '../lib/permissions.js';
 
 // Контакты по одному на строку, первый — основной; ссылки открывают почту/звонок.
-function contactList(items, hrefPrefix, hrefOf = (s) => s) {
+function contactList(items, hrefPrefix, hrefOf = (s) => s, textOf = (s) => s) {
   if (!items || items.length === 0) return null;
   return el('div', { class: 'contact-list contact-list--left' }, items.map((item, i) => el(
     'div',
     { class: i === 0 && items.length > 1 ? 'contact-primary' : null },
-    el('a', { href: `${hrefPrefix}${hrefOf(item)}` }, item),
+    el('a', { href: `${hrefPrefix}${hrefOf(item)}` }, textOf(item)),
   )));
 }
 
@@ -48,7 +48,7 @@ export function openPersonCard(id, { onChanged } = {}) {
       el('h3', { class: 'person-card-name' }, personName(person)),
       definitionList([
         ['Дата рождения', formatDate(person.birth_date)],
-        ['Телефоны', contactList(person.phones, 'tel:', phoneHref)],
+        ['Телефоны', contactList(person.phones, 'tel:', phoneHref, formatPhone)],
         ['Email', contactList(person.emails, 'mailto:')],
       ]),
       person.phones?.length || person.emails?.length || person.birth_date

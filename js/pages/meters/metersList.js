@@ -7,6 +7,7 @@ import { meterResources, meterTariffs, premisesKinds, label, options } from '../
 import { formatDate, todayIso } from '../../lib/format.js';
 import { lastReadingText, meterGroup, meterStatus, meterTitle, premisesGroup, resourceUnit, serialParts, verificationState } from '../../lib/meters.js';
 import { buildingLabel, buildingLabelOf } from '../../lib/buildings.js';
+import { meterIcon } from '../../ui/meterIcon.js';
 
 // Список счётчиков. Используется на странице «Счётчики», в карточке помещения (fixedQuery/fixed: premises_id)
 // и на странице дома (fixedQuery: {scope: 'common', building_id}, fixed: {building_id}).
@@ -51,7 +52,7 @@ export function createMetersList({ fixedQuery = {}, fixed = {}, target = 'fixed'
     groupBy: (m) => (m.premises_id ? (byPremises ? premisesGroup(m, buildings.length > 1) : null) : meterGroup(m, showLocation)),
     rowClass: (m) => (m.active ? null : 'row-muted'),
     columns: [
-      { key: 'serial_number', label: 'Счётчик', primary: true, render: (m) => el('a', { href: `/meters/${m.id}` }, meterCellTitle(m)) },
+      { key: 'serial_number', label: 'Счётчик', primary: true, render: (m) => el('span', { class: 'meter-cell' }, [meterIcon(m.resource), el('a', { href: `/meters/${m.id}` }, meterCellTitle(m))]) },
       showLocation && !byPremises ? { key: 'location', label: 'Где', render: locationCell } : null,
       { key: 'tariffs', label: 'Тарифность', render: (m) => (m.resource === 'electricity' ? label(meterTariffs, m.tariffs) : '') },
       { key: 'last', label: 'Последнее показание', render: (m) => lastCell(m) },

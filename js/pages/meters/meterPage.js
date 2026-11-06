@@ -8,6 +8,7 @@ import { metersApi, meterReadingsApi } from '../../api/resources.js';
 import { meterFields, meterReadingFields } from '../fields.js';
 import { meterTariffs, premisesKinds, label } from '../../lib/labels.js';
 import { formatDate, monthLabel, todayIso } from '../../lib/format.js';
+import { meterIcon } from '../../ui/meterIcon.js';
 import { consumption, formatDelta, formatReading, meterStatus, meterTitle, resourceUnit, tariffColumns, verificationState } from '../../lib/meters.js';
 import { describeApiError } from '../../lib/apiErrors.js';
 import { canWrite } from '../../lib/permissions.js';
@@ -36,7 +37,7 @@ export async function meterPage(container, { id }) {
     : [el('a', { href: '/meters' }, 'Счётчики'), ' / ', el('a', { href: `/buildings/${meter.location_building_id}` }, buildingLabelOf(meter)), ' /']);
 
   function renderInfo() {
-    title.textContent = meterTitle(meter);
+    title.replaceChildren(...[meterIcon(meter.resource), meterTitle(meter)].filter(Boolean));
     const status = meterStatus(meter);
     const verification = verificationState(meter, today);
     info.replaceChildren(definitionList([

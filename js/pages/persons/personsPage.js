@@ -6,12 +6,12 @@ import { el } from '../../lib/dom.js';
 import { saveFile } from '../../ui/saveFile.js';
 import { toast } from '../../ui/toast.js';
 import { describeApiError } from '../../lib/apiErrors.js';
-import { formatDate, personName } from '../../lib/format.js';
+import { formatDate, formatPhone, personName } from '../../lib/format.js';
 
 // Контакты по одному на строку; первый — основной (жирным, если их несколько).
-function contactList(items) {
+function contactList(items, textOf = (s) => s) {
   if (!items || items.length === 0) return '';
-  return el('div', { class: 'contact-list' }, items.map((item, i) => el('div', { class: i === 0 && items.length > 1 ? 'contact-primary' : null }, item)));
+  return el('div', { class: 'contact-list' }, items.map((item, i) => el('div', { class: i === 0 && items.length > 1 ? 'contact-primary' : null }, textOf(item))));
 }
 
 // Отчёт «физлица и их недвижимость» (квартиры → коммерческие → машиноместа); доступен и для просмотра.
@@ -33,7 +33,7 @@ export const personsPage = crudPage({
   columns: [
     { key: 'name', label: 'ФИО', primary: true, render: personName },
     { key: 'birth_date', label: 'Дата рождения', render: (r) => formatDate(r.birth_date) },
-    { key: 'phones', label: 'Телефоны', render: (r) => contactList(r.phones) },
+    { key: 'phones', label: 'Телефоны', render: (r) => contactList(r.phones, formatPhone) },
     { key: 'emails', label: 'Email', render: (r) => contactList(r.emails) },
   ],
   extraActions: (r) => [el('button', {

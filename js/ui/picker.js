@@ -1,7 +1,7 @@
 import { el } from '../lib/dom.js';
 import { personsApi, legalEntitiesApi, accountsApi, premisesApi, buildingsApi } from '../api/resources.js';
 import { accountPurposes, premisesKinds, label } from '../lib/labels.js';
-import { personName } from '../lib/format.js';
+import { formatPhone, personName } from '../lib/format.js';
 import { createPersonForm } from './personCreate.js';
 import { buildingLabel } from '../lib/buildings.js';
 
@@ -39,7 +39,7 @@ const KINDS = {
   person: {
     api: personsApi,
     title: (p) => personName(p),
-    hint: (p) => [p.birth_date ? p.birth_date.split('-').reverse().join('.') : null, (p.phones || [])[0]].filter(Boolean).join(', '),
+    hint: (p) => [p.birth_date ? p.birth_date.split('-').reverse().join('.') : null, (p.phones || []).slice(0, 1).map(formatPhone)[0]].filter(Boolean).join(', '),
     placeholder: 'Фамилия, имя, телефон или email',
   },
   // Лицевой счёт помещения: поиск по началу номера.

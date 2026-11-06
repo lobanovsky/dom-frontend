@@ -1370,3 +1370,12 @@ a.account-link:hover { text-decoration: underline; }
 .serial-head { color: var(--color-text-muted); font-weight: 400; }
 .serial-head::after { content: '-'; }
 .serial-tail { font-weight: 700; }
+
+/* Значок вида счётчика слева от названия */
+.meter-cell { display: inline-flex; align-items: flex-start; gap: var(--space-2); }
+.meter-icon { display: inline-flex; flex: none; line-height: 0; margin-top: 1px; }
+.meter-icon--cold_water { color: var(--color-meter-cold); }
+.meter-icon--hot_water { color: var(--color-meter-hot); }
+.meter-icon--electricity { color: var(--color-meter-electricity); }
+.section-header h1 .meter-icon { margin-right: var(--space-2); vertical-align: middle; }
+.section-header h1 .meter-icon svg { width: 26px; height: 26px; }

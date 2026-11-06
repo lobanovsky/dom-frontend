@@ -2,6 +2,19 @@
 
 const pad = (n) => String(n).padStart(2, '0');
 
+// Российский номер для показа: «+7 (926) 793-63-63» из «+79267936363», «89267936363», «9267936363», «7 926 793 63 63».
+// Всё остальное (иностранные номера, «доб.», короткие) остаётся как введено. В базе номер хранится как ввели.
+export function formatPhone(value) {
+  const raw = String(value ?? '').trim();
+  if (/[^\d\s()+\-.]/.test(raw)) return raw; // буквы, «доб.», «#» — не трогаем
+  const digits = raw.replace(/\D/g, '');
+  let d = null;
+  if (digits.length === 11 && (digits[0] === '7' || (digits[0] === '8' && !raw.startsWith('+')))) d = `7${digits.slice(1)}`;
+  else if (digits.length === 10 && !raw.startsWith('+')) d = `7${digits}`;
+  if (!d) return raw;
+  return `+7 (${d.slice(1, 4)}) ${d.slice(4, 7)}-${d.slice(7, 9)}-${d.slice(9, 11)}`;
+}
+
 // "2020-03-05" -> "05.03.2020"; пустое значение -> ''.
 export function formatDate(iso) {
   if (!iso) return '';

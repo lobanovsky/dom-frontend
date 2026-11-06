@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { formatDateTime, formatDate, formatPeriod, formatShare, formatArea, personName, isActiveOn, todayIso, registryLabel } from './format.js';
+import { formatPhone, formatDateTime, formatDate, formatPeriod, formatShare, formatArea, personName, isActiveOn, todayIso, registryLabel } from './format.js';
 
 test('formatDate', () => {
   assert.equal(formatDate('2020-03-05'), '05.03.2020');
@@ -78,4 +78,16 @@ test('formatDateTime', () => {
   assert.equal(formatDateTime(local), '05.10.2026 09:07');
   assert.equal(formatDateTime(null), '');
   assert.equal(formatDateTime('не дата'), '');
+});
+
+test('formatPhone: российские номера в одном виде, остальное как введено', () => {
+  for (const raw of ['+79636110726', '89636110726', '9636110726', '7 963 611-07-26', '+7 (963) 611-07-26', '8 (963) 611 07 26']) {
+    assert.equal(formatPhone(raw), '+7 (963) 611-07-26', raw);
+  }
+  assert.equal(formatPhone('+1 415 555 2671'), '+1 415 555 2671');
+  assert.equal(formatPhone('+442071838750'), '+442071838750');
+  assert.equal(formatPhone('+7 (495) 123-45-67 доб. 12'), '+7 (495) 123-45-67 доб. 12');
+  assert.equal(formatPhone('12345'), '12345');
+  assert.equal(formatPhone(''), '');
+  assert.equal(formatPhone(null), '');
 });
