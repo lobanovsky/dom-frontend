@@ -21,10 +21,12 @@ import { createMetersList } from '../meters/metersList.js';
 import { createAccountServices } from '../accounts/accountServices.js';
 import { openCalculationDialog } from '../../ui/calculationDialog.js';
 import { openPersonCard } from '../../ui/personCard.js';
+import { openModal } from '../../ui/modal.js';
+import { groupPeople } from '../../lib/people.js';
 import { notFoundView, definitionList, deletedBanner } from '../common.js';
 import { buildingLabel } from '../../lib/buildings.js';
 
-// Карточка помещения: сведения, собственники с долями, жители, лицевые счета
+// Карточка помещения: сведения, люди (собственники с долями и жители в одной таблице), лицевые счета
 // с плательщиками. Каждый блок перезагружается сам после изменений.
 export async function premisesPage(container, { id }) {
   container.replaceChildren(el('div', { class: 'table-status' }, 'Загрузка…'));
@@ -41,14 +43,13 @@ export async function premisesPage(container, { id }) {
   const today = todayIso();
   const names = createNameCache();
   // Какие блоки сейчас показывают удалённые записи («корзину»).
-  const showDeleted = { owners: false, residents: false, accounts: false };
+  const showDeleted = { accounts: false };
 
   // Виды помещений с правилом «проживающих не бывает» (машиноместо) показываются без блока жителей.
   const hasResidents = !kindRules(premises.kind).noResidents;
   const title = el('h1', {});
   const info = el('div', { class: 'card' });
-  const ownersBody = el('div', {});
-  const residentsBody = el('div', {});
+  const peopleBody = el('div', {});
   const accountsBody = el('div', {});
 
   function renderInfo() {
@@ -106,48 +107,110 @@ export async function premisesPage(container, { id }) {
       onclick: () => openPersonCard(personId, {
         onChanged: (saved) => {
           names.set('person', personId, personName(saved));
-          loadOwners();
-          if (hasResidents) loadResidents();
+          loadPeople();
           loadAccounts();
         },
       }),
     }, text);
   }
 
-  // --- Собственники ---
+  // --- Люди: собственники и жители в одной таблице, собственники сверху и выделены ---
 
-  async function loadOwners() {
-    const deleted = showDeleted.owners;
+  const TABS = [['current', 'Сейчас'], ['history', 'История'], ...(canWrite() ? [['deleted', 'Удалённые']] : [])];
+  let peopleTab = 'current';
+  const tabsBar = el('div', { class: 'segmented', role: 'tablist' });
+
+  function renderTabs() {
+    tabsBar.replaceChildren(...TABS.map(([tab, text]) => el('button', {
+      type: 'button', role: 'tab', class: tab === peopleTab ? 'segmented-item is-active' : 'segmented-item', 'aria-selected': String(tab === peopleTab),
+      onclick: () => { if (tab === peopleTab) return; peopleTab = tab; renderTabs(); loadPeople(); },
+    }, text)));
+  }
+
+  async function loadPeople() {
+    const deleted = peopleTab === 'deleted';
     try {
-      const { items } = await premisesApi.ownerships(premises.id, deleted ? { deleted: 'only' } : undefined);
-      const sum = activeShareSum(items, today);
+      const [{ items: ownerships }, { items: residencies }] = await Promise.all([
+        premisesApi.ownerships(premises.id, deleted ? { deleted: 'only' } : undefined),
+        hasResidents ? residenciesApi.list({ premises_id: premises.id, deleted: deleted ? 'only' : undefined, limit: 200 }) : { items: [] },
+      ]);
+      await names.preload(residencies.flatMap((r) => [['person', r.person_id], ['person', r.related_owner_id]]));
+      const nameOfRow = (row) => (row.ownerName || names.get('person', row.personId));
+      const rows = groupPeople(ownerships, residencies, { tab: peopleTab, day: today, nameOf: nameOfRow });
+      const sum = activeShareSum(ownerships, today);
+      const emptyMessages = { current: 'Сейчас никого нет', history: 'Прошлых записей нет', deleted: 'Удалённых записей нет' };
       // replaceChildren превращает null в текст «null», поэтому пустые узлы отфильтровываем.
-      ownersBody.replaceChildren(...[
-        deleted ? null : el('p', { class: sum.num > sum.den ? 'section-note section-note--warning' : 'section-note' }, `Доли на сегодня: ${describeShareSum(sum)}`),
+      peopleBody.replaceChildren(...[
+        peopleTab === 'current' ? el('p', { class: sum.num > sum.den ? 'section-note section-note--warning' : 'section-note' }, `Доли на сегодня: ${describeShareSum(sum)}`) : null,
         renderTable({
           columns: [
-            { key: 'owner', label: 'Собственник', primary: true, render: (r) => [r.person_id ? personLink(r.person_id, r.owner_name) : r.owner_name, r.owner_kind === 'legal_entity' ? el('span', { class: 'badge badge-neutral' }, 'юрлицо') : null] },
-            { key: 'share', label: 'Доля', render: (r) => formatShare(r.share_num, r.share_den) },
-            { key: 'period', label: 'Период', render: (r) => periodCell(r.valid_from, r.valid_to) },
-            { key: 'basis', label: 'Основание' },
+            { key: 'person', label: 'Человек', primary: true, render: (row) => personCell(row, nameOfRow(row)) },
+            { key: 'ownership', label: 'Владение', render: (row) => ownershipCell(row) },
+            ...(hasResidents ? [{ key: 'residency', label: 'Проживание', render: (row) => residencyCell(row) }] : []),
           ],
-          rows: items,
-          emptyMessage: deleted ? 'Удалённых записей нет' : 'Собственники не указаны',
-          rowActions: !canWrite() ? null : deleted
-            ? (r) => [restoreButton(() => restoreRow(() => ownershipsApi.restore(r.id), loadOwners))]
-            : (r) => [
-              editButton(() => ownershipForm(r)),
-              deleteButton(() => removeRow(`Удалить запись о собственности «${r.owner_name}»?`, () => ownershipsApi.remove(r.id), loadOwners)),
-            ],
+          rows,
+          getRowKey: (row) => row.key,
+          rowClass: (row) => (row.ownerships.some((o) => isActiveOn(o.valid_from, o.valid_to, today)) ? 'person-row--owner' : ''),
+          emptyMessage: emptyMessages[peopleTab],
         }),
       ].filter(Boolean));
-      ownersBody.classList.toggle('crud-table--deleted', deleted);
+      peopleBody.classList.toggle('crud-table--deleted', deleted);
     } catch (err) {
-      ownersBody.replaceChildren(errorStatus(err));
+      peopleBody.replaceChildren(errorStatus(err));
     }
   }
 
-  function ownershipForm(row) {
+  function personCell(row, text) {
+    const name = row.personId ? personLink(row.personId, text) : text;
+    return [name, row.ownerKind === 'legal_entity' ? el('span', { class: 'badge badge-neutral' }, 'юрлицо') : null];
+  }
+
+  // Кнопки одной записи (собственности или проживания): изменить/удалить, на вкладке «Удалённые» — восстановить.
+  function recordButtons({ edit, remove, restore }) {
+    if (!canWrite()) return null;
+    return peopleTab === 'deleted'
+      ? restoreButton(restore)
+      : [editButton(edit), deleteButton(remove)];
+  }
+
+  function ownershipCell(row) {
+    if (row.ownerships.length === 0) return el('span', { class: 'text-muted' }, '—');
+    return row.ownerships.map((o) => {
+      const active = isActiveOn(o.valid_from, o.valid_to, today);
+      return el('div', { class: 'person-record' }, [
+        el('span', { class: active ? 'badge badge-owner' : 'badge badge-neutral' }, `${active ? 'Собственник' : 'Собственник (не сейчас)'} ${formatShare(o.share_num, o.share_den)}`),
+        periodCell(o.valid_from, o.valid_to),
+        o.basis ? el('span', { class: 'text-muted' }, o.basis) : null,
+        recordButtons({
+          edit: () => ownershipForm(o),
+          remove: () => removeRow(`Удалить запись о собственности «${o.owner_name}»?`, () => ownershipsApi.remove(o.id), loadPeople),
+          restore: () => restoreRow(() => ownershipsApi.restore(o.id), loadPeople),
+        }),
+      ]);
+    });
+  }
+
+  function residencyCell(row) {
+    const records = row.residencies.map((r) => el('div', { class: 'person-record' }, [
+      el('span', {}, [r.registered ? 'Прописан' : 'Проживает без прописки', r.relation === 'owner' ? '' : ` · ${relationText(r)}`]),
+      periodCell(r.valid_from, r.valid_to),
+      recordButtons({
+        edit: () => residencyForm(r),
+        remove: () => removeRow(`Удалить запись о проживании «${names.get('person', r.person_id)}»?`, () => residenciesApi.remove(r.id), loadPeople),
+        restore: () => restoreRow(() => residenciesApi.restore(r.id), loadPeople),
+      }),
+    ]));
+    if (records.length > 0) return records;
+    // Собственник без записи о проживании: быстро добавить проживание с родством «собственник».
+    const owned = row.ownerships.find((o) => isActiveOn(o.valid_from, o.valid_to, today));
+    const addable = canWrite() && peopleTab === 'current' && row.personId && owned;
+    return [
+      el('span', { class: 'text-muted' }, '—'),
+      addable ? el('button', { type: 'button', class: 'btn btn-ghost btn-sm', onclick: () => residencyForm(null, { person_id: row.personId, relation: 'owner', valid_from: owned.valid_from }) }, '+ проживание') : null,
+    ];
+  }
+
+  function ownershipForm(row, { thenResidency = false } = {}) {
     openEntityForm({
       title: row ? 'Собственник: редактирование' : 'Новый собственник',
       fields: ownershipFields,
@@ -156,54 +219,42 @@ export async function premisesPage(container, { id }) {
       initialValues: row ? { owner_kind: ownerKindOf(row) } : { owner_kind: 'person', share_num: '1', share_den: '1', valid_from: today },
       fixed: { premises_id: premises.id },
       save: (body) => (row ? ownershipsApi.update(row.id, body) : ownershipsApi.create(body)),
-      onSaved: loadOwners,
+      onSaved: (saved) => {
+        loadPeople();
+        if (thenResidency && saved?.person_id) residencyForm(null, { person_id: saved.person_id, relation: 'owner', valid_from: saved.valid_from });
+      },
     });
   }
 
-  // --- Жители ---
+  function residencyForm(row, preset = {}) {
+    openEntityForm({
+      title: row ? 'Житель: редактирование' : 'Новый житель',
+      fields: residencyFields,
+      entity: row,
+      initialValues: row ? {} : { relation: 'other', valid_from: today, ...preset },
+      fixed: { premises_id: premises.id },
+      save: (body) => (row ? residenciesApi.update(row.id, body) : residenciesApi.create(body)),
+      onSaved: loadPeople,
+    });
+  }
 
-  async function loadResidents() {
-    const deleted = showDeleted.residents;
-    try {
-      const { items } = await residenciesApi.list({ premises_id: premises.id, deleted: deleted ? 'only' : undefined, limit: 200 });
-      await names.preload(items.flatMap((r) => [['person', r.person_id], ['person', r.related_owner_id]]));
-      residentsBody.replaceChildren(renderTable({
-        columns: [
-          { key: 'person', label: 'Житель', primary: true, render: (r) => personLink(r.person_id, names.get('person', r.person_id)) },
-          { key: 'relation', label: 'Кем приходится', render: (r) => relationText(r) },
-          { key: 'registered', label: 'Регистрация', render: (r) => (r.registered ? 'Прописан' : 'Проживает без прописки') },
-          { key: 'period', label: 'Период', render: (r) => periodCell(r.valid_from, r.valid_to) },
-        ],
-        rows: items,
-        emptyMessage: deleted ? 'Удалённых записей нет' : 'Жители не указаны',
-        rowActions: !canWrite() ? null : deleted
-          ? (r) => [restoreButton(() => restoreRow(() => residenciesApi.restore(r.id), loadResidents))]
-          : (r) => [
-            editButton(() => residencyForm(r)),
-            deleteButton(() => removeRow(`Удалить запись о проживании «${names.get('person', r.person_id)}»?`, () => residenciesApi.remove(r.id), loadResidents)),
-          ],
-      }));
-      residentsBody.classList.toggle('crud-table--deleted', deleted);
-    } catch (err) {
-      residentsBody.replaceChildren(errorStatus(err));
-    }
+  function addPerson() {
+    if (!hasResidents) return ownershipForm(null);
+    const choose = (open) => () => { modal.close(); open(); };
+    const option = (text, hint, open) => el('button', { type: 'button', class: 'btn add-person-option', onclick: choose(open) }, [el('strong', {}, text), el('span', { class: 'text-muted' }, hint)]);
+    const modal = openModal({
+      title: 'Кого добавить?',
+      content: el('div', { class: 'add-person-options' }, [
+        option('Собственника, который здесь живёт', 'Запись о собственности и о проживании за один шаг', () => ownershipForm(null, { thenResidency: true })),
+        option('Собственника', 'Не проживает (например, юрлицо или сдаёт жильё)', () => ownershipForm(null)),
+        option('Жителя', 'Член семьи или другой проживающий, не собственник', () => residencyForm(null)),
+      ]),
+    });
   }
 
   function relationText(r) {
     const rel = label(relations, r.relation);
     return r.related_owner_id ? `${rel} — ${names.get('person', r.related_owner_id)}` : rel;
-  }
-
-  function residencyForm(row) {
-    openEntityForm({
-      title: row ? 'Житель: редактирование' : 'Новый житель',
-      fields: residencyFields,
-      entity: row,
-      initialValues: row ? {} : { relation: 'other', valid_from: today },
-      fixed: { premises_id: premises.id },
-      save: (body) => (row ? residenciesApi.update(row.id, body) : residenciesApi.create(body)),
-      onSaved: loadResidents,
-    });
   }
 
   // --- Лицевые счета и плательщики ---
@@ -407,6 +458,17 @@ export async function premisesPage(container, { id }) {
     return el('span', { class: active ? '' : 'text-muted' }, [formatPeriod(from, to), active ? null : ' (в прошлом)']);
   }
 
+  function peopleSection() {
+    return el('section', { class: 'page-section' }, [
+      el('div', { class: 'section-header section-header--sub' }, [
+        el('h2', {}, hasResidents ? 'Собственники и жители' : 'Собственники'),
+        canWrite() ? el('div', { class: 'section-tools' }, el('button', { type: 'button', class: 'btn btn-primary btn-add', onclick: addPerson }, hasResidents ? 'Добавить' : 'Добавить собственника')) : null,
+      ]),
+      tabsBar,
+      peopleBody,
+    ]);
+  }
+
   renderInfo();
   container.replaceChildren(el('div', { class: 'page' }, [
     el('nav', { class: 'breadcrumbs' }, [
@@ -421,8 +483,7 @@ export async function premisesPage(container, { id }) {
       ]) : null,
     ]),
     info,
-    section('Собственники', 'Добавить собственника', () => ownershipForm(null), ownersBody, (on) => { showDeleted.owners = on; loadOwners(); }),
-    hasResidents ? section('Жители', 'Добавить жителя', () => residencyForm(null), residentsBody, (on) => { showDeleted.residents = on; loadResidents(); }) : null,
+    peopleSection(),
     section('Лицевые счета', 'Открыть счёт', () => accountForm(null), accountsBody, (on) => { showDeleted.accounts = on; loadAccounts(); }),
     el('section', { class: 'page-section' }, [
       el('div', { class: 'section-header section-header--sub' }, el('h2', {}, 'Счётчики')),
@@ -435,8 +496,8 @@ export async function premisesPage(container, { id }) {
     ]),
   ]));
 
-  loadOwners();
-  if (hasResidents) loadResidents();
+  renderTabs();
+  loadPeople();
   loadAccounts();
 }
 
