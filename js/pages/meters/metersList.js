@@ -16,6 +16,8 @@ export function createMetersList({ fixedQuery = {}, fixed = {}, target = 'fixed'
   const today = todayIso();
   // Страница «Счётчики → В помещениях»: счётчики сгруппированы по помещениям, место указано в заголовке группы.
   const byPremises = showFilters && fixedQuery.scope === 'individual';
+  // Общедомовые: место и так известно (дом в заголовке группы), вместо «Где» — дата ввода в эксплуатацию.
+  const common = fixedQuery.scope === 'common';
   let list;
 
   // Быстрый ввод показания прямо из списка.
@@ -53,9 +55,10 @@ export function createMetersList({ fixedQuery = {}, fixed = {}, target = 'fixed'
     rowClass: (m) => (m.active ? null : 'row-muted'),
     columns: [
       { key: 'serial_number', label: 'Счётчик', primary: true, render: (m) => el('span', { class: 'meter-cell' }, [meterIcon(m.resource), el('a', { href: `/meters/${m.id}` }, meterCellTitle(m))]) },
-      showLocation && !byPremises ? { key: 'location', label: 'Где', render: locationCell } : null,
+      showLocation && !byPremises && !common ? { key: 'location', label: 'Где', render: locationCell } : null,
       { key: 'tariffs', label: 'Тарифность', render: (m) => (m.resource === 'electricity' ? label(meterTariffs, m.tariffs) : '') },
       { key: 'last', label: 'Последнее показание', render: (m) => lastCell(m) },
+      common ? { key: 'installed_at', label: 'Введён в эксплуатацию', render: (m) => formatDate(m.installed_at) } : null,
       { key: 'verification', label: 'Поверка', render: (m) => verificationCell(m, today) },
       { key: 'status', label: 'Состояние', render: (m) => { const s = meterStatus(m); return el('span', { class: `badge badge-${s.kind}` }, s.text); } },
     ].filter(Boolean),
