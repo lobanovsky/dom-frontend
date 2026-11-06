@@ -1332,3 +1332,29 @@ a.account-link:hover { text-decoration: underline; }
     break-inside: avoid;
   }
 }
+
+/* Кнопка, выглядящая как ссылка (имя собственника/жителя → карточка) */
+.link-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-accent);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+}
+
+.link-button:hover,
+.link-button:focus-visible {
+  text-decoration-color: currentColor;
+}
+
+.contact-list--left {
+  align-items: flex-start;
+}
+
+.person-card-name {
+  margin: 0 0 12px;
+}

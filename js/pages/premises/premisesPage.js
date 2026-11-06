@@ -20,6 +20,7 @@ import { canWrite } from '../../lib/permissions.js';
 import { createMetersList } from '../meters/metersList.js';
 import { createAccountServices } from '../accounts/accountServices.js';
 import { openCalculationDialog } from '../../ui/calculationDialog.js';
+import { openPersonCard } from '../../ui/personCard.js';
 import { notFoundView, definitionList, deletedBanner } from '../common.js';
 import { buildingLabel } from '../../lib/buildings.js';
 
@@ -94,6 +95,23 @@ export async function premisesPage(container, { id }) {
     if (await removeWithToast(() => premisesApi.remove(premises.id), 'Помещение удалено. Восстановить можно в списке помещений дома')) goTo(`/buildings/${building.id}`);
   }
 
+  // Имя физлица, по клику — карточка с контактами; после правки обновляем имена и блоки страницы.
+  function personLink(personId, text) {
+    return el('button', {
+      type: 'button',
+      class: 'link-button',
+      title: 'Открыть карточку',
+      onclick: () => openPersonCard(personId, {
+        onChanged: (saved) => {
+          names.set('person', personId, personName(saved));
+          loadOwners();
+          loadResidents();
+          loadAccounts();
+        },
+      }),
+    }, text);
+  }
+
   // --- Собственники ---
 
   async function loadOwners() {
@@ -106,7 +124,7 @@ export async function premisesPage(container, { id }) {
         deleted ? null : el('p', { class: sum.num > sum.den ? 'section-note section-note--warning' : 'section-note' }, `Доли на сегодня: ${describeShareSum(sum)}`),
         renderTable({
           columns: [
-            { key: 'owner', label: 'Собственник', primary: true, render: (r) => [r.owner_name, r.owner_kind === 'legal_entity' ? el('span', { class: 'badge badge-neutral' }, 'юрлицо') : null] },
+            { key: 'owner', label: 'Собственник', primary: true, render: (r) => [r.person_id ? personLink(r.person_id, r.owner_name) : r.owner_name, r.owner_kind === 'legal_entity' ? el('span', { class: 'badge badge-neutral' }, 'юрлицо') : null] },
             { key: 'share', label: 'Доля', render: (r) => formatShare(r.share_num, r.share_den) },
             { key: 'period', label: 'Период', render: (r) => periodCell(r.valid_from, r.valid_to) },
             { key: 'basis', label: 'Основание' },
@@ -149,7 +167,7 @@ export async function premisesPage(container, { id }) {
       await names.preload(items.flatMap((r) => [['person', r.person_id], ['person', r.related_owner_id]]));
       residentsBody.replaceChildren(renderTable({
         columns: [
-          { key: 'person', label: 'Житель', primary: true, render: (r) => names.get('person', r.person_id) },
+          { key: 'person', label: 'Житель', primary: true, render: (r) => personLink(r.person_id, names.get('person', r.person_id)) },
           { key: 'relation', label: 'Кем приходится', render: (r) => relationText(r) },
           { key: 'registered', label: 'Регистрация', render: (r) => (r.registered ? 'Прописан' : 'Проживает без прописки') },
           { key: 'period', label: 'Период', render: (r) => periodCell(r.valid_from, r.valid_to) },
@@ -327,7 +345,7 @@ export async function premisesPage(container, { id }) {
         canWrite() ? el('div', { class: 'holders-tools' }, toggle) : null,
         el('div', { class: deleted ? 'crud-table--deleted' : null }, renderTable({
           columns: [
-            { key: 'holder', label: 'Плательщик', primary: true, render: (h) => holderName(h) },
+            { key: 'holder', label: 'Плательщик', primary: true, render: (h) => (h.person_id ? personLink(h.person_id, holderName(h)) : holderName(h)) },
             { key: 'period', label: 'Период', render: (h) => periodCell(h.valid_from, h.valid_to) },
           ],
           rows: items,
@@ -504,5 +522,9 @@ function createNameCache() {
     }));
   }
 
-  return { preload, get: (kind, id) => cache.get(`${kind}:${id}`) || `#${id}` };
+  return {
+    preload,
+    set: (kind, id, name) => cache.set(`${kind}:${id}`, name),
+    get: (kind, id) => cache.get(`${kind}:${id}`) || `#${id}`,
+  };
 }
