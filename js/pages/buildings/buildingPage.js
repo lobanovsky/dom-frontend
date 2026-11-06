@@ -12,7 +12,6 @@ import { formatArea } from '../../lib/format.js';
 import { describeApiError } from '../../lib/apiErrors.js';
 import { canWrite } from '../../lib/permissions.js';
 import { saveFile } from '../../ui/saveFile.js';
-import { createMetersList } from '../meters/metersList.js';
 import { notFoundView, definitionList, deletedBanner } from '../common.js';
 import { buildingLabel } from '../../lib/buildings.js';
 
@@ -127,13 +126,6 @@ export async function buildingPage(container, { id }) {
     deleteMessage: (r) => `Удалить помещение № ${r.number}? Удалить можно только помещение без собственников, жителей и счетов.`,
   });
 
-  const meters = createMetersList({
-    fixedQuery: { scope: 'common', building_id: building.id },
-    fixed: { building_id: building.id },
-    showLocation: false,
-    emptyMessage: 'Общедомовых счётчиков пока нет',
-  });
-
   renderInfo();
   container.replaceChildren(el('div', { class: 'page' }, [
     el('nav', { class: 'breadcrumbs' }, [el('a', { href: '/buildings' }, 'Дома'), ' / ']),
@@ -151,7 +143,5 @@ export async function buildingPage(container, { id }) {
     info,
     el('h2', { class: 'section-title' }, 'Помещения'),
     premises.element,
-    el('h2', { class: 'section-title' }, 'Общедомовые счётчики'),
-    meters.element,
   ]));
 }
