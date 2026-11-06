@@ -81,6 +81,8 @@ const CONFLICTS = {
   premises_cadastral_number_uq: 'Помещение с таким кадастровым номером уже есть',
   premises_kinds_code_uq: 'Вид помещения с таким кодом уже есть (в том числе среди удалённых)',
   premises_kinds_name_uq: 'Вид помещения с таким названием уже есть',
+  kinships_code_uq: 'Родство с таким кодом уже есть (в том числе среди удалённых)',
+  kinships_name_uq: 'Родство с таким названием уже есть',
   buildings_name_uq: 'Дом с таким названием уже есть',
   buildings_cadastral_number_uq: 'Дом с таким кадастровым номером уже есть',
   personal_accounts_number_key: 'Лицевой счёт с таким номером уже есть',
@@ -195,6 +197,9 @@ export function describeApiError(err, { action = 'save' } = {}) {
   }
   if (raw === 'cannot save: premises kind is unknown or deleted') {
     return { field: null, message: 'Вид помещения не найден или удалён. Выберите другой или восстановите его в «Справочники → Виды помещений»' };
+  }
+  if (raw === 'cannot save: kinship is unknown or deleted') {
+    return { field: 'relation', message: 'Родство не найдено или удалено. Выберите другое или восстановите его в «Справочники → Родство»' };
   }
   let m = raw.match(/^cannot delete: has active (.+)$/);
   if (m) {

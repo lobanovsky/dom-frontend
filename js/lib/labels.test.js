@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { premisesKinds, setPremisesKinds, premisesKindOptions, label } from './labels.js';
+import { premisesKinds, setPremisesKinds, premisesKindOptions, relations, setKinships, relationOptions, label } from './labels.js';
 
 test('виды помещений заменяются содержимым справочника, порядок сохраняется', () => {
   const before = { ...premisesKinds };
@@ -11,4 +11,14 @@ test('виды помещений заменяются содержимым сп
   assert.equal(label(premisesKinds, 'storage'), 'storage');
   setPremisesKinds(Object.entries(before).map(([code, name]) => ({ code, name })));
   assert.equal(label(premisesKinds, 'storage'), 'Кладовая');
+});
+
+test('родство заменяется содержимым справочника, удалённое показывается кодом', () => {
+  const before = { ...relations };
+  setKinships([{ code: 'cousin', name: 'Двоюродный брат' }, { code: 'owner', name: 'Собственник' }]);
+  assert.deepEqual(relationOptions(), [{ value: 'cousin', label: 'Двоюродный брат' }, { value: 'owner', label: 'Собственник' }]);
+  assert.equal(label(relations, 'cousin'), 'Двоюродный брат');
+  assert.equal(label(relations, 'son'), 'son');
+  setKinships(Object.entries(before).map(([code, name]) => ({ code, name })));
+  assert.equal(label(relations, 'son'), 'Сын');
 });

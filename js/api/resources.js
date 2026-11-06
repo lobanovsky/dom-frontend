@@ -1,6 +1,6 @@
 import { client } from './client.js';
 import { maybeGzip } from '../lib/gzip.js';
-import { setPremisesKinds } from '../lib/labels.js';
+import { setPremisesKinds, setKinships } from '../lib/labels.js';
 
 // Тонкая обёртка над CRUD-маршрутами бэкенда: /api/v1/<name>[/<id>].
 function resource(name) {
@@ -113,6 +113,31 @@ export const premisesKindsApi = {
   update: thenRefresh(premisesKindsResource.update),
   remove: thenRefresh(premisesKindsResource.remove),
   restore: thenRefresh(premisesKindsResource.restore),
+};
+
+// Справочник родства: подписи и список выбора в форме проживающего берутся из lib/labels.js#relations,
+// поэтому после входа и после любой правки справочника его содержимое перезагружается.
+export async function refreshKinships() {
+  try {
+    const { items } = await client.get('/api/v1/kinships', { query: { limit: 200 } });
+    setKinships(items);
+  } catch {
+    // остаются прежние значения; ошибку сети уже показал общий обработчик
+  }
+}
+
+const kinshipsResource = resource('kinships');
+const kinshipsThenRefresh = (call) => async (...args) => {
+  const result = await call(...args);
+  await refreshKinships();
+  return result;
+};
+export const kinshipsApi = {
+  ...kinshipsResource,
+  create: kinshipsThenRefresh(kinshipsResource.create),
+  update: kinshipsThenRefresh(kinshipsResource.update),
+  remove: kinshipsThenRefresh(kinshipsResource.remove),
+  restore: kinshipsThenRefresh(kinshipsResource.restore),
 };
 
 // Платежи. Банковский счёт организации (bank-accounts) — не лицевой счёт помещения (accounts).

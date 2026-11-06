@@ -30,14 +30,43 @@ export function premisesKindOptions() {
   return Object.entries(premisesKinds).map(([value, text]) => ({ value, label: text }));
 }
 
+// Родство проживающего с собственником — справочник (`/kinships`), изменяемый объект как premisesKinds:
+// его заполняет setKinships, порядок ключей — порядок в списках выбора. Начальные значения — на случай,
+// если справочник не загрузился.
 export const relations = {
+  owner: 'Собственник',
   spouse: 'Супруг(а)',
+  husband: 'Муж',
+  wife: 'Жена',
   child: 'Ребёнок',
+  son: 'Сын',
+  daughter: 'Дочь',
   parent: 'Родитель',
+  father: 'Отец',
+  mother: 'Мать',
+  grandson: 'Внук',
+  granddaughter: 'Внучка',
+  grandfather: 'Дедушка',
+  grandmother: 'Бабушка',
+  brother: 'Брат',
+  sister: 'Сестра',
+  guardian: 'Опекун',
   relative: 'Родственник',
+  not_relative: 'Не родственник',
   tenant: 'Арендатор',
+  temporary: 'Временно проживающий',
   other: 'Другое',
 };
+
+// Заменяет содержимое relations действующими записями справочника (в порядке position).
+export function setKinships(items) {
+  for (const key of Object.keys(relations)) delete relations[key];
+  for (const k of items) relations[k.code] = k.name;
+}
+
+export function relationOptions() {
+  return Object.entries(relations).map(([value, text]) => ({ value, label: text }));
+}
 
 export const accountPurposes = {
   utilities: 'ЖКУ',

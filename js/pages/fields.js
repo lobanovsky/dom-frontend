@@ -1,7 +1,7 @@
 import { el } from '../lib/dom.js';
 import { textField, numberField, dateField, textareaField, selectField, checkboxField } from '../lib/fields.js';
 import {
-  options, bankLabel, organizationKinds, buildingKinds, premisesKinds, premisesKindOptions, relations, accountPurposes, accountStatuses, ownerKinds,
+  options, bankLabel, organizationKinds, buildingKinds, premisesKinds, premisesKindOptions, relationOptions, accountPurposes, accountStatuses, ownerKinds,
   meterResources, meterTariffs, serviceKinds, serviceUnits, serviceCalcMethods,
 } from '../lib/labels.js';
 import { tariffColumns, resourceUnit, previousReadingText, meterNumberText, selectableCommonMeters, retiredNote } from '../lib/meters.js';
@@ -97,7 +97,8 @@ export const ownershipFields = (values) => [
 
 export const residencyFields = [
   { type: 'picker', name: 'person_id', label: 'Житель', required: true, full: true, component: entityPicker('person', { allowCreate: true }) },
-  selectField('relation', 'Кем приходится собственнику', options(relations), { required: true }),
+  // Родство — справочник, который загружается после загрузки модуля: варианты читаются при открытии формы.
+  { ...selectField('relation', 'Кем приходится собственнику', [], { required: true }), get options() { return relationOptions(); } },
   { type: 'picker', name: 'related_owner_id', label: 'Собственник (необязательно)', full: true, component: entityPicker('person') },
   checkboxField('registered', 'Зарегистрирован (прописан)'),
   dateField('valid_from', 'Проживает с', { required: true }),
@@ -265,6 +266,14 @@ export const bankAccountFields = (organizations) => [
 export const premisesKindFields = (values) => [
   textField('name', 'Название', { required: true, full: true, help: 'Так вид показывается в списках и карточках' }),
   textField('code', 'Код', { required: true, disabled: !!values.code, help: 'Латиница, цифры и «_», начинается с буквы, до 40 символов, например garage. Потом изменить нельзя' }),
+  numberField('position', 'Порядок', { step: 1, inputmode: 'numeric', help: 'Меньше — выше в списках. Пусто — 0' }),
+];
+
+// Родство с собственником. Код — идентификатор, на который ссылаются проживающие, после создания он не меняется
+// (при редактировании поле уже заполнено; форма строится один раз по начальным значениям).
+export const kinshipFields = (values) => [
+  textField('name', 'Название', { required: true, full: true, help: 'Так родство показывается в списках и карточках, например «Сын»' }),
+  textField('code', 'Код', { required: true, disabled: !!values.code, help: 'Латиница, цифры и «_», начинается с буквы, до 40 символов, например son. Потом изменить нельзя' }),
   numberField('position', 'Порядок', { step: 1, inputmode: 'numeric', help: 'Меньше — выше в списках. Пусто — 0' }),
 ];
 

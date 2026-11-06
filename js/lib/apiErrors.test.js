@@ -245,5 +245,6 @@ test('справочник видов помещений', () => {
   assert.match(changed.message, /менять нельзя/);
   assert.equal(describeApiError(err('code: must be a code of 1 to 40 latin lowercase letters, digits or underscores, starting with a letter')).field, 'code');
   assert.match(describeApiError(err('cannot save: premises kind is unknown or deleted')).message, /Вид помещения/);
+  assert.match(describeApiError(err('cannot save: kinship is unknown or deleted')).message, /Родство не найдено/);
   assert.match(describeApiError(err('cannot delete: has active premises'), { action: 'delete' }).message, /помещения/);
 });
