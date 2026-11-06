@@ -3,6 +3,9 @@ import { openPropertiesDialog } from '../../ui/propertiesDialog.js';
 import { personsApi } from '../../api/resources.js';
 import { personFields } from '../fields.js';
 import { el } from '../../lib/dom.js';
+import { saveFile } from '../../ui/saveFile.js';
+import { toast } from '../../ui/toast.js';
+import { describeApiError } from '../../lib/apiErrors.js';
 import { formatDate, personName } from '../../lib/format.js';
 
 // Контакты по одному на строку; первый — основной (жирным, если их несколько).
@@ -11,8 +14,18 @@ function contactList(items) {
   return el('div', { class: 'contact-list' }, items.map((item, i) => el('div', { class: i === 0 && items.length > 1 ? 'contact-primary' : null }, item)));
 }
 
+// Отчёт «физлица и их недвижимость» (квартиры → коммерческие → машиноместа); доступен и для просмотра.
+async function downloadReport() {
+  try {
+    saveFile(await personsApi.propertiesReportPdf());
+  } catch (err) {
+    if (err.status !== 0 && err.status < 500) toast.error(describeApiError(err).message);
+  }
+}
+
 export const personsPage = crudPage({
   title: 'Физлица',
+  headerActions: [el('button', { type: 'button', class: 'btn', onclick: downloadReport }, 'Отчёт: физлица и недвижимость (PDF)')],
   entityTitle: 'Физлицо',
   api: personsApi,
   fields: personFields,

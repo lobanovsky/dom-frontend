@@ -46,6 +46,8 @@ export const premisesApi = {
 export const personsApi = {
   ...resource('persons'),
   properties: (id) => client.get(`/api/v1/persons/${id}/properties`),
+  // Отчёт «физлица и их недвижимость» в PDF на дату (по умолчанию сегодня): {blob, fileName}.
+  propertiesReportPdf: (date) => client.download('/api/v1/persons/properties-report', { query: date ? { date } : undefined }),
 };
 export const legalEntitiesApi = {
   ...resource('legal-entities'),

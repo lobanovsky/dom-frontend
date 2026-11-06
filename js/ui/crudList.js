@@ -170,11 +170,12 @@ export function createCrudList({
 }
 
 // Страница-справочник: заголовок + список.
-export function crudPage({ title, ...listOptions }) {
+// headerActions: [Node] — кнопки в шапке страницы рядом с заголовком (например, скачать отчёт).
+export function crudPage({ title, headerActions, ...listOptions }) {
   return (container) => {
     const list = createCrudList(listOptions);
     container.replaceChildren(el('div', { class: 'page' }, [
-      el('div', { class: 'section-header' }, el('h1', {}, title)),
+      el('div', { class: 'section-header' }, [el('h1', {}, title), headerActions?.length ? el('div', { class: 'header-actions' }, headerActions) : null]),
       list.element,
     ]));
   };
