@@ -11,6 +11,7 @@ import { buildingKinds, premisesKinds, premisesKindOptions, label, options } fro
 import { formatArea } from '../../lib/format.js';
 import { describeApiError } from '../../lib/apiErrors.js';
 import { canWrite } from '../../lib/permissions.js';
+import { saveFile } from '../../ui/saveFile.js';
 import { createMetersList } from '../meters/metersList.js';
 import { notFoundView, definitionList, deletedBanner } from '../common.js';
 import { buildingLabel } from '../../lib/buildings.js';
@@ -77,6 +78,15 @@ export async function buildingPage(container, { id }) {
     });
   }
 
+  // Реестр собственников на сегодня; доступен и для просмотра.
+  async function downloadRegistry() {
+    try {
+      saveFile(await buildingsApi.ownersRegistryPdf(building.id));
+    } catch (err) {
+      if (err.status !== 0 && err.status < 500) toast.error(describeApiError(err).message);
+    }
+  }
+
   function importData() {
     // Страница перерисовывается сразу после загрузки; окно с итогом остаётся поверх.
     openImportDialog({ buildingId: building.id, onImported: () => buildingPage(container, { id }) });
@@ -129,11 +139,14 @@ export async function buildingPage(container, { id }) {
     el('nav', { class: 'breadcrumbs' }, [el('a', { href: '/buildings' }, 'Дома'), ' / ']),
     el('div', { class: 'section-header' }, [
       title,
-      canWrite() ? el('div', { class: 'header-actions' }, [
-        el('button', { type: 'button', class: 'btn', onclick: importData }, 'Импорт из Excel'),
-        el('button', { type: 'button', class: 'btn', onclick: edit }, 'Изменить'),
-        el('button', { type: 'button', class: 'btn btn-ghost btn-danger-text', onclick: remove }, 'Удалить'),
-      ]) : null,
+      el('div', { class: 'header-actions' }, [
+        el('button', { type: 'button', class: 'btn', onclick: downloadRegistry }, 'Реестр собственников (PDF)'),
+        ...(canWrite() ? [
+          el('button', { type: 'button', class: 'btn', onclick: importData }, 'Импорт из Excel'),
+          el('button', { type: 'button', class: 'btn', onclick: edit }, 'Изменить'),
+          el('button', { type: 'button', class: 'btn btn-ghost btn-danger-text', onclick: remove }, 'Удалить'),
+        ] : []),
+      ]),
     ]),
     info,
     el('h2', { class: 'section-title' }, 'Помещения'),

@@ -27,6 +27,8 @@ export const usersApi = {
 export const organizationsApi = resource('organizations');
 export const buildingsApi = {
   ...resource('buildings'),
+  // Реестр собственников дома в PDF на дату (по умолчанию сегодня): {blob, fileName}.
+  ownersRegistryPdf: (id, date) => client.download(`/api/v1/buildings/${id}/owners-registry`, { query: date ? { date } : undefined }),
   // Импорт помещений, собственников и счетов из xlsx; kind — вид помещений файла.
   importFile: (id, kind, file) => {
     const body = new FormData();
