@@ -12,7 +12,7 @@ import {
 import {
   premisesFields, ownershipFields, residencyFields, accountFields, accountHolderFields, ownerKindOf,
 } from '../fields.js';
-import { premisesKinds, relations, accountPurposes, accountStatuses, label } from '../../lib/labels.js';
+import { premisesKinds, relations, accountPurposes, accountStatuses, label, kindRules } from '../../lib/labels.js';
 import { formatArea, formatDate, formatMoney, formatPeriod, formatShare, formatTime, personName, isActiveOn, todayIso, registryLabel } from '../../lib/format.js';
 import { activeShareSum, describeShareSum } from '../../lib/shares.js';
 import { describeApiError } from '../../lib/apiErrors.js';
@@ -43,6 +43,8 @@ export async function premisesPage(container, { id }) {
   // Какие блоки сейчас показывают удалённые записи («корзину»).
   const showDeleted = { owners: false, residents: false, accounts: false };
 
+  // Виды помещений с правилом «проживающих не бывает» (машиноместо) показываются без блока жителей.
+  const hasResidents = !kindRules(premises.kind).noResidents;
   const title = el('h1', {});
   const info = el('div', { class: 'card' });
   const ownersBody = el('div', {});
@@ -105,7 +107,7 @@ export async function premisesPage(container, { id }) {
         onChanged: (saved) => {
           names.set('person', personId, personName(saved));
           loadOwners();
-          loadResidents();
+          if (hasResidents) loadResidents();
           loadAccounts();
         },
       }),
@@ -420,7 +422,7 @@ export async function premisesPage(container, { id }) {
     ]),
     info,
     section('Собственники', 'Добавить собственника', () => ownershipForm(null), ownersBody, (on) => { showDeleted.owners = on; loadOwners(); }),
-    section('Жители', 'Добавить жителя', () => residencyForm(null), residentsBody, (on) => { showDeleted.residents = on; loadResidents(); }),
+    hasResidents ? section('Жители', 'Добавить жителя', () => residencyForm(null), residentsBody, (on) => { showDeleted.residents = on; loadResidents(); }) : null,
     section('Лицевые счета', 'Открыть счёт', () => accountForm(null), accountsBody, (on) => { showDeleted.accounts = on; loadAccounts(); }),
     el('section', { class: 'page-section' }, [
       el('div', { class: 'section-header section-header--sub' }, el('h2', {}, 'Счётчики')),
@@ -434,7 +436,7 @@ export async function premisesPage(container, { id }) {
   ]));
 
   loadOwners();
-  loadResidents();
+  if (hasResidents) loadResidents();
   loadAccounts();
 }
 

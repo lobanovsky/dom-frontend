@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { premisesKinds, setPremisesKinds, premisesKindOptions, relations, setKinships, relationOptions, label } from './labels.js';
+import { premisesKinds, setPremisesKinds, premisesKindOptions, kindRules, relations, setKinships, relationOptions, label } from './labels.js';
 
 test('виды помещений заменяются содержимым справочника, порядок сохраняется', () => {
   const before = { ...premisesKinds };
@@ -21,4 +21,19 @@ test('родство заменяется содержимым справочн�
   assert.equal(label(relations, 'son'), 'son');
   setKinships(Object.entries(before).map(([code, name]) => ({ code, name })));
   assert.equal(label(relations, 'son'), 'Сын');
+});
+
+test('правила вида помещения берутся из справочника', () => {
+  const before = { ...premisesKinds };
+  setPremisesKinds([
+    { code: 'parking_space', name: 'Машиноместо', no_residents: true, single_owner: true },
+    { code: 'apartment', name: 'Квартира', no_residents: false, single_owner: false },
+    { code: 'storage', name: 'Кладовая', no_residents: true, single_owner: false },
+  ]);
+  assert.deepEqual(kindRules('parking_space'), { noResidents: true, singleOwner: true });
+  assert.deepEqual(kindRules('storage'), { noResidents: true, singleOwner: false });
+  assert.deepEqual(kindRules('apartment'), { noResidents: false, singleOwner: false });
+  assert.deepEqual(kindRules('unknown'), { noResidents: false, singleOwner: false });
+  setPremisesKinds(Object.entries(before).map(([code, name]) => ({ code, name, no_residents: code === 'parking_space', single_owner: code === 'parking_space' })));
+  assert.deepEqual(kindRules('storage'), { noResidents: false, singleOwner: false });
 });

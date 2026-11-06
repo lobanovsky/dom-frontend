@@ -13,6 +13,7 @@ export function premisesKindsPage(container) {
     columns: [
       { key: 'name', label: 'Название', primary: true },
       { key: 'code', label: 'Код' },
+      { key: 'rules', label: 'Правила', render: (r) => [r.no_residents ? 'без проживающих' : null, r.single_owner ? 'один собственник' : null].filter(Boolean).join(', ') },
       { key: 'position', label: 'Порядок' },
     ],
     emptyMessage: 'Видов помещений пока нет',

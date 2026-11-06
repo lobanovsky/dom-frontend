@@ -20,10 +20,23 @@ export const premisesKinds = {
   storage: 'Кладовая',
 };
 
+// Правила видов из того же справочника: noResidents — в таких помещениях не бывает проживающих,
+// singleOwner — у них один собственник. Начальные значения — на случай, если справочник не загрузился.
+export const premisesKindRules = { parking_space: { noResidents: true, singleOwner: true } };
+
 // Заменяет содержимое premisesKinds действующими видами из справочника (в порядке position).
 export function setPremisesKinds(items) {
   for (const key of Object.keys(premisesKinds)) delete premisesKinds[key];
-  for (const k of items) premisesKinds[k.code] = k.name;
+  for (const key of Object.keys(premisesKindRules)) delete premisesKindRules[key];
+  for (const k of items) {
+    premisesKinds[k.code] = k.name;
+    if (k.no_residents || k.single_owner) premisesKindRules[k.code] = { noResidents: !!k.no_residents, singleOwner: !!k.single_owner };
+  }
+}
+
+// Правила вида помещения по его коду; у неизвестного и «обычного» вида правил нет.
+export function kindRules(code) {
+  return premisesKindRules[code] || { noResidents: false, singleOwner: false };
 }
 
 export function premisesKindOptions() {

@@ -198,6 +198,15 @@ export function describeApiError(err, { action = 'save' } = {}) {
   if (raw === 'cannot save: premises kind is unknown or deleted') {
     return { field: null, message: 'Вид помещения не найден или удалён. Выберите другой или восстановите его в «Справочники → Виды помещений»' };
   }
+  const kindRule = {
+    'cannot save: premises kind does not allow residents': 'В помещениях этого вида не бывает проживающих (правило вида помещения)',
+    'cannot save: premises kind allows a single owner': 'У помещения этого вида один собственник: периоды владения не должны пересекаться',
+    'cannot save: premises has residents and the kind does not allow them': 'Нельзя сменить вид: у помещения есть проживающие, а в помещениях нового вида их не бывает',
+    'cannot save: premises has several owners and the kind allows a single owner': 'Нельзя сменить вид: у помещения несколько собственников одновременно, а в новом виде собственник один',
+    'cannot save: kind has premises with residents': 'Нельзя включить «Проживающих не бывает»: у помещений этого вида есть проживающие',
+    'cannot save: kind has premises with several owners': 'Нельзя включить «Только один собственник»: у некоторых помещений этого вида несколько собственников одновременно',
+  }[raw];
+  if (kindRule) return { field: null, message: kindRule };
   if (raw === 'cannot save: kinship is unknown or deleted') {
     return { field: 'relation', message: 'Родство не найдено или удалено. Выберите другое или восстановите его в «Справочники → Родство»' };
   }
