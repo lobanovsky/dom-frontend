@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { premisesGroup, serialParts, formatSerial, resourceUnit, tariffColumns, formatReading, formatDelta, consumption, lastReadingText, meterStatus, verificationState, meterTitle, meterNumberText, previousReadingText, selectableCommonMeters, retiredNote, meterGroup } from './meters.js';
+import { coefficientNote, premisesGroup, serialParts, formatSerial, resourceUnit, tariffColumns, formatReading, formatDelta, consumption, lastReadingText, meterStatus, verificationState, meterTitle, meterNumberText, previousReadingText, selectableCommonMeters, retiredNote, meterGroup } from './meters.js';
 
 test('units and tariff columns', () => {
   assert.equal(resourceUnit('electricity'), 'кВт·ч');
@@ -98,4 +98,20 @@ test('premisesGroup: вид и номер помещения, при необх�
   assert.equal(premisesGroup(m), 'Квартира № 16');
   assert.equal(premisesGroup(m, true), 'Паркинг · Квартира № 16');
   assert.equal(premisesGroup({ premises_kind: 'apartment', premises_number: '3', building_name: null, building_address: 'адрес' }, true), 'адрес · Квартира № 3');
+});
+
+test('coefficientNote: коэффициент только у общедомового электросчётчика', () => {
+  assert.equal(coefficientNote({ resource: 'electricity', premises_id: null, coefficient: 40 }), 'коэф. 40');
+  assert.equal(coefficientNote({ resource: 'electricity', premises_id: null, coefficient: 1 }), 'коэф. 1');
+  assert.equal(coefficientNote({ resource: 'electricity', premises_id: null, coefficient: 0.5 }), 'коэф. 0,5');
+  assert.equal(coefficientNote({ resource: 'electricity', premises_id: 7, coefficient: 1 }), '');
+  assert.equal(coefficientNote({ resource: 'cold_water', premises_id: null, coefficient: 1 }), '');
+  assert.equal(coefficientNote({ resource: 'electricity', premises_id: null }), '');
+});
+
+test('meterTitle / meterNumberText показывают коэффициент общедомового электросчётчика', () => {
+  const m = { resource: 'electricity', serial_number: '42', name: '40 - Паркинг', coefficient: 40, premises_id: null };
+  assert.equal(meterTitle(m), '40 - Паркинг · Электроэнергия (коэф. 40) № 42');
+  assert.equal(meterNumberText(m), '40 - Паркинг, коэф. 40, № 42');
+  assert.equal(meterTitle({ ...m, premises_id: 5, coefficient: 1 }), '40 - Паркинг · Электроэнергия № 42');
 });

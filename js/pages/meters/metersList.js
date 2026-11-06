@@ -5,7 +5,7 @@ import { metersApi, meterReadingsApi } from '../../api/resources.js';
 import { meterFields, meterReadingFields } from '../fields.js';
 import { meterResources, meterTariffs, premisesKinds, label, options } from '../../lib/labels.js';
 import { formatDate, todayIso } from '../../lib/format.js';
-import { lastReadingText, meterGroup, meterStatus, meterTitle, premisesGroup, resourceUnit, serialParts, verificationState } from '../../lib/meters.js';
+import { coefficientNote, lastReadingText, meterGroup, meterStatus, meterTitle, premisesGroup, resourceUnit, serialParts, verificationState } from '../../lib/meters.js';
 import { buildingLabel, buildingLabelOf } from '../../lib/buildings.js';
 import { meterIcon } from '../../ui/meterIcon.js';
 
@@ -71,7 +71,7 @@ export function createMetersList({ fixedQuery = {}, fixed = {}, target = 'fixed'
 function meterCellTitle(m) {
   const { head, tail } = serialParts(m.serial_number);
   return [
-    m.name ? `${m.name} · ` : '',
+    ...[m.name, coefficientNote(m)].filter(Boolean).map((s) => `${s} · `),
     m.premises_id ? `${label(meterResources, m.resource)} ` : '',
     // «№» держится рядом с номером: при переносе строки они не разъезжаются
     el('span', { class: 'nowrap' }, ['№ ', el('span', { class: 'serial' }, [head ? el('span', { class: 'serial-head' }, head) : null, el('span', { class: 'serial-tail' }, tail)])]),

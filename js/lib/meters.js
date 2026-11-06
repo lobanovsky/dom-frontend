@@ -55,11 +55,17 @@ export function formatSerial(serial) {
   return head ? `${head}-${tail}` : tail;
 }
 
+// Коэффициент трансформации в названии: только у общедомового электросчётчика («коэф. 40»); у индивидуальных он всегда 1.
+export function coefficientNote(meter) {
+  if (meter.premises_id || meter.resource !== 'electricity' || meter.coefficient === null || meter.coefficient === undefined) return '';
+  return `коэф. ${formatReading(meter.coefficient)}`;
+}
+
 // «№ 42» или, если у счётчика есть название, «ИТП, № 42».
-export const meterNumberText = (meter) => `${meter.name ? `${meter.name}, ` : ''}№ ${meter.serial_number}`;
+export const meterNumberText = (meter) => `${[meter.name, coefficientNote(meter)].filter(Boolean).map((s) => `${s}, `).join('')}№ ${meter.serial_number}`;
 
 // «ИТП · Холодная вода № 42»; без названия — «Холодная вода № 42».
-export const meterTitle = (meter) => `${meter.name ? `${meter.name} · ` : ''}${label(meterResources, meter.resource)} № ${meter.serial_number}`;
+export const meterTitle = (meter) => `${meter.name ? `${meter.name} · ` : ''}${label(meterResources, meter.resource)}${coefficientNote(meter) ? ` (${coefficientNote(meter)})` : ''} № ${meter.serial_number}`;
 
 // Состояние счётчика по дням работы: {text, kind} для бейджа (kind — суффикс badge-*).
 export function meterStatus(meter) {
