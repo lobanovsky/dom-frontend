@@ -1379,3 +1379,9 @@ a.account-link:hover { text-decoration: underline; }
 .meter-icon--electricity { color: var(--color-meter-electricity); }
 .section-header h1 .meter-icon { margin-right: var(--space-2); vertical-align: middle; }
 .section-header h1 .meter-icon svg { width: 26px; height: 26px; }
+
+/* Месяцы с уже введёнными данными (показание есть) */
+.month-picker-month.is-marked:not(.btn-primary) { background: var(--color-success-bg); border-color: var(--color-success); color: var(--color-success); font-weight: 600; }
+.month-picker-month.is-marked.btn-primary { box-shadow: 0 0 0 2px var(--color-success); }
+.month-picker-swatch { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -1px; background: var(--color-success-bg); border: 1px solid var(--color-success); }
+.month-picker-legend { margin-top: var(--space-2); }

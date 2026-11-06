@@ -10,6 +10,7 @@ import { listInput } from '../ui/listInput.js';
 import { formatPhone } from '../lib/format.js';
 import { checkboxGroup } from '../ui/checkboxGroup.js';
 import { monthField } from '../ui/monthPicker.js';
+import { meterReadingsApi } from '../api/resources.js';
 import { unitShort, isSumMethod } from '../lib/services.js';
 import { categoryColorPicker, categoryIconPicker } from '../ui/categoryStyle.js';
 import { conditionsEditor, actionEditor } from '../ui/ruleEditors.js';
@@ -148,12 +149,18 @@ export const meterFields = ({ target = 'fixed', buildings = [] } = {}) => (value
   ].filter(Boolean);
 };
 
+// Месяцы («YYYY-MM»), за которые у счётчика уже есть показание: их кнопки отмечаются зелёным.
+const readingMonths = async (meter) => {
+  const { items } = await meterReadingsApi.list({ meter_id: meter.id, limit: 200 });
+  return new Set(items.map((r) => String(r.period).slice(0, 7)));
+};
+
 // Показание счётчика: по одному полю на тариф. meter — счётчик из ответа API (число тарифов, прошлое показание для подсказки).
 export const meterReadingFields = (meter) => {
   const unit = resourceUnit(meter.resource);
   return [
     dateField('reading_date', 'Дата показаний', { required: true }),
-    { type: 'picker', name: 'period', label: 'За какой месяц', full: true, component: monthField({ followDate: 'reading_date' }), required: true,
+    { type: 'picker', name: 'period', label: 'За какой месяц', full: true, component: monthField({ followDate: 'reading_date', marked: () => readingMonths(meter) }), required: true,
       help: 'В расчёт за этот месяц войдёт показание. По умолчанию — месяц даты показаний; можно выбрать другой, например показание от 28 сентября отнести к октябрю. В месяце одно показание счётчика' },
     // Подсказка над полями показаний: что было последним. Не поле формы (virtual), в запрос не уходит.
     { type: 'picker', name: 'previous_hint', label: '', virtual: true, full: true,
