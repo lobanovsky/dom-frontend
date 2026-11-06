@@ -171,6 +171,7 @@ export function openAssignHistory({ direction = 'incoming', onChanged } = {}) {
         columns: [
           { key: 'id', label: 'Запуск', primary: true, render: (r) => `№ ${r.id}` },
           { key: 'created_at', label: 'Когда', render: (r) => `${formatDate(r.created_at)} ${formatTime(String(r.created_at).slice(11, 19))}` },
+          { key: 'trigger', label: 'Запуск', render: (r) => (r.trigger === 'auto' ? 'Автоматически' : 'Вручную') },
           { key: 'mode', label: 'Режим', render: (r) => ({ ...MODE_LABELS, unassigned: directionTexts(direction).unassigned })[r.mode] || r.mode },
           { key: 'assigned_count', label: 'Определено', render: (r) => `${r.assigned_count}${r.changed_count ? ` (из них изменено ${r.changed_count})` : ''}${r.cleared_count ? `, снято ${r.cleared_count}` : ''}` },
           { key: 'status', label: 'Статус', render: (r) => (r.rolled_back_at ? `Откатан ${formatDate(r.rolled_back_at)}${r.rolled_back_kept ? `, оставлено ${r.rolled_back_kept}` : ''}` : 'Действует') },

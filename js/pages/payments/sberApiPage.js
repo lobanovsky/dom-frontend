@@ -157,7 +157,7 @@ export async function sberApiPage(container) {
           ],
         }),
         status.runs.some((r) => r.incoming || r.outgoing)
-          ? el('p', { class: 'section-note' }, [el('a', { href: '/payments/incoming' }, 'Входящие платежи'), ' — там кнопка «Определить лицевые счета».'])
+          ? el('p', { class: 'section-note' }, [el('a', { href: '/payments/incoming' }, 'Входящие платежи'), ' — лицевые счета и категории определяются автоматически после каждой загрузки; вручную (с предпросмотром) — кнопка «Определить лицевые счета».'])
           : null,
       ]),
     ].filter(Boolean));
