@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { resourceUnit, tariffColumns, formatReading, formatDelta, consumption, lastReadingText, meterStatus, verificationState, meterTitle, meterNumberText, previousReadingText, selectableCommonMeters, retiredNote, meterGroup } from './meters.js';
+import { premisesGroup, serialParts, formatSerial, resourceUnit, tariffColumns, formatReading, formatDelta, consumption, lastReadingText, meterStatus, verificationState, meterTitle, meterNumberText, previousReadingText, selectableCommonMeters, retiredNote, meterGroup } from './meters.js';
 
 test('units and tariff columns', () => {
   assert.equal(resourceUnit('electricity'), 'кВт·ч');
@@ -78,4 +78,24 @@ test('meterGroup: ресурс, при необходимости с домом'
   assert.equal(meterGroup(m), 'Холодная вода');
   assert.equal(meterGroup(m, true), 'Паркинг · Холодная вода');
   assert.equal(meterGroup({ resource: 'electricity', building_name: null, building_address: 'адрес' }, true), 'адрес · Электроэнергия');
+});
+
+test('serialParts / formatSerial: длинный числовой номер делится на голову и последние 4 цифры', () => {
+  assert.deepEqual(serialParts('023260210667'), { head: '02326021', tail: '0667' });
+  assert.equal(formatSerial('146301425'), '14630-1425');
+  assert.equal(formatSerial('21649058'), '2164-9058');
+  assert.equal(formatSerial('864018'), '86-4018');
+});
+
+test('serialParts: короткие и нечисловые номера не делятся', () => {
+  assert.deepEqual(serialParts('13080'), { head: '', tail: '13080' });
+  assert.equal(formatSerial('AB-12345678'), 'AB-12345678');
+  assert.equal(formatSerial(null), '');
+});
+
+test('premisesGroup: вид и номер помещения, при необходимости с домом', () => {
+  const m = { premises_kind: 'apartment', premises_number: '16', building_name: 'Паркинг', building_address: 'адрес' };
+  assert.equal(premisesGroup(m), 'Квартира № 16');
+  assert.equal(premisesGroup(m, true), 'Паркинг · Квартира № 16');
+  assert.equal(premisesGroup({ premises_kind: 'apartment', premises_number: '3', building_name: null, building_address: 'адрес' }, true), 'адрес · Квартира № 3');
 });

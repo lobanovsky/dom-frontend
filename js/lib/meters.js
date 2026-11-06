@@ -1,7 +1,7 @@
 // Логика счётчиков и показаний без DOM: единицы, тарифы, форматирование, статус и поверка. Покрыта тестами.
 
 import { formatDate } from './format.js';
-import { label, meterResources } from './labels.js';
+import { label, meterResources, premisesKinds } from './labels.js';
 
 const UNITS = { cold_water: 'м³', hot_water: 'м³', electricity: 'кВт·ч' };
 
@@ -39,6 +39,20 @@ export function consumption(reading, tariffs) {
 export function lastReadingText(meter) {
   if (!meter.last_reading_date) return '';
   return tariffColumns(meter.tariffs).map((c) => formatReading(meter[`last_${c.key}`])).join(' · ');
+}
+
+// Длинный числовой номер делим на «голову» и последние четыре цифры: люди сверяют счётчик по хвосту.
+// 023260210667 -> {head: '02326021', tail: '0667'}; короткие и нечисловые номера не делятся.
+export function serialParts(serial) {
+  const s = String(serial ?? '');
+  if (!/^\d{6,}$/.test(s)) return { head: '', tail: s };
+  return { head: s.slice(0, -4), tail: s.slice(-4) };
+}
+
+// Номер для чтения человеком: «02326021-0667» (в списках тире рисует CSS, поэтому при копировании остаются цифры).
+export function formatSerial(serial) {
+  const { head, tail } = serialParts(serial);
+  return head ? `${head}-${tail}` : tail;
 }
 
 // «№ 42» или, если у счётчика есть название, «ИТП, № 42».
@@ -82,6 +96,13 @@ export const retiredNote = (m) => (isRetired(m) ? ` (выведен ${formatDate
 // поэтому старый счётчик нужен услуге, пока по нему считают прошлые периоды.
 export const selectableCommonMeters = (meters, resource) =>
   meters.filter((m) => m.resource === resource).sort((a, b) => Number(isRetired(a)) - Number(isRetired(b)));
+
+// Метка группы индивидуальных счётчиков: «Квартира № 16»; withBuilding — с домом: «Паркинг · Квартира № 16».
+export const premisesGroup = (meter, withBuilding = false) => {
+  const text = `${label(premisesKinds, meter.premises_kind)} № ${meter.premises_number}`;
+  const building = withBuilding ? (meter.building_name || meter.building_address) : '';
+  return building ? `${building} · ${text}` : text;
+};
 
 // Метка группы общедомовых счётчиков: «Холодная вода»; withBuilding — с домом: «Паркинг · Холодная вода».
 export const meterGroup = (meter, withBuilding = false) => {

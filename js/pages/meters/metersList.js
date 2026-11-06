@@ -5,7 +5,7 @@ import { metersApi, meterReadingsApi } from '../../api/resources.js';
 import { meterFields, meterReadingFields } from '../fields.js';
 import { meterResources, meterTariffs, premisesKinds, label, options } from '../../lib/labels.js';
 import { formatDate, todayIso } from '../../lib/format.js';
-import { lastReadingText, meterGroup, meterStatus, meterTitle, resourceUnit, verificationState } from '../../lib/meters.js';
+import { lastReadingText, meterGroup, meterStatus, meterTitle, premisesGroup, resourceUnit, serialParts, verificationState } from '../../lib/meters.js';
 import { buildingLabel, buildingLabelOf } from '../../lib/buildings.js';
 
 // Список счётчиков. Используется на странице «Счётчики», в карточке помещения (fixedQuery/fixed: premises_id)
@@ -13,6 +13,8 @@ import { buildingLabel, buildingLabelOf } from '../../lib/buildings.js';
 // target — как в форме выбирается привязка (см. meterFields); showLocation: false — без колонки «Где» (место и так известно).
 export function createMetersList({ fixedQuery = {}, fixed = {}, target = 'fixed', buildings = [], showFilters = false, showLocation = true, emptyMessage = 'Счётчиков пока нет' } = {}) {
   const today = todayIso();
+  // Страница «Счётчики → В помещениях»: счётчики сгруппированы по помещениям, место указано в заголовке группы.
+  const byPremises = showFilters && fixedQuery.scope === 'individual';
   let list;
 
   // Быстрый ввод показания прямо из списка.
@@ -29,9 +31,10 @@ export function createMetersList({ fixedQuery = {}, fixed = {}, target = 'fixed'
 
   const filters = showFilters ? [
     { name: 'building_id', label: 'Дом', type: 'select', options: buildings.map((b) => ({ value: String(b.id), label: buildingLabel(b) })) },
+    ...(byPremises ? [{ name: 'premises_number', label: 'Помещение №', type: 'search', placeholder: 'Номер квартиры' }] : []),
     { name: 'resource', label: 'Ресурс', type: 'select', options: options(meterResources) },
     { name: 'active', label: 'Состояние', type: 'select', allLabel: 'Все', options: [{ value: 'true', label: 'Работают' }, { value: 'false', label: 'Не работают' }], defaultValue: 'true' },
-    { name: 'q', label: 'Поиск', type: 'search', placeholder: 'Номер, название счётчика или номер помещения' },
+    { name: 'q', label: 'Поиск', type: 'search', placeholder: 'Номер или название счётчика' },
   ] : [];
 
   list = createCrudList({
@@ -44,12 +47,12 @@ export function createMetersList({ fixedQuery = {}, fixed = {}, target = 'fixed'
     fixed,
     newDefaults: { installed_at: today, tariffs: '3', coefficient: '1', ...(target === 'building' && buildings.length === 1 ? { building_id: String(buildings[0].id) } : {}) },
     filters,
-    // Общедомовые счётчики сгруппированы по ресурсу (сервер отдаёт их по дому, ресурсу и названию); индивидуальные — без групп.
-    groupBy: (m) => (m.premises_id ? null : meterGroup(m, showLocation)),
+    // Общедомовые счётчики сгруппированы по ресурсу (сервер отдаёт их по дому, ресурсу и названию), индивидуальные на странице «Счётчики» — по помещениям (сервер отдаёт счётчики помещения подряд).
+    groupBy: (m) => (m.premises_id ? (byPremises ? premisesGroup(m, buildings.length > 1) : null) : meterGroup(m, showLocation)),
     rowClass: (m) => (m.active ? null : 'row-muted'),
     columns: [
-      { key: 'serial_number', label: 'Счётчик', primary: true, render: (m) => el('a', { href: `/meters/${m.id}` }, meterTitle(m)) },
-      showLocation ? { key: 'location', label: 'Где', render: locationCell } : null,
+      { key: 'serial_number', label: 'Счётчик', primary: true, render: (m) => el('a', { href: `/meters/${m.id}` }, meterCellTitle(m)) },
+      showLocation && !byPremises ? { key: 'location', label: 'Где', render: locationCell } : null,
       { key: 'tariffs', label: 'Тарифность', render: (m) => (m.resource === 'electricity' ? label(meterTariffs, m.tariffs) : '') },
       { key: 'last', label: 'Последнее показание', render: (m) => lastCell(m) },
       { key: 'verification', label: 'Поверка', render: (m) => verificationCell(m, today) },
@@ -60,6 +63,18 @@ export function createMetersList({ fixedQuery = {}, fixed = {}, target = 'fixed'
     deleteMessage: (m) => `Удалить счётчик ${meterTitle(m)}? Удалить можно только счётчик без показаний; обычно его выводят из работы датой окончания.`,
   });
   return list;
+}
+
+// Название в списке: у общедомовых вид ресурса уже указан в заголовке группы, поэтому «ИТП · № …»; у индивидуальных
+// «Холодная вода № …». Номер: голова приглушена, последние 4 цифры жирно (тире рисует CSS).
+function meterCellTitle(m) {
+  const { head, tail } = serialParts(m.serial_number);
+  return [
+    m.name ? `${m.name} · ` : '',
+    m.premises_id ? `${label(meterResources, m.resource)} ` : '',
+    // «№» держится рядом с номером: при переносе строки они не разъезжаются
+    el('span', { class: 'nowrap' }, ['№ ', el('span', { class: 'serial' }, [head ? el('span', { class: 'serial-head' }, head) : null, el('span', { class: 'serial-tail' }, tail)])]),
+  ];
 }
 
 function locationCell(m) {
