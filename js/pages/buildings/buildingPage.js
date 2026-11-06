@@ -103,7 +103,7 @@ export async function buildingPage(container, { id }) {
     fixed: { building_id: building.id },
     filters: [
       { name: 'kind', label: 'Вид', type: 'select', options: premisesKindOptions() },
-      { name: 'number', label: 'Номер', type: 'search', placeholder: 'Точный номер' },
+      { name: 'q', label: 'Поиск', type: 'search', placeholder: 'Номер или ФИО собственника' },
     ],
     columns: [
       { key: 'number', label: 'Номер', primary: true, render: (r) => el('a', { href: `/premises/${r.id}` }, `${label(premisesKinds, r.kind)} № ${r.number}`) },
