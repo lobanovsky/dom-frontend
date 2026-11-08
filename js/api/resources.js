@@ -235,3 +235,11 @@ export const paymentAssignmentsApi = {
   runs: (query) => client.get('/api/v1/payment-assignments', { query }),
   rollback: (id) => client.post(`/api/v1/payment-assignments/${id}/rollback`),
 };
+
+// Управление кабинетами собственников, доступно только администратору.
+export const residentAccessApi = {
+ list: (ids) => client.get('/api/v1/resident-access', { query: { person_ids: ids.join(',') } }),
+ get: (id) => client.get(`/api/v1/resident-access/${id}`),
+ update: (id, body) => client.put(`/api/v1/resident-access/${id}`, body),
+ invite: (id, body) => client.post(`/api/v1/resident-access/${id}/invite`, body),
+};

@@ -1,7 +1,10 @@
+import { isAdmin } from '../../lib/permissions.js';
+import { attachResidentAccess } from '../../lib/residentAccess.js';
+import { residentAccessStatusView } from '../../ui/residentAccessStatus.js';
 import { openResidentAccess } from '../../ui/residentAccess.js';
-import { crudPage } from '../../ui/crudList.js';
+import { createCrudList } from '../../ui/crudList.js';
 import { openPropertiesDialog } from '../../ui/propertiesDialog.js';
-import { personsApi } from '../../api/resources.js';
+import { personsApi, residentAccessApi } from '../../api/resources.js';
 import { personFields } from '../fields.js';
 import { el } from '../../lib/dom.js';
 import { saveFile } from '../../ui/saveFile.js';
@@ -24,24 +27,33 @@ async function downloadReport() {
   }
 }
 
-export const personsPage = crudPage({
-  title: 'Физлица',
-  headerActions: [el('button', { type: 'button', class: 'btn', onclick: downloadReport }, 'Отчёт: физлица и недвижимость (PDF)')],
-  entityTitle: 'Физлицо',
-  api: personsApi,
-  fields: personFields,
-  filters: [{ name: 'q', label: 'Поиск', type: 'search', placeholder: 'Фамилия, имя, телефон или email' }],
-  columns: [
-    { key: 'name', label: 'ФИО', primary: true, render: personName },
-    { key: 'birth_date', label: 'Дата рождения', render: (r) => formatDate(r.birth_date) },
-    { key: 'phones', label: 'Телефоны', render: (r) => contactList(r.phones, formatPhone) },
-    { key: 'emails', label: 'Email', render: (r) => contactList(r.emails) },
-  ],
-  extraActions: (r) => [el('button', {
-    type: 'button',
-    class: 'btn btn-ghost btn-sm',
-    onclick: () => openPropertiesDialog({ title: `Недвижимость: ${personName(r)}`, load: () => personsApi.properties(r.id) }),
-  }, 'Недвижимость'), el('button', { type: 'button', class: 'btn btn-ghost btn-sm', onclick: () => openResidentAccess(r) }, 'Личный кабинет')],
-  emptyMessage: 'Физлиц не найдено',
-  deleteMessage: (r) => `Удалить «${personName(r)}»?`,
-});
+export function personsPage(container) {
+  const admin = isAdmin();
+  const list = createCrudList({
+    entityTitle: 'Физлицо',
+    api: { ...personsApi, list: async (query) => {
+      const result = await personsApi.list(query);
+      return admin ? { ...result, items: await attachResidentAccess(result.items, residentAccessApi.list) } : result;
+    } },
+    fields: personFields,
+    filters: [{ name: 'q', label: 'Поиск', type: 'search', placeholder: 'Фамилия, имя, телефон или email' }],
+    columns: [
+      { key: 'name', label: 'ФИО', primary: true, render: personName },
+      { key: 'birth_date', label: 'Дата рождения', render: (r) => formatDate(r.birth_date) },
+      { key: 'phones', label: 'Телефоны', render: (r) => contactList(r.phones, formatPhone) },
+      { key: 'emails', label: 'Email', render: (r) => contactList(r.emails) },
+      ...(admin ? [{ key: 'resident_access', label: 'Личный кабинет', render: (r) => residentAccessStatusView(r.resident_access) }] : []),
+    ],
+    extraActions: (r) => [el('button', {
+      type: 'button',
+      class: 'btn btn-ghost btn-sm',
+      onclick: () => openPropertiesDialog({ title: `Недвижимость: ${personName(r)}`, load: () => personsApi.properties(r.id) }),
+    }, 'Недвижимость'), el('button', { type: 'button', class: 'btn btn-ghost btn-sm', onclick: () => openResidentAccess(r, { onSaved: () => list.reload() }) }, 'Личный кабинет')],
+    emptyMessage: 'Физлиц не найдено',
+    deleteMessage: (r) => `Удалить «${personName(r)}»?`,
+  });
+  container.replaceChildren(el('div', { class: 'page' }, [
+    el('div', { class: 'section-header' }, [el('h1', {}, 'Физлица'), el('div', { class: 'header-actions' }, [el('button', { type: 'button', class: 'btn', onclick: downloadReport }, 'Отчёт: физлица и недвижимость (PDF)')])]),
+    list.element,
+  ]));
+}
