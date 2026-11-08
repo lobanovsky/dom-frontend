@@ -136,7 +136,7 @@ export async function meterPage(container, { id }) {
       { key: 'period', label: 'За месяц', render: (r) => monthLabel(r.period) },
       ...cols.map((c) => ({ key: c.key, label: c.label, render: (r) => el('span', { class: 'nowrap' }, formatReading(r[c.key])) })),
       { key: 'delta', label: `Расход, ${unit()}`, render: (r) => consumptionCell(r) },
-      { key: 'source', label: 'Источник', render: (r) => (r.source === 'import' ? 'Из файла' : 'Вручную') },
+      { key: 'source', label: 'Источник', render: (r) => ({ import: 'Из файла', resident: 'Личный кабинет', manual: 'Вручную' }[r.source] || r.source) },
       { key: 'comment', label: 'Комментарий' },
     ],
     emptyMessage: 'Показаний пока нет',

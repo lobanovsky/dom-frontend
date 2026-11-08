@@ -1,3 +1,4 @@
+import { openResidentAccess } from '../../ui/residentAccess.js';
 import { crudPage } from '../../ui/crudList.js';
 import { openPropertiesDialog } from '../../ui/propertiesDialog.js';
 import { personsApi } from '../../api/resources.js';
@@ -40,7 +41,7 @@ export const personsPage = crudPage({
     type: 'button',
     class: 'btn btn-ghost btn-sm',
     onclick: () => openPropertiesDialog({ title: `Недвижимость: ${personName(r)}`, load: () => personsApi.properties(r.id) }),
-  }, 'Недвижимость')],
+  }, 'Недвижимость'), el('button', { type: 'button', class: 'btn btn-ghost btn-sm', onclick: () => openResidentAccess(r) }, 'Личный кабинет')],
   emptyMessage: 'Физлиц не найдено',
   deleteMessage: (r) => `Удалить «${personName(r)}»?`,
 });

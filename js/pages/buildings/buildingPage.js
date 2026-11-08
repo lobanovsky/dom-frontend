@@ -1,3 +1,4 @@
+import { openResidentWindow } from '../../ui/residentWindow.js';
 import { el } from '../../lib/dom.js';
 import { createCrudList } from '../../ui/crudList.js';
 import { openEntityForm } from '../../ui/entityForm.js';
@@ -135,6 +136,7 @@ export async function buildingPage(container, { id }) {
         el('button', { type: 'button', class: 'btn', onclick: downloadRegistry }, 'Реестр собственников (PDF)'),
         ...(canWrite() ? [
           el('button', { type: 'button', class: 'btn', onclick: importData }, 'Импорт из Excel'),
+          el('button', { type: 'button', class: 'btn', onclick: () => openResidentWindow(building) }, 'Приём показаний ЛК'),
           el('button', { type: 'button', class: 'btn', onclick: edit }, 'Изменить'),
           el('button', { type: 'button', class: 'btn btn-ghost btn-danger-text', onclick: remove }, 'Удалить'),
         ] : []),
