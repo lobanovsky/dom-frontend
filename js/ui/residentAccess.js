@@ -64,7 +64,8 @@ export async function openResidentAccess(person, { onSaved } = {}) {
       modal.close();
       await onSaved?.();
     } catch (e) {
-      status.textContent = e.message.includes('resident_access_email_key') ? 'Эта почта уже подтверждена для другого физлица.'
+      status.textContent = e.message.includes('resident email must be listed') ? 'Для входа можно использовать только адрес из профиля физлица. Сначала обновите профиль.'
+        : e.message.includes('resident_access_email_key') ? 'Эта почта уже подтверждена для другого физлица.'
         : e.message.includes('account email cannot be changed') ? 'У кабинета уже есть другой логин. Здесь можно отключить доступ; смена логина требует отдельной процедуры.'
         : e.status === 503 ? 'Исходящая почта пока не настроена. Можно сохранить доступ без приглашения.' : 'Не удалось сохранить настройки. Проверьте данные и повторите попытку.';
     } finally { busy = false; syncButtons(); }
