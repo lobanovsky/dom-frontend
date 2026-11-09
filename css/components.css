@@ -1421,3 +1421,13 @@ a.account-link:hover { text-decoration: underline; }
 .resident-access-badge--success { color: #166534; background: #dcfce7; }
 .resident-access-badge--warning { color: #92400e; background: #fef3c7; }
 .resident-access-badge--danger { color: #991b1b; background: #fee2e2; }
+
+/* Выбор единственного адреса кабинета рядом с широким полем email. */
+.list-input-row > input[type="radio"] {
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+  min-height: 0;
+  padding: 0;
+  align-self: center;
+}

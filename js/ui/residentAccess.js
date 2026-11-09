@@ -28,7 +28,7 @@ export async function openResidentAccess(person, { onSaved } = {}) {
     el('p', {}, 'Подтверждайте доступ после проверки личности и принадлежности почты. Один адрес может использоваться только для одного кабинета.'),
     summary,
     el('label', { class: 'field' }, [el('span', {}, 'Почта для входа'), email]),
-    el('p', { class: 'field-help' }, emails.length > 1 ? 'Выберите один адрес из email, указанных в профиле. По умолчанию выбран первый.' : emails.length === 1 ? 'Для входа используется email из профиля физлица.' : 'Сначала добавьте адрес электронной почты в профиль физлица.'),
+    el('p', { class: 'field-help' }, 'Адрес для входа выбирается в карточке физлица.'),
     el('label', {}, [enabled, ' Разрешить личный кабинет']),
     el('p', { class: 'field-help' }, '«Сохранить» изменяет разрешение без письма. Для первой регистрации можно сохранить доступ и отправить приглашение со ссылкой для установки пароля.'),
     status,
@@ -40,7 +40,7 @@ export async function openResidentAccess(person, { onSaved } = {}) {
     const state = await residentAccessApi.get(person.id);
     enabled.checked = state.enabled;
     registered = state.registered;
-    email.disabled = registered || emails.length === 0;
+    email.disabled = false;
     summary.replaceChildren(residentAccessStatusView(state));
     if (registered) summary.append(el('p', { class: 'field-help' }, 'Аккаунт уже зарегистрирован. Если пароль забыт, собственник может восстановить его на странице входа.'));
     loaded = true;
