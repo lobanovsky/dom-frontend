@@ -15,7 +15,7 @@ export function listInput({ inputType = 'text', inputmode, placeholder, addLabel
     const root = el('div', { class: 'list-input', id }, [rows, addButton]);
 
     function emit() {
-      onChange(primaryLabel ? [items[selectedIndex], ...items.filter((_, i) => i !== selectedIndex)] : [...items]);
+      onChange(primaryLabel && items.length ? [items[selectedIndex], ...items.filter((_, i) => i !== selectedIndex)] : [...items]);
     }
 
     function render(focusIndex = -1) {

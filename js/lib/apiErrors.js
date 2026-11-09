@@ -5,6 +5,7 @@ import { ApiError } from '../api/client.js';
 // Здесь — перевод на русский и разбор на поле и текст для формы.
 
 const REASONS = [
+  [/^resident email is already selected for another person$/, 'Этот email уже выбран для личного кабинета другого физлица. Выберите другой адрес; как обычный контакт его можно оставить.'],
   [/^is required$/, 'Обязательное поле'],
   [/^must be positive$/, 'Должно быть больше нуля'],
   [/^is too large$/, 'Слишком большое значение'],
