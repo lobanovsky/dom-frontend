@@ -36,7 +36,7 @@ export function personsPage(container) {
       return admin ? { ...result, items: await attachResidentAccess(result.items, residentAccessApi.list) } : result;
     } },
     fields: personFields,
-    filters: [{ name: 'q', label: 'Поиск', type: 'search', placeholder: 'Фамилия, имя, телефон или email' }],
+    filters: [{ name: 'q', label: 'Поиск', type: 'search', placeholder: 'Фамилия, имя, телефон или email' }, ...(admin ? [{ name: 'resident_status', label: 'Личный кабинет', type: 'select', allLabel: 'Все статусы', options: [{ value: 'unissued', label: 'Не выдан' }, { value: 'approved', label: 'Разрешён' }, { value: 'registered', label: 'Зарегистрирован' }, { value: 'used', label: 'Входил' }, { value: 'disabled', label: 'Отключён' }, { value: 'unavailable', label: 'Вход недоступен' }] }] : [])],
     columns: [
       { key: 'name', label: 'ФИО', primary: true, render: personName },
       { key: 'birth_date', label: 'Дата рождения', render: (r) => formatDate(r.birth_date) },
