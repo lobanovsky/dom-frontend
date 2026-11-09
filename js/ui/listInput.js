@@ -4,7 +4,7 @@ import { el } from '../lib/dom.js';
 // кнопка «+ Добавить» и крестик у каждой строки. Первое значение основное.
 // Возвращает компонент для form.js (type: 'list'): ({id, value, onChange}) -> Node.
 // format(значение) -> строка: как показывать сохранённое значение в поле (например, телефон из цифр с форматированием).
-export function listInput({ inputType = 'text', inputmode, placeholder, addLabel = '+ Добавить', autocomplete, format = (s) => s } = {}) {
+export function listInput({ inputType = 'text', inputmode, placeholder, addLabel = '+ Добавить', autocomplete, format = (s) => s, primaryLabel = '' } = {}) {
   return function createListInput({ id, value, onChange }) {
     // Пустой список — одна пустая строка ввода; пустые строки в API не уходят (lib/payload.js).
     let items = Array.isArray(value) && value.length ? value.map(format) : [''];
@@ -35,6 +35,7 @@ export function listInput({ inputType = 'text', inputmode, placeholder, addLabel
             if (input.value.trim() !== '') add();
           }
         });
+        const primary = primaryLabel ? el('label', { class: 'list-input-primary' }, [el('input', { type: 'radio', name: `${id}-primary`, checked: index === 0, disabled: !item.trim(), 'aria-label': primaryLabel, onchange: () => { if (index === 0) return; const [selected] = items.splice(index, 1); items.unshift(selected); emit(); render(); } }), primaryLabel]) : null;
         const remove = el('button', {
           type: 'button', class: 'btn btn-ghost btn-sm list-input-remove', 'aria-label': `Удалить: ${item || index + 1}`,
           onclick: () => {
@@ -43,7 +44,7 @@ export function listInput({ inputType = 'text', inputmode, placeholder, addLabel
             render();
           },
         }, '×');
-        return el('div', { class: 'list-input-row' }, [input, remove]);
+        return el('div', { class: 'list-input-row' }, [input, primary, remove]);
       }));
       if (focusIndex >= 0) rows.children[focusIndex]?.querySelector('input')?.focus();
     }

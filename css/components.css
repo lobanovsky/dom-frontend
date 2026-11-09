@@ -943,9 +943,22 @@ a.btn-primary {
   gap: var(--space-2);
 }
 
-.list-input-row input {
+.list-input-row > input:not([type="radio"]) {
   flex: 1;
   min-width: 0;
+}
+
+.list-input-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  white-space: nowrap;
+}
+
+.list-input-primary input {
+  margin: 0;
 }
 
 .list-input-remove {
@@ -973,7 +986,20 @@ a.btn-primary {
 }
 
 @media (max-width: 768px) {
-  .list-input-remove {
+  .list-input-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  white-space: nowrap;
+}
+
+.list-input-primary input {
+  margin: 0;
+}
+
+.list-input-remove {
     min-width: 44px;
   }
 

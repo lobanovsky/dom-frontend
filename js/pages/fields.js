@@ -42,8 +42,8 @@ export const personFields = [
   dateField('birth_date', 'Дата рождения'),
   { type: 'list', name: 'phones', label: 'Телефоны', help: 'Первый — основной',
     component: listInput({ inputType: 'tel', inputmode: 'tel', placeholder: '+7 900 123-45-67', addLabel: '+ Добавить телефон', autocomplete: 'off', format: formatPhone }) },
-  { type: 'list', name: 'emails', label: 'Email', help: 'Первый — основной',
-    component: listInput({ inputType: 'email', inputmode: 'email', placeholder: 'name@example.com', addLabel: '+ Добавить email', autocomplete: 'off' }) },
+  { type: 'list', name: 'emails', label: 'Email', help: 'Выберите адрес для личного кабинета. По умолчанию выбран первый.',
+    component: listInput({ inputType: 'email', inputmode: 'email', placeholder: 'name@example.com', addLabel: '+ Добавить email', autocomplete: 'off', primaryLabel: 'Для личного кабинета' }) },
 ];
 
 export function buildingFields(organizations) {

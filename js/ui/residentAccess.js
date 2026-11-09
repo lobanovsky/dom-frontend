@@ -7,9 +7,8 @@ import { residentAccessStatusView } from './residentAccessStatus.js';
 
 // Подтверждение контакта выполняет сотрудник после проверки личности собственника.
 export async function openResidentAccess(person, { onSaved } = {}) {
-  const emails = [...new Set((person.emails || []).map((value) => value.trim()).filter(Boolean))];
-  const email = el('select', { required: true, disabled: true }, [el('option', { value: '' }, emails.length ? 'Выберите почту' : 'Сначала добавьте email в профиль'), ...emails.map((value) => el('option', { value }, value))]);
-  email.value = emails[0] || '';
+  const primaryEmail = (person.emails || []).find((value) => value.trim()) || '';
+  const email = el('input', { type: 'email', readonly: true, value: primaryEmail, autocomplete: 'off', disabled: true });
   const enabled = el('input', { type: 'checkbox', disabled: true });
   const status = el('p', { role: 'alert' });
   const summary = el('div', { 'aria-live': 'polite' });
@@ -19,7 +18,7 @@ export async function openResidentAccess(person, { onSaved } = {}) {
   let loaded = false;
   let busy = false;
   function syncButtons() {
-    email.disabled = !loaded || busy || registered || !emails.length;
+    email.disabled = !loaded || busy;
     enabled.disabled = !loaded || busy;
     save.disabled = !loaded || busy;
     invite.hidden = registered;
@@ -39,10 +38,6 @@ export async function openResidentAccess(person, { onSaved } = {}) {
   enabled.addEventListener('change', syncButtons);
   try {
     const state = await residentAccessApi.get(person.id);
-    if (state.email) {
-      if (!emails.some((value) => value.toLowerCase() === state.email.toLowerCase())) email.append(el('option', { value: state.email }, `${state.email} (текущий адрес кабинета)`));
-      email.value = state.email;
-    }
     enabled.checked = state.enabled;
     registered = state.registered;
     email.disabled = registered || emails.length === 0;
