@@ -80,6 +80,7 @@ export const accountServicesApi = {
   bulkPeriodApply: (body) => client.post('/api/v1/account-services/bulk-period', body),
 };
 export const meterReadingsApi = {
+  exportExcel: (query) => client.download('/api/v1/meter-readings/export', { query }),
   ...resource('meter-readings'),
   // Загрузка показаний одного ресурса дома из xlsx на дату readingDate за расчётный месяц period («2026-10», пусто — месяц даты); installedAt задан — неизвестные счётчики создаются.
   importFile: ({ buildingId, resource: kind, readingDate, period, installedAt, file }) => {

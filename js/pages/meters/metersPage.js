@@ -1,3 +1,4 @@
+import { openMeterExportDialog } from '../../ui/meterExportDialog.js';
 import { el } from '../../lib/dom.js';
 import { buildingsApi } from '../../api/resources.js';
 import { describeApiError } from '../../lib/apiErrors.js';
@@ -44,9 +45,10 @@ export async function metersPage(container) {
   container.replaceChildren(el('div', { class: 'page' }, [
     el('div', { class: 'section-header' }, [
       el('h1', {}, 'Счётчики'),
-      canWrite() ? el('div', { class: 'header-actions' }, [
-        el('button', { type: 'button', class: 'btn', onclick: () => openMeterImportDialog({ buildings, onImported: show }) }, 'Загрузить показания'),
-      ]) : null,
+      el('div', { class: 'header-actions' }, [
+        el('button', { type: 'button', class: 'btn', onclick: openMeterExportDialog }, 'Экспорт показаний'),
+        canWrite() ? el('button', { type: 'button', class: 'btn', onclick: () => openMeterImportDialog({ buildings, onImported: show }) }, 'Загрузить показания') : null,
+      ]),
     ]),
     switcher,
     host,
