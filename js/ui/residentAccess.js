@@ -7,8 +7,9 @@ import { residentAccessStatusView } from './residentAccessStatus.js';
 
 // Подтверждение контакта выполняет сотрудник после проверки личности собственника.
 export async function openResidentAccess(person, { onSaved } = {}) {
-  const email = el('input', { type: 'email', required: true, autocomplete: 'off', maxlength: 254, disabled: true });
-  email.value = person.emails?.[0] || '';
+  const emails = [...new Set((person.emails || []).map((value) => value.trim()).filter(Boolean))];
+  const email = el('select', { required: true, disabled: true }, [el('option', { value: '' }, emails.length ? 'Выберите почту' : 'Сначала добавьте email в профиль'), ...emails.map((value) => el('option', { value }, value))]);
+  email.value = emails[0] || '';
   const enabled = el('input', { type: 'checkbox', disabled: true });
   const status = el('p', { role: 'alert' });
   const summary = el('div', { 'aria-live': 'polite' });
@@ -18,7 +19,7 @@ export async function openResidentAccess(person, { onSaved } = {}) {
   let loaded = false;
   let busy = false;
   function syncButtons() {
-    email.disabled = !loaded || busy;
+    email.disabled = !loaded || busy || registered || !emails.length;
     enabled.disabled = !loaded || busy;
     save.disabled = !loaded || busy;
     invite.hidden = registered;
@@ -28,6 +29,7 @@ export async function openResidentAccess(person, { onSaved } = {}) {
     el('p', {}, 'Подтверждайте доступ после проверки личности и принадлежности почты. Один адрес может использоваться только для одного кабинета.'),
     summary,
     el('label', { class: 'field' }, [el('span', {}, 'Почта для входа'), email]),
+    el('p', { class: 'field-help' }, emails.length > 1 ? 'Выберите один адрес из email, указанных в профиле. По умолчанию выбран первый.' : emails.length === 1 ? 'Для входа используется email из профиля физлица.' : 'Сначала добавьте адрес электронной почты в профиль физлица.'),
     el('label', {}, [enabled, ' Разрешить личный кабинет']),
     el('p', { class: 'field-help' }, '«Сохранить» изменяет разрешение без письма. Для первой регистрации можно сохранить доступ и отправить приглашение со ссылкой для установки пароля.'),
     status,
@@ -37,10 +39,13 @@ export async function openResidentAccess(person, { onSaved } = {}) {
   enabled.addEventListener('change', syncButtons);
   try {
     const state = await residentAccessApi.get(person.id);
-    if (state.email) email.value = state.email;
+    if (state.email) {
+      if (!emails.some((value) => value.toLowerCase() === state.email.toLowerCase())) email.append(el('option', { value: state.email }, `${state.email} (текущий адрес кабинета)`));
+      email.value = state.email;
+    }
     enabled.checked = state.enabled;
     registered = state.registered;
-    email.readOnly = registered;
+    email.disabled = registered || emails.length === 0;
     summary.replaceChildren(residentAccessStatusView(state));
     if (registered) summary.append(el('p', { class: 'field-help' }, 'Аккаунт уже зарегистрирован. Если пароль забыт, собственник может восстановить его на странице входа.'));
     loaded = true;
@@ -51,6 +56,7 @@ export async function openResidentAccess(person, { onSaved } = {}) {
     busy = true; syncButtons(); status.textContent = '';
     try {
       const body = { email: email.value.trim(), enabled: enabled.checked };
+      if (!body.email) { status.textContent = 'Добавьте email в профиль физлица и выберите его для кабинета.'; return; }
       if (withInvite && !body.enabled) { status.textContent = 'Для приглашения разрешите личный кабинет.'; return; }
       if (withInvite) await residentAccessApi.invite(person.id, { email: body.email });
       else await residentAccessApi.update(person.id, body);
