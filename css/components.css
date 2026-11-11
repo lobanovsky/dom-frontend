@@ -1431,3 +1431,35 @@ a.account-link:hover { text-decoration: underline; }
   padding: 0;
   align-self: center;
 }
+
+/* Помесячный расчёт электроэнергии по договорам Мосэнергосбыта. */
+.electricity-page > .muted { margin-top: -10px; }
+.electricity-period { display: flex; align-items: center; margin-bottom: 16px; }
+.electricity-period label { display: grid; gap: 6px; font-size: .85rem; }
+.electricity-period input { min-height: 38px; border: 1px solid var(--color-border); border-radius: 8px; padding: 6px 10px; font: inherit; }
+.electricity-total { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 18px; margin-bottom: 16px; border-radius: 12px; background: #eaf3e9; color: #24452b; }
+.electricity-total strong { font-size: 1.35rem; font-variant-numeric: tabular-nums; }
+.electricity-total.is-incomplete, .electricity-result-row.is-incomplete { background: #fff5df; color: #75531c; }
+.electricity-contract-result { margin-bottom: 12px; }
+.electricity-contract-result .section-header { margin: 0 0 12px; }
+.electricity-contract-result .section-header h2 { margin: 0; }
+.electricity-result-row { display: grid; grid-template-columns: minmax(160px, 1fr) minmax(200px, 1.5fr) auto; gap: 12px; align-items: center; padding: 10px 0; border-top: 1px solid var(--color-border); font-size: .86rem; }
+.electricity-result-row strong:last-child { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.electricity-settings-card { margin-bottom: 10px; }
+.electricity-settings-card > summary { font-weight: 600; }
+.electricity-settings { padding-top: 16px; }
+.electricity-settings h3 { margin: 18px 0 8px; font-size: .95rem; }
+.electricity-meter-choices { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 8px; }
+.electricity-meter-choice { display: flex; gap: 9px; align-items: start; font-size: .85rem; }
+.electricity-meter-choice input { margin-top: 3px; }
+.electricity-prices { display: grid; gap: 8px; }
+.electricity-price-row { display: grid; grid-template-columns: repeat(5, minmax(120px, 1fr)) auto; gap: 8px; }
+.electricity-price-row input { min-width: 0; min-height: 36px; border: 1px solid var(--color-border); border-radius: 7px; padding: 5px 8px; font: inherit; }
+.electricity-save { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 16px; }
+.electricity-save .muted { margin: 0; }
+@media (max-width: 760px) {
+  .electricity-result-row { grid-template-columns: 1fr auto; }
+  .electricity-result-row > span { grid-column: 1 / -1; grid-row: 2; }
+  .electricity-price-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .electricity-price-row .text-button { grid-column: 1 / -1; justify-self: start; }
+}

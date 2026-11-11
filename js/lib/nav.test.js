@@ -7,14 +7,14 @@ const finance = NAV.find((n) => n.group === 'Финансы');
 test('finance group holds the requested items', () => {
   assert.deepEqual(
     finance.items.map((i) => i.label),
-    ['Входящие', 'Исходящие', 'Реестры', 'Выгрузки', 'Корректировки', 'Выписки', 'Банк (Сбер)', 'Почта', 'Контрагенты', 'Правила'],
+    ['Входящие', 'Исходящие', 'Реестры', 'Выгрузки', 'Электроэнергия', 'Корректировки', 'Выписки', 'Банк (Сбер)', 'Почта', 'Контрагенты', 'Правила'],
   );
 });
 
 test('every route appears in the menu exactly once', () => {
   const hrefs = NAV.flatMap((n) => (n.group ? n.items : [n])).map((n) => n.href);
   assert.equal(new Set(hrefs).size, hrefs.length);
-  for (const href of ['/payments/incoming', '/payments/outgoing', '/payment-registries', '/bank-statements', '/sber-api', '/mail', '/counterparties', '/payment-rules', '/bank-accounts', '/payment-categories', '/organizations', '/buildings', '/persons', '/legal-entities', '/meters', '/services']) {
+  for (const href of ['/payments/incoming', '/payments/outgoing', '/payment-registries', '/bank-statements', '/sber-api', '/mail', '/counterparties', '/payment-rules', '/bank-accounts', '/payment-categories', '/organizations', '/buildings', '/persons', '/legal-entities', '/meters', '/services', '/electricity']) {
     assert.ok(hrefs.includes(href), href);
   }
 });
@@ -46,5 +46,5 @@ test('viewer menu hides admin-only pages, admin sees all', () => {
   assert.ok(labels('admin').includes('Правила') && labels('admin').includes('Пользователи'));
   assert.ok(!labels('viewer').includes('Правила') && !labels('viewer').includes('Пользователи'));
   assert.ok(labels('viewer').includes('Входящие') && labels('viewer').includes('Организации'));
-  assert.deepEqual(ADMIN_ONLY_PATHS.sort(), ['/payment-rules', '/users']);
+  assert.deepEqual(ADMIN_ONLY_PATHS.sort(), ['/electricity', '/payment-rules', '/users']);
 });
