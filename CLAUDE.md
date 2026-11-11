@@ -66,3 +66,5 @@ Run the backend first (`../dom-backend`: `set -a; . ./.env; set +a; go run ./cmd
 ## Deploy
 
 `.github/workflows/build-and-deploy-frontend.yml`: test → Docker Hub → SSH deploy to `DEPLOY_HOST_PROJECT_PATH` with `/healthz` check (goes through Caddy to the backend) and rollback. Container `dom-frontend` joins external networks `dom-network` and `housekpr-network` (Traefik); the workflow only checks they exist, never creates them. Traefik issues the Let's Encrypt cert from compose labels (router `dom-frontend`, host `dom.lobanovsky.ru`, resolver `letsEncrypt`, HTTP-01) — don't rename the router/host or touch Traefik config, to avoid repeated issuance and LE rate limits.
+
+- **Тарифы Мосэнергосбыта** (`pages/electricity/electricityPage.js`, миграция backend `0046`): договор выбирает справочные тарифы `tariff_t1_id..tariff_t3_id`. Число полей зависит от максимальной тарифности выбранных счётчиков. Цены редактируются в справочнике «Тарифы», а расчёт читает цену выбранного месяца.

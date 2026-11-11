@@ -5,6 +5,9 @@ import { ApiError } from '../api/client.js';
 // Здесь — перевод на русский и разбор на поле и текст для формы.
 
 const REASONS = [
+  [/^must be active kwh tariffs of the meters organization$/, 'Выберите действующий тариф в кВт·ч той же организации, что и счётчики'],
+  [/^is required for selected meters$/, 'Выберите тариф для этой зоны счётчика'],
+  [/^tariff not found$/, 'Тариф не найден. Выберите его из справочника'],
   [/^resident email is already selected for another person$/, 'Этот email уже выбран для личного кабинета другого физлица. Выберите другой адрес; как обычный контакт его можно оставить.'],
   [/^is required$/, 'Обязательное поле'],
   [/^must be positive$/, 'Должно быть больше нуля'],
@@ -283,6 +286,7 @@ export function describeApiError(err, { action = 'save' } = {}) {
   if (raw === 'tariff does not match service organization or unit') return { field: 'tariff_id', message: 'Тариф должен быть той же организации и с той же единицей измерения, что у услуги' };
   if (raw === 'service has own tariffs') return { field: 'tariff_id', message: 'У услуги есть собственные цены (архив): тариф можно выбрать только у услуги без них' };
   if (raw === 'service uses a catalog tariff') return { field: null, message: 'Услуга берёт цену из справочника тарифов: меняйте цены в самом тарифе' };
+  if (raw === 'tariff is used by electricity contracts') return { field: null, message: 'Тариф используется в договорах Мосэнергосбыта. Его нельзя удалить или изменить организацию и единицу измерения' };
   if (raw === 'tariff is used by services') return { field: null, message: 'Организацию и единицу нельзя менять: тариф используют услуги' };
   if (raw === 'service has no norms') return { field: null, message: 'Нормативы бывают только у услуги «площадь × норматив»' };
   if (raw === 'building belongs to another organization') return { field: 'building_id', message: 'Дом принадлежит другой организации, не той, что у услуги' };
