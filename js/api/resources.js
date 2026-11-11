@@ -65,6 +65,8 @@ export const accountHoldersApi = resource('account-holders');
 // Счётчики воды и электроэнергии (индивидуальные у помещений, общедомовые у дома) и их показания.
 export const metersApi = resource('meters');
 export const electricityApi = {
+  createContract: (body) => client.post('/api/v1/electricity-contracts', body),
+  archiveContract: (id) => client.delete(`/api/v1/electricity-contracts/${id}`),
   listContracts: () => client.get('/api/v1/electricity-contracts'),
   updateContract: (id, body) => client.put(`/api/v1/electricity-contracts/${id}`, body),
   calculation: (period) => client.get('/api/v1/electricity-contracts/calculation', { query: { period } }),

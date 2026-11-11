@@ -1463,3 +1463,10 @@ a.account-link:hover { text-decoration: underline; }
   .electricity-price-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .electricity-price-row .text-button { grid-column: 1 / -1; justify-self: start; }
 }
+
+.electricity-table-scroll { overflow-x: auto; }
+.electricity-overview { width: 100%; border-collapse: collapse; }
+.electricity-overview th, .electricity-overview td { padding: 12px; border-bottom: 1px solid var(--color-border); text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.electricity-overview th:first-child { text-align: left; }
+.electricity-contract-management { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; padding: 16px 0; border-bottom: 1px solid var(--color-border); }
+.electricity-contract-management p { margin: 4px 0 0; }
