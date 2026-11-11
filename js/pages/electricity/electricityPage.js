@@ -3,6 +3,7 @@ import { el } from '../../lib/dom.js';
 import { formatMoney } from '../../lib/format.js';
 import { canWrite } from '../../lib/permissions.js';
 import { describeApiError } from '../../lib/apiErrors.js';
+import { createMonthPicker } from '../../ui/monthPicker.js';
 
 const currentMonth = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Moscow', year: 'numeric', month: '2-digit' }).format(new Date());
 const input = (type, value = '', attrs = {}) => el('input', { type, value: value ?? '', ...attrs });
@@ -117,7 +118,7 @@ export async function electricityPage(container) {
     return;
   }
   let period = currentMonth();
-  const picker = input('month', period, { 'aria-label': 'Месяц расчёта' });
+  const picker = createMonthPicker({ value: period, onChange: (month) => { period = month; load(); } });
   const output = el('div', { class: 'electricity-output' });
   const settings = el('div', { class: 'electricity-settings-list' });
   const load = async () => {
@@ -128,12 +129,11 @@ export async function electricityPage(container) {
   const renderSettings = () => settings.replaceChildren(...contracts.map((contract) => contractSettings(contract, meters, async () => {
     ({ items: contracts } = await electricityApi.listContracts()); renderSettings(); await load();
   })));
-  picker.addEventListener('change', () => { period = picker.value; if (period) load(); });
   renderSettings(); await load();
   container.replaceChildren(el('div', { class: 'page electricity-page' }, [
     el('div', { class: 'section-header' }, el('h1', {}, 'Электроэнергия Мосэнергосбыта')),
     el('p', { class: 'muted' }, 'Расход уже учитывает коэффициент трансформации счётчика; стоимость рассчитывается по ценам тарифных зон.'),
-    el('div', { class: 'card electricity-period' }, [el('label', {}, ['Месяц расчёта', picker])]), output,
+    el('div', { class: 'card electricity-period' }, picker.element), output,
     canWrite() ? el('section', {}, [el('h2', {}, 'Настройки контрактов'), settings]) : null,
   ]));
 }
