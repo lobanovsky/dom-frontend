@@ -1470,3 +1470,7 @@ a.account-link:hover { text-decoration: underline; }
 .electricity-overview th:first-child { text-align: left; }
 .electricity-contract-management { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; padding: 16px 0; border-bottom: 1px solid var(--color-border); }
 .electricity-contract-management p { margin: 4px 0 0; }
+
+.electricity-range-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 16px; }
+.electricity-year-label { display: flex; align-items: center; gap: 8px; }
+.electricity-year-input { width: 6.5rem; min-height: 36px; padding: 6px 8px; border: 1px solid var(--color-border); border-radius: 7px; font: inherit; }

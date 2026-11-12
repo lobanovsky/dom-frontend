@@ -7,3 +7,9 @@ export function recentMonths(period, count = 12) {
   });
 }
 export const monthLabel = (period) => new Intl.DateTimeFormat('ru-RU', { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${period}-01T12:00:00Z`));
+
+// Все месяцы выбранного календарного года: от декабря к январю.
+export function yearMonths(year) {
+  if (!Number.isInteger(year) || year < 1 || year > 9999) throw new RangeError('Invalid year');
+  return Array.from({ length: 12 }, (_, index) => `${String(year).padStart(4, '0')}-${String(12 - index).padStart(2, '0')}`);
+}
