@@ -1472,3 +1472,5 @@ a.account-link:hover { text-decoration: underline; }
 .electricity-contract-management p { margin: 4px 0 0; }
 
 .electricity-range-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 16px; }
+
+.electricity-total small { display: block; margin-top: 4px; }

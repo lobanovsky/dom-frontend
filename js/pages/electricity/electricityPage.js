@@ -5,7 +5,7 @@ import { canWrite } from '../../lib/permissions.js';
 import { describeApiError } from '../../lib/apiErrors.js';
 import { openModal } from '../../ui/modal.js';
 import { confirmDialog } from '../../ui/confirmDialog.js';
-import { yearMonths, monthLabel } from '../../lib/electricity.js';
+import { yearMonths, monthLabel, annualElectricityTotal } from '../../lib/electricity.js';
 
 const currentMonth = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Moscow', year: 'numeric', month: '2-digit' }).format(new Date());
 const input = (type, value = '', attrs = {}) => el('input', { type, value: value ?? '', ...attrs });
@@ -148,11 +148,14 @@ export async function electricityPage(container) {
       }));
       if (version !== request) return;
       const visible = contracts.filter((c) => !c.archived_at || rows.some((r) => r.result?.contracts.some((item) => item.id === c.id)));
-      const newest = rows[0].result;
-      const total = newest ? el('div', { class: `electricity-total${newest.complete ? '' : ' is-incomplete'}` }, [
-        el('span', {}, `${monthLabel(rows[0].period)} · ${newest.complete ? 'Ориентировочно к оплате' : 'Неполный расчёт'}`),
-        el('strong', {}, newest.complete ? formatMoney(newest.total) : '—'),
-      ]) : null;
+      const annual = annualElectricityTotal(rows);
+      const total = el('div', { class: `electricity-total${annual.complete ? '' : ' is-incomplete'}` }, [
+        el('div', {}, [
+          el('span', {}, `${annual.complete ? 'Итого' : 'Промежуточный итог'} за ${selectedYear} год`),
+          !annual.complete ? el('small', {}, `Учтены только полностью рассчитанные месяцы: ${annual.monthsCount} из 12.`) : null,
+        ]),
+        el('strong', {}, annual.total === null ? '—' : formatMoney(annual.total)),
+      ]);
       const amount = (item) => item ? (item.complete ? formatMoney(item.total) : 'Неполный расчёт') : '—';
       const table = el('table', { class: 'electricity-overview' }, [
         el('thead', {}, el('tr', {}, [el('th', {}, 'Месяц'), ...visible.map((c) => el('th', {}, c.name)), el('th', {}, 'Всего')])),
