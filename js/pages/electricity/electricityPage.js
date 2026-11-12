@@ -5,7 +5,7 @@ import { canWrite } from '../../lib/permissions.js';
 import { describeApiError } from '../../lib/apiErrors.js';
 import { openModal } from '../../ui/modal.js';
 import { confirmDialog } from '../../ui/confirmDialog.js';
-import { recentMonths, yearMonths, monthLabel } from '../../lib/electricity.js';
+import { yearMonths, monthLabel } from '../../lib/electricity.js';
 
 const currentMonth = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Moscow', year: 'numeric', month: '2-digit' }).format(new Date());
 const input = (type, value = '', attrs = {}) => el('input', { type, value: value ?? '', ...attrs });
@@ -120,38 +120,28 @@ function resultView(result) {
 
 export async function electricityPage(container) {
   let contracts = []; let meters = []; let tariffs = []; let request = 0;
-  let selectedYear = null;
-  const initialYear = Number(currentMonth().slice(0, 4));
-  const description = el('p', { class: 'muted' });
-  const yearInput = input('number', initialYear, { min: 1, max: 9999, step: 1, inputmode: 'numeric', class: 'electricity-year-input', 'aria-label': 'Год расчёта' });
-  const recentButton = el('button', { type: 'button', class: 'btn btn-primary', 'aria-pressed': 'true', onclick: () => { selectedYear = null; yearInput.value = String(initialYear); refreshRange(); reload(); } }, 'Последние 12 месяцев');
+  let selectedYear = Number(currentMonth().slice(0, 4));
+  const description = el('p', { class: 'muted' }, 'Расход учитывает коэффициенты счётчиков; стоимость рассчитана по ценам тарифных зон.');
+  const yearLabel = el('strong', { class: 'month-picker-year', 'aria-live': 'polite' }, selectedYear);
   const selectYear = (year) => {
-    if (!Number.isInteger(year) || year < 1 || year > 9999) { yearInput.reportValidity(); return; }
-    selectedYear = year; yearInput.value = String(year); refreshRange(); reload();
+    if (year < 1 || year > 9999) return;
+    selectedYear = year; yearLabel.textContent = String(year);
+    prev.disabled = year === 1; next.disabled = year === 9999;
+    reload();
   };
-  const prev = el('button', { type: 'button', class: 'btn btn-sm', 'aria-label': 'Предыдущий год', onclick: () => selectYear((selectedYear ?? initialYear) - 1) }, '‹');
-  const next = el('button', { type: 'button', class: 'btn btn-sm', 'aria-label': 'Следующий год', onclick: () => selectYear((selectedYear ?? initialYear) + 1) }, '›');
-  const refreshRange = () => {
-    recentButton.classList.toggle('btn-primary', selectedYear === null);
-    recentButton.setAttribute('aria-pressed', String(selectedYear === null));
-    prev.disabled = selectedYear === 1; next.disabled = selectedYear === 9999;
-    description.textContent = `${selectedYear === null ? 'Последние 12 месяцев' : `Расчёт за ${selectedYear} год`}. Расход учитывает коэффициенты счётчиков; стоимость рассчитана по ценам тарифных зон.`;
-  };
-  yearInput.addEventListener('change', () => selectYear(yearInput.valueAsNumber));
-  yearInput.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); selectYear(yearInput.valueAsNumber); } });
-  const rangeControls = el('div', { class: 'electricity-range-controls' }, [recentButton,
-    el('div', { class: 'month-picker-year-row', role: 'group', 'aria-label': 'Выбор года' }, [prev, el('label', { class: 'electricity-year-label' }, ['Год', yearInput]), next]),
-  ]);
-  refreshRange();
+  const prev = el('button', { type: 'button', class: 'btn btn-sm', 'aria-label': 'Предыдущий год', onclick: () => selectYear(selectedYear - 1) }, '‹');
+  const next = el('button', { type: 'button', class: 'btn btn-sm', 'aria-label': 'Следующий год', onclick: () => selectYear(selectedYear + 1) }, '›');
+  const rangeControls = el('div', { class: 'electricity-range-controls' },
+    el('div', { class: 'month-picker-year-row', role: 'group', 'aria-label': 'Выбор года' }, [prev, yearLabel, next]));
   const output = el('div', { class: 'electricity-output' });
   const reload = async () => {
     const version = ++request;
-    output.replaceChildren(el('p', { class: 'muted' }, selectedYear === null ? 'Загрузка расчётов за 12 месяцев…' : `Загрузка расчётов за ${selectedYear} год…`));
+    output.replaceChildren(el('p', { class: 'muted' }, `Загрузка расчётов за ${selectedYear} год…`));
     try {
       const [contractResult, meterList, tariffList] = await Promise.all([electricityApi.listContracts(), listElectricityMeters(), listElectricityTariffs()]);
       if (version !== request) return;
       contracts = contractResult.items; meters = meterList; tariffs = tariffList;
-      const periods = selectedYear === null ? recentMonths(currentMonth()) : yearMonths(selectedYear);
+      const periods = yearMonths(selectedYear);
       const rows = await Promise.all(periods.map(async (period) => {
         try { return { period, result: await electricityApi.calculation(period) }; }
         catch (error) { return { period, error }; }
