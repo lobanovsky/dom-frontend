@@ -4,7 +4,15 @@ import { formatPhone, formatDate, formatDateTime } from '../../lib/format.js';
 import { describeApiError } from '../../lib/apiErrors.js';
 import { openModal } from '../../ui/modal.js';
 import { renderTable } from '../../ui/table.js';
-import { GATE_STATUSES, GATE_ZONES, GATE_RELATIONS, gatePropertyLabel } from '../../lib/gate.js';
+import {
+  GATE_STATUSES,
+  GATE_ZONES,
+  GATE_RELATIONS,
+  gatePropertyLabel,
+  gateZoneLabel,
+  gateStatusLabel,
+  groupGateRequests,
+} from '../../lib/gate.js';
 
 const badge = (r) =>
   el(
@@ -12,7 +20,7 @@ const badge = (r) =>
     {
       class: `badge ${r.active ? 'badge-success' : r.effective_status === 'pending' ? 'badge-warning' : 'badge-neutral'}`,
     },
-    GATE_STATUSES[r.effective_status] || r.effective_status,
+    gateStatusLabel(r.effective_status),
   );
 export async function gatePage(container) {
   let offset = 0,
@@ -95,13 +103,14 @@ export async function gatePage(container) {
     next.disabled = true;
     host.replaceChildren(el('p', { role: 'status' }, 'Загрузка…'));
     try {
-      const { items } = await gateApi.list({
+      const result = await gateApi.list({
         status: status.value,
         zone: zone.value,
         q: input.value.trim(),
         limit: 50,
         offset,
       });
+      const items = groupGateRequests(result.items);
       if (request !== version) return;
       host.replaceChildren(
         renderTable({
@@ -117,17 +126,22 @@ export async function gatePage(container) {
                 ]),
             },
             { key: 'phone', label: 'Телефон', render: (r) => formatPhone(r.phone) },
-            { key: 'zone', label: 'Куда', render: (r) => GATE_ZONES[r.zone] },
+            { key: 'zone', label: 'Куда', render: (r) => gateZoneLabel(r) },
             {
               key: 'premises_number',
-              label: 'Объект и заявитель',
+              label: 'Объекты и заявитель',
               render: (r) => el('div', {}, [gatePropertyLabel(r), el('p', { class: 'muted' }, r.applicant_name)]),
             },
             {
               key: 'vehicle_plate',
               label: 'Автомобиль',
               render: (r) =>
-                [r.vehicle_plate, r.vehicle_brand, r.occasional_vehicle ? 'Редкие заезды' : '']
+                [
+                  r.vehicle_plate,
+                  r.vehicle_brand,
+                  r.no_personal_vehicle ? 'Нет личного автомобиля' : '',
+                  r.occasional_vehicle ? 'Редкие заезды' : '',
+                ]
                   .filter(Boolean)
                   .join(' · ') || '—',
             },
@@ -170,7 +184,17 @@ export async function gatePage(container) {
         badge(r),
         el('h3', {}, r.recipient_name),
         el('p', {}, `${formatPhone(r.phone)} · ${GATE_RELATIONS[r.relation]}`),
-        el('p', {}, `${GATE_ZONES[r.zone]} · ${gatePropertyLabel(r)}`),
+        el(
+          'div',
+          {},
+          r.items.map((item) =>
+            el(
+              'p',
+              {},
+              `${GATE_ZONES[item.zone]} · ${gatePropertyLabel(item)} · ${gateStatusLabel(item.effective_status)}`,
+            ),
+          ),
+        ),
         el('p', { class: 'muted' }, r.address),
         el('p', {}, `Заявитель: ${r.applicant_name}`),
         el('p', {}, `Срок: ${r.valid_until ? `до ${formatDate(r.valid_until)} включительно` : 'без ограничения'}`),
@@ -240,7 +264,7 @@ export async function gatePage(container) {
         },
       },
       [
-        el('p', {}, `${r.recipient_name} · ${formatPhone(r.phone)} · ${GATE_ZONES[r.zone]} · ${gatePropertyLabel(r)}`),
+        el('p', {}, `${r.recipient_name} · ${formatPhone(r.phone)} · ${gateZoneLabel(r)} · ${gatePropertyLabel(r)}`),
         el('label', { class: 'field' }, [
           action === 'approve' ? 'Комментарий (необязательно)' : 'Причина (обязательно)',
           note,
