@@ -15,6 +15,7 @@ export const NAV = [
       { href: '/payments/outgoing', label: 'Исходящие', icon: '<path d="M12 21V9M7 14l5-5 5 5M4 3h16"/>' },
       { href: '/payment-registries', label: 'Реестры', icon: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8zM14 3v5h5M9 13h6M9 17h6"/>' },
       { href: '/payment-exports', label: 'Выгрузки', icon: '<path d="M12 15V3M7 8l5-5 5 5M4 21h16"/>' },
+      { href: '/water', adminOnly: true, label: 'Вода и водоотведение', icon: '<path d="M12 3S5 10 5 15a7 7 0 0 0 14 0c0-5-7-12-7-12z"/>' },
       { href: '/electricity', adminOnly: true, label: 'Электроэнергия', icon: '<path d="M13 2L4 13h7l-1 9 10-12h-7z"/>' },
       { href: '/adjustment-registries', label: 'Корректировки', icon: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8zM14 3v5h5M12 11v6M9 14h6"/>' },
       { href: '/bank-statements', label: 'Выписки', icon: '<path d="M6 2h9l5 5v15H6zM14 2v6h6M9 13h8M9 17h8M9 9h3"/>' },

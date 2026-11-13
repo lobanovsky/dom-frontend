@@ -71,6 +71,13 @@ export const electricityApi = {
   updateContract: (id, body) => client.put(`/api/v1/electricity-contracts/${id}`, body),
   calculation: (period) => client.get('/api/v1/electricity-contracts/calculation', { query: { period } }),
 };
+export const waterApi = {
+  createContract: (body) => client.post('/api/v1/water-contracts', body),
+  archiveContract: (id) => client.delete(`/api/v1/water-contracts/${id}`),
+  listContracts: () => client.get('/api/v1/water-contracts'),
+  updateContract: (id, body) => client.put(`/api/v1/water-contracts/${id}`, body),
+  calculation: (period) => client.get('/api/v1/water-contracts/calculation', { query: { period } }),
+};
 export const servicesApi = resource('services');
 // Справочник тарифов («Электроэнергия Т1») с ценами по периодам: цены услуг ведутся только здесь, услуга ссылается на тариф.
 export const tariffsApi = resource('tariffs');

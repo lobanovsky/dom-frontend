@@ -5,6 +5,14 @@ import { ApiError } from '../api/client.js';
 // Здесь — перевод на русский и разбор на поле и текст для формы.
 
 const REASONS = [
+  [/^must be active m3 tariffs of the same organization$/, 'Выберите действующие тарифы на воду и водоотведение в м³ одной организации'],
+  [/^water and sewer tariffs are required$/, 'Выберите тарифы на воду и водоотведение'],
+  [/^select 1 to 200 common water meters$/, 'Выберите от 1 до 200 вводных счётчиков воды'],
+  [/^must be common cold water meters of the tariffs organization$/, 'Выберите общедомовые счётчики холодной воды той же организации, что и тарифы'],
+  [/^meter already belongs to another water contract$/, 'Счётчик уже включён в другой договор Мосводоканала'],
+  [/^must be unique positive IDs$/, 'Счётчики должны быть выбраны без повторений'],
+  [/^must contain 1 to 200 characters$/, 'Укажите от 1 до 200 символов'],
+  [/^must not exceed 200 characters$/, 'Не больше 200 символов'],
   [/^must be active kwh tariffs of the meters organization$/, 'Выберите действующий тариф в кВт·ч той же организации, что и счётчики'],
   [/^is required for selected meters$/, 'Выберите тариф для этой зоны счётчика'],
   [/^tariff not found$/, 'Тариф не найден. Выберите его из справочника'],
@@ -286,6 +294,9 @@ export function describeApiError(err, { action = 'save' } = {}) {
   if (raw === 'tariff does not match service organization or unit') return { field: 'tariff_id', message: 'Тариф должен быть той же организации и с той же единицей измерения, что у услуги' };
   if (raw === 'service has own tariffs') return { field: 'tariff_id', message: 'У услуги есть собственные цены (архив): тариф можно выбрать только у услуги без них' };
   if (raw === 'service uses a catalog tariff') return { field: null, message: 'Услуга берёт цену из справочника тарифов: меняйте цены в самом тарифе' };
+  if (raw === 'tariff is used by water contracts') return { field: null, message: 'Тариф используется в договорах Мосводоканала. Его нельзя удалить или изменить организацию и единицу измерения' };
+  if (raw === 'meter is used by water contracts') return { field: null, message: 'Счётчик используется в договоре Мосводоканала. Сначала измените состав договора; для замены прибора укажите дату окончания работы' };
+  if (raw.includes('water_contracts_name_key')) return { field: 'name', message: 'Договор с таким названием уже существует' };
   if (raw === 'tariff is used by electricity contracts') return { field: null, message: 'Тариф используется в договорах Мосэнергосбыта. Его нельзя удалить или изменить организацию и единицу измерения' };
   if (raw === 'tariff is used by services') return { field: null, message: 'Организацию и единицу нельзя менять: тариф используют услуги' };
   if (raw === 'service has no norms') return { field: null, message: 'Нормативы бывают только у услуги «площадь × норматив»' };

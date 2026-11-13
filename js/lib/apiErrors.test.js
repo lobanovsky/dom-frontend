@@ -250,3 +250,11 @@ test('справочник видов помещений', () => {
   assert.match(describeApiError(err('cannot save: premises kind allows a single owner')).message, /один собственник/);
   assert.match(describeApiError(err('cannot delete: has active premises'), { action: 'delete' }).message, /помещения/);
 });
+
+
+test('ошибки договоров Мосводоканала понятны администратору', () => {
+  assert.match(describeApiError(new Error('tariff_ids: must be active m3 tariffs of the same organization')).message, /м³ одной организации/);
+  assert.match(describeApiError(new Error('meter_ids: meter already belongs to another water contract')).message, /другой договор Мосводоканала/);
+  assert.match(describeApiError(new Error('tariff is used by water contracts')).message, /Мосводоканала/);
+  assert.match(describeApiError(new Error('meter is used by water contracts')).message, /дату окончания работы/);
+});

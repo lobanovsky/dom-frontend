@@ -1474,3 +1474,9 @@ a.account-link:hover { text-decoration: underline; }
 .electricity-range-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 16px; }
 
 .electricity-total small { display: block; margin-top: 4px; }
+
+/* Детализация воды использует общий каркас отчётов поставщиков. */
+.water-meter-detail p { margin: 3px 0; }
+@media (max-width: 768px) {
+  .water-meter-detail { grid-column: 1 / -1; grid-row: 2; }
+}
