@@ -1,6 +1,6 @@
 import { waterApi, metersApi, tariffsApi } from '../../api/resources.js';
 import { el } from '../../lib/dom.js';
-import { formatMoney } from '../../lib/format.js';
+import { formatMoney, formatDate } from '../../lib/format.js';
 import { canWrite } from '../../lib/permissions.js';
 import { describeApiError } from '../../lib/apiErrors.js';
 import { openModal } from '../../ui/modal.js';
@@ -11,7 +11,7 @@ const currentMonth = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/
 const input = (type, value = '', attrs = {}) => el('input', { type, value: value ?? '', ...attrs });
 const shown = (v) => v == null ? '—' : new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 3 }).format(v);
 const rate = (v) => v == null ? '—' : new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 4 }).format(v);
-const statusText = (s) => ({ no_reading: 'Нет показания за месяц', no_previous: 'Нет показания за предыдущий месяц или начального показания в месяце установки', no_tariff: 'Нет цены на воду или водоотведение за этот месяц', negative: 'Показание меньше предыдущего' })[s] || s;
+const statusText = (s) => ({ no_reading: 'Нет показания за месяц', no_previous: 'Нет предыдущего показания или начального показания для первого расчёта', no_tariff: 'Нет цены на воду или водоотведение за этот месяц', negative: 'Показание меньше предыдущего' })[s] || s;
 
 async function listWaterMeters() {
   const all = [];
@@ -88,6 +88,8 @@ function meterResult(meter) {
   row.append(
     el('a', { href: `/meters/${meter.meter_id}` }, `${meter.name !== meter.serial_number ? `${meter.name} · ` : ''}№ ${meter.serial_number}`),
     el('div', { class: 'water-meter-detail' }, [
+      meter.previous_date && meter.current_date ? el('p', { class: 'muted' }, `Замеры: ${formatDate(meter.previous_date)} — ${formatDate(meter.current_date)}`) : null,
+      meter.reading_gap ? el('p', { class: 'water-reading-warning', role: 'note' }, 'Между замерами пропущены месяцы. Весь расход за этот интервал включён в выбранный месяц по его тарифам.') : null,
       el('p', {}, `Показания: ${shown(meter.previous)} → ${shown(meter.current)} м³. Расход: ${shown(meter.volume)} м³.`),
       el('p', {}, `Вода: ${shown(meter.volume)} м³ × ${rate(meter.water_price)} ₽ = ${meter.volume != null && meter.water_price != null ? formatMoney(meter.water_amount) : '—'}`),
       el('p', {}, `Водоотведение: ${shown(meter.volume)} м³ × ${rate(meter.sewer_price)} ₽ = ${meter.volume != null && meter.sewer_price != null ? formatMoney(meter.sewer_amount) : '—'}`),
@@ -164,14 +166,14 @@ export async function waterPage(container) {
         el('tbody', {}, rows.map(({ period, result, error }) => el('tr', {}, [
           el('th', { scope: 'row' }, el('button', { type: 'button', class: 'btn btn-ghost', disabled: !result,
             onclick: () => openModal({ title: monthLabel(period), content: resultView(result), wide: true }),
-          }, monthLabel(period))),
+          }, [monthLabel(period), result?.contracts.some((c) => c.meters.some((m) => m.reading_gap)) ? el('span', { class: 'badge badge-warning water-gap-badge', title: 'Есть пропуски месяцев: в расчёт включён весь расход между замерами' }, 'Есть пропуски') : null])),
           ...(visible.length > 1 ? visible.map((c) => el('td', {}, error ? 'Ошибка загрузки' : amount(result.contracts.find((item) => item.id === c.id)))) : []),
           ...['water_amount', 'sewer_amount'].map((key) => el('td', {}, error ? 'Ошибка загрузки' : result.complete ? formatMoney(result[key]) : '—')),
           el('td', {}, el('strong', {}, error ? 'Ошибка загрузки' : amount(result))),
         ]))),
       ]);
       output.replaceChildren(...[total, el('div', { class: 'card electricity-table-scroll' }, table),
-        el('p', { class: 'muted' }, 'Нажмите на месяц, чтобы посмотреть счётчики, расход и применённые цены. Неполный расчёт означает, что не хватает показаний за текущий или предыдущий месяц либо цен в справочнике.'),
+        el('p', { class: 'muted' }, 'Нажмите на месяц, чтобы посмотреть счётчики, расход и применённые цены. Неполный расчёт означает, что не хватает текущих показаний, исходного показания или цен в справочнике. При пропуске месяцев расход считается между доступными замерами; даты видны в детализации.'),
       ].filter(Boolean));
     } catch (err) { if (version === request) output.replaceChildren(el('div', { class: 'card empty-state' }, describeApiError(err).message)); }
   };

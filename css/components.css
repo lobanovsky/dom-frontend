@@ -1480,3 +1480,6 @@ a.account-link:hover { text-decoration: underline; }
 @media (max-width: 768px) {
   .water-meter-detail { grid-column: 1 / -1; grid-row: 2; }
 }
+
+.water-reading-warning { color: #75531c; background: #fff5df; padding: 8px; border-radius: 6px; }
+.water-gap-badge { margin-left: 8px; }
