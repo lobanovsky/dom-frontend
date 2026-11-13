@@ -194,7 +194,7 @@ export async function electricityPage(container) {
     show(); openModal({ title: 'Договоры Мосэнергосбыта', content: host, wide: true });
   }
   container.replaceChildren(el('div', { class: 'page electricity-page' }, [
-    el('div', { class: 'section-header' }, [el('h1', {}, 'Электроэнергия Мосэнергосбыта'),
+    el('div', { class: 'section-header' }, [el('h1', {}, 'Мосэнергосбыт'),
       canWrite() ? el('button', { class: 'btn', type: 'button', onclick: manageContracts }, 'Контракты') : null]),
     description, rangeControls, output,
   ]));

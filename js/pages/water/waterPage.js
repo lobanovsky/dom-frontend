@@ -197,7 +197,7 @@ export async function waterPage(container) {
     show(); openModal({ title: 'Договоры Мосводоканала', content: host, wide: true });
   }
   container.replaceChildren(el('div', { class: 'page electricity-page' }, [
-    el('div', { class: 'section-header' }, [el('h1', {}, 'Вода и водоотведение Мосводоканала'),
+    el('div', { class: 'section-header' }, [el('h1', {}, 'Мосводоканал'),
       settingsButton]),
     description, rangeControls, output,
   ]));
