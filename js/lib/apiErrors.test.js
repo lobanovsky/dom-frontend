@@ -258,3 +258,10 @@ test('ошибки договоров Мосводоканала понятны 
   assert.match(describeApiError(new Error('tariff is used by water contracts')).message, /Мосводоканала/);
   assert.match(describeApiError(new Error('meter is used by water contracts')).message, /дату окончания работы/);
 });
+
+
+test('решения по въезду объясняют причину отказа в действии', () => {
+ assert.match(describeApiError(err('gate: decision reason is required')).message, /Укажите причину/);
+ assert.match(describeApiError(err('gate: request status changed')).message, /Статус заявки уже изменился/);
+ assert.match(describeApiError(err('gate: property or expiry is no longer eligible')).message, /право собственности утрачено/);
+});

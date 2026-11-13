@@ -4,6 +4,19 @@ import { ApiError } from '../api/client.js';
 // 422), либо фиксированная фраза (дубликат, связанная запись, сумма долей).
 // Здесь — перевод на русский и разбор на поле и текст для формы.
 
+const GATE_ERRORS = {
+  "gate: property is not eligible": "Для этого объекта нет действующего права выдавать доступ в выбранную зону.",
+  "gate: expiry is in the past": "Дата окончания доступа уже прошла. Выберите сегодняшнюю или будущую дату.",
+  "gate: duplicate request": "Для этого телефона и объекта уже есть заявка на проверке или одобренный доступ.",
+  "gate: request status changed": "Статус заявки уже изменился. Обновите список.",
+  "gate: property or expiry is no longer eligible": "Заявку нельзя одобрить: право собственности утрачено или срок доступа истёк.",
+  "gate: decision reason is required": "Укажите причину отклонения или отзыва доступа.",
+  "gate: invalid decision note": "Комментарий должен содержать не более 500 символов без служебных знаков.",
+  "gate: invalid action": "Это действие недоступно для вашей роли.",
+  "phone: gate phone must contain 11 to 15 digits": "Укажите телефон с кодом страны, например +7 999 123-45-67.",
+  "gate: invalid filters": "Проверьте фильтры списка заявок.",
+};
+
 const REASONS = [
   [/^must be active m3 tariffs of the same organization$/, 'Выберите действующие тарифы на воду и водоотведение в м³ одной организации'],
   [/^water and sewer tariffs are required$/, 'Выберите тарифы на воду и водоотведение'],
@@ -288,6 +301,7 @@ export function describeApiError(err, { action = 'save' } = {}) {
   // Ошибка БД при импорте: бэкенд добавляет номер строки файла.
   m = raw.match(/^row (\d+): (.+)$/);
   if (m) return { field: null, message: `Строка ${m[1]}: ${describeApiError(new Error(m[2])).message}` };
+  if (GATE_ERRORS[raw]) return { field: null, message: GATE_ERRORS[raw] };
   if (raw === 'not found') return { field: null, message: 'Запись не найдена' };
   if (raw === 'service purpose does not match account purpose') return { field: null, message: 'Тип лицевого счёта не подходит услуге (например, услуга капремонта для счёта ЖКУ)' };
   if (raw === 'service is not available for this premises kind') return { field: null, message: 'Услуга не применяется к этому виду помещений' };

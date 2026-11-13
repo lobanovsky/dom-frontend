@@ -2,7 +2,7 @@ import { createRouter } from './router.js';
 import { onUnauthenticated, onGlobalError, ApiError } from './api/client.js';
 import { me } from './api/auth.js';
 import { isAuthenticated, setAuthenticated, setUser } from './state/session.js';
-import { isAdmin } from './lib/permissions.js';
+import { isAdmin, isGuard, canManageGate } from './lib/permissions.js';
 import { setNavigate } from './state/nav.js';
 import { renderLoginPage } from './pages/login/loginPage.js';
 import { renderShell } from './pages/shell/shellLayout.js';
@@ -40,6 +40,7 @@ import { tariffsPage } from './pages/tariffs/tariffsPage.js';
 import { tariffPage } from './pages/tariffs/tariffPage.js';
 import { usersPage } from './pages/users/usersPage.js';
 import { waterPage } from './pages/water/waterPage.js';
+import { gatePage } from './pages/gate/gatePage.js';
 import { electricityPage } from './pages/electricity/electricityPage.js';
 
 const appRoot = document.getElementById('app');
@@ -55,6 +56,7 @@ function adminOnly(mount) {
 
 const routes = [
   { pattern: '/', mount: dashboardPage },
+  { pattern: '/gate-access', mount: (container) => { if (canManageGate()) return gatePage(container); container.textContent = 'Недостаточно прав'; } },
   { pattern: '/organizations', mount: organizationsPage },
   { pattern: '/legal-entities', mount: legalEntitiesPage },
   { pattern: '/persons', mount: personsPage },
@@ -124,7 +126,7 @@ function showAuth() {
       return;
     }
     window.history.replaceState(null, '', returnTo);
-    await Promise.all([refreshPremisesKinds(), refreshKinships()]);
+    if (!isGuard()) await Promise.all([refreshPremisesKinds(), refreshKinships()]);
     showShell();
   };
   const authRoutes = [{ pattern: '/login', mount: (c) => renderLoginPage(c, { onSuccess }) }];
@@ -138,9 +140,13 @@ function showShell() {
   stopRouter();
   stopShell();
   setAuthenticated(true);
+  if (isGuard() && ['/', '/login'].includes(location.pathname)) history.replaceState(null, '', '/gate-access');
   const { outlet, refreshNav, cleanup } = renderShell(appRoot, { onLogout: handleLoggedOut });
   shellCleanup = cleanup;
-  router = createRouter(routes, outlet, { afterRender: refreshNav });
+  router = createRouter(routes.map((route) => ({ ...route, mount: (container, ...args) => {
+    if (isGuard() && route.pattern !== '/gate-access') { container.replaceChildren(el('p', {}, 'Охране доступен только раздел «Двор и паркинг».')); return; }
+    return route.mount(container, ...args);
+  } })), outlet, { afterRender: refreshNav });
   router.notFound((c) => {
     c.replaceChildren(el('div', { class: 'card empty-state' }, [el('p', {}, 'Страница не найдена'), el('a', { href: '/' }, 'На главную')]));
   });
@@ -164,7 +170,7 @@ onUnauthenticated(() => {
 async function bootstrap() {
   try {
     setUser(await me());
-    await Promise.all([refreshPremisesKinds(), refreshKinships()]);
+    if (!isGuard()) await Promise.all([refreshPremisesKinds(), refreshKinships()]);
     showShell();
   } catch (err) {
     if (!(err instanceof ApiError && err.status === 401)) notifyGlobalError(err);

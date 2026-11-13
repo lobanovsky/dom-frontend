@@ -48,3 +48,10 @@ test('viewer menu hides admin-only pages, admin sees all', () => {
   assert.ok(labels('viewer').includes('Входящие') && labels('viewer').includes('Организации'));
   assert.deepEqual(ADMIN_ONLY_PATHS.sort(), ['/electricity', '/payment-rules', '/users', '/water']);
 });
+
+
+test('охрана видит только въезд, просмотр не видит персональные заявки', () => {
+ assert.deepEqual(navFor('guard').map((n) => n.href), ['/gate-access']);
+ assert.ok(!navFor('viewer').some((n) => n.href === '/gate-access'));
+ assert.ok(navFor('admin').some((n) => n.href === '/gate-access'));
+});

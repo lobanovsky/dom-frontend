@@ -258,3 +258,10 @@ export const residentAccessApi = {
  update: (id, body) => client.put(`/api/v1/resident-access/${id}`, body),
  invite: (id, body) => client.post(`/api/v1/resident-access/${id}/invite`, body),
 };
+
+// Заявки на въезд доступны только администратору и охране.
+export const gateApi = {
+ list: (query) => client.get('/api/v1/gate-access', { query }),
+ events: (id) => client.get(`/api/v1/gate-access/${id}/events`),
+ decision: (id, body) => client.post(`/api/v1/gate-access/${id}/decision`, body),
+};

@@ -1483,3 +1483,12 @@ a.account-link:hover { text-decoration: underline; }
 
 .water-reading-warning { color: #75531c; background: #fff5df; padding: 8px; border-radius: 6px; }
 .water-gap-badge { margin-left: 8px; }
+
+/* Рабочее место охраны. */
+.gate-filters { display: flex; flex-wrap: wrap; gap: 10px; margin: 16px 0; }
+.gate-filters input { flex: 1 1 240px; min-width: 0; }
+.gate-filters input, .gate-filters select { min-height: 40px; padding: 8px; border: 1px solid var(--color-border); border-radius: 8px; font: inherit; }
+.gate-pagination { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 16px; }
+.gate-detail { display: grid; gap: 12px; overflow-wrap: anywhere; }
+.gate-detail p, .gate-detail h3 { margin: 0; white-space: pre-wrap; }
+.gate-detail textarea { width: 100%; box-sizing: border-box; }

@@ -350,7 +350,7 @@ const passwordField = (opts) => ({ type: 'password', name: 'password', autocompl
 
 export const userCreateFields = [
   textField('username', 'Логин', { required: true, full: true, minLength: 3, maxLength: 50, autocomplete: 'off' }),
-  selectField('role', 'Роль', options(ROLES), { required: true, full: true, help: 'Просмотр: видит все разделы и скачивает Excel и файлы, но ничего не меняет. Администратор: полный доступ, управляет пользователями' }),
+  selectField('role', 'Роль', options(ROLES), { required: true, full: true, help: 'Просмотр: читает доступные разделы и скачивает Excel и файлы, но ничего не меняет. Охрана: только заявки во двор и паркинг. Администратор: полный доступ, управляет пользователями' }),
   passwordField({ label: 'Пароль', required: true, full: true, help: 'Не короче 8 символов. Передайте его пользователю: сменить пароль можно в шапке' }),
 ];
 

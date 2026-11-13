@@ -70,3 +70,6 @@ Run the backend first (`../dom-backend`: `set -a; . ./.env; set +a; go run ./cmd
 - **Тарифы Мосэнергосбыта** (`pages/electricity/electricityPage.js`, миграция backend `0046`): договор выбирает справочные тарифы `tariff_t1_id..tariff_t3_id`. Число полей зависит от максимальной тарифности выбранных счётчиков. Цены редактируются в справочнике «Тарифы», а расчёт читает цену выбранного месяца.
 
 - **Период отчёта электроэнергии**: по умолчанию текущий календарный год, переключение только стрелками влево/вправо, без ручного ввода и дополнительных режимов. `lib/electricity.js#yearMonths` формирует месяцы декабря–января; выбор сохраняется при редактировании договоров и повторной загрузке отчёта.
+
+
+**Въезд** (`pages/gate/gatePage.js`, `/gate-access`, migration backend `0048`): admin/guard only; guard has only this route/nav and skips directory bootstrap. `canManageGate` is separate from general `canWrite` (guard must not gain generic write access). Queue polls every 30 seconds while visible and no dialog is open. Approval is local to the service; hardware integration is deferred. Resident UI is in sibling `dom-resident/js/gate.js`.

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { canWrite, isAdmin, roleCanWrite, roleLabel } from './permissions.js';
+import { canWrite, isAdmin, roleCanWrite, roleLabel, canManageGate } from './permissions.js';
 import { setAuthenticated, setUser } from '../state/session.js';
 
 test('only admin may write', () => {
@@ -25,4 +25,12 @@ test('permissions follow the current user and default to read-only', () => {
 test('role labels', () => {
   assert.equal(roleLabel('viewer'), 'Просмотр');
   assert.equal(roleLabel('x'), 'x');
+});
+
+
+test('охрана управляет въездом и не получает общих прав на изменение', () => {
+ setUser({ role: 'guard' });
+ assert.equal(canManageGate(), true); assert.equal(canWrite(), false); assert.equal(isAdmin(), false);
+ setUser({ role: 'viewer' });assert.equal(canManageGate(), false);
+ setAuthenticated(false);
 });

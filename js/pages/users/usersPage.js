@@ -16,7 +16,7 @@ export async function usersPage(container) {
   const addButton = el('button', { type: 'button', class: 'btn btn-primary btn-add', onclick: () => openCreate() }, 'Добавить пользователя');
   container.replaceChildren(el('div', { class: 'page' }, [
     el('div', { class: 'section-header' }, [el('h1', {}, 'Пользователи'), addButton]),
-    el('p', { class: 'field-help' }, 'Роль «Просмотр» подходит, например, бухгалтеру: она видит все разделы, скачивает Excel и файлы реестров, но ничего не меняет.'),
+    el('p', { class: 'field-help' }, '«Охрана» видит только заявки во двор и паркинг и принимает решения. «Просмотр» предназначен для просмотра данных без изменений. «Администратор» имеет полный доступ.'),
     host,
     el('div', { class: 'section-header' }, [loginsTitle, el('button', { type: 'button', class: 'btn', onclick: () => loadLogins() }, 'Все пользователи')]),
     loginsHost,
