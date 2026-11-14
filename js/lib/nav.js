@@ -6,7 +6,10 @@ export const NAV = [
   { href: '/buildings', label: 'Дома', icon: '<path d="M3 21h18M5 21V7l7-4 7 4v14M9 9h1M14 9h1M9 13h1M14 13h1M10 21v-4h4v4"/>' },
   { href: '/persons', label: 'Физлица', icon: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>' },
   { href: '/legal-entities', label: 'Юрлица', icon: '<rect x="3" y="7" width="18" height="14" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 13h18"/>' },
-  { href: '/gate-access', gateOnly: true, label: 'Двор и паркинг', icon: '<path d="M3 21V5h18v16M7 21V9h10v12M12 9v12"/>' },
+  { group: 'Двор и паркинг', gateOnly: true, icon: '<path d="M3 21V5h18v16M7 21V9h10v12M12 9v12"/>', items: [
+    { href:'/gate-access', label:'Заявки', icon:'<path d="M4 4h16v16H4zM8 9h8M8 13h8M8 17h5"/>' },
+    { href:'/gate-access/view', adminOnly:true, label:'Просмотр доступов', icon:'<circle cx="10" cy="10" r="6"/><path d="m15 15 6 6M10 7v6M7 10h6"/>' },
+  ] },
   { href: '/meters', label: 'Счётчики', icon: '<circle cx="12" cy="12" r="9"/><path d="M12 12l4-4M7 12h1M12 7v1M17 12h-1"/>' },
   {
     group: 'Финансы',
@@ -47,8 +50,8 @@ export const ADMIN_ONLY_PATHS = NAV.flatMap((n) => (n.group ? n.items : [n])).fi
 
 // Меню для роли: пункты «только админу» скрыты, пустые группы убираются.
 export function navFor(role) {
-  const visible = (item) => role === 'guard' ? item.href === '/gate-access' : item.gateOnly ? role === 'admin' : !item.adminOnly || role === 'admin';
-  return NAV.map((n) => (n.group ? { ...n, items: n.items.filter(visible) } : n)).filter((n) => (n.group ? n.items.length > 0 : visible(n)));
+  const visible = (item) => role === 'guard' ? item.href === '/gate-access' : !item.adminOnly || role === 'admin';
+  return NAV.map((n) => (n.group ? { ...n, items: n.items.filter(visible) } : n)).filter((n) => (n.group ? n.items.length > 0 && (!n.gateOnly || role === 'admin' || role === 'guard') : visible(n)));
 }
 
 // Пункт активен для адреса path. Карточка помещения — часть раздела «Дома».

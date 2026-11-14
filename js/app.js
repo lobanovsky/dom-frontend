@@ -41,6 +41,7 @@ import { tariffPage } from './pages/tariffs/tariffPage.js';
 import { usersPage } from './pages/users/usersPage.js';
 import { waterPage } from './pages/water/waterPage.js';
 import { gatePage } from './pages/gate/gatePage.js';
+import { gateAccessViewPage } from './pages/gate/gateAccessViewPage.js';
 import { electricityPage } from './pages/electricity/electricityPage.js';
 
 const appRoot = document.getElementById('app');
@@ -57,6 +58,7 @@ function adminOnly(mount) {
 const routes = [
   { pattern: '/', mount: dashboardPage },
   { pattern: '/gate-access', mount: (container) => { if (canManageGate()) return gatePage(container); container.textContent = 'Недостаточно прав'; } },
+  { pattern: '/gate-access/view', mount: adminOnly(gateAccessViewPage) },
   { pattern: '/organizations', mount: organizationsPage },
   { pattern: '/legal-entities', mount: legalEntitiesPage },
   { pattern: '/persons', mount: personsPage },
@@ -144,7 +146,7 @@ function showShell() {
   const { outlet, refreshNav, cleanup } = renderShell(appRoot, { onLogout: handleLoggedOut });
   shellCleanup = cleanup;
   router = createRouter(routes.map((route) => ({ ...route, mount: (container, ...args) => {
-    if (isGuard() && route.pattern !== '/gate-access') { container.replaceChildren(el('p', {}, 'Охране доступен только раздел «Двор и паркинг».')); return; }
+    if (isGuard() && route.pattern !== '/gate-access') { container.replaceChildren(el('p', {}, 'Охране доступен только раздел «Заявки».')); return; }
     return route.mount(container, ...args);
   } })), outlet, { afterRender: refreshNav });
   router.notFound((c) => {

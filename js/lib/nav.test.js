@@ -46,12 +46,14 @@ test('viewer menu hides admin-only pages, admin sees all', () => {
   assert.ok(labels('admin').includes('Правила') && labels('admin').includes('Пользователи'));
   assert.ok(!labels('viewer').includes('Правила') && !labels('viewer').includes('Пользователи'));
   assert.ok(labels('viewer').includes('Входящие') && labels('viewer').includes('Организации'));
-  assert.deepEqual(ADMIN_ONLY_PATHS.sort(), ['/electricity', '/payment-rules', '/users', '/water']);
+  assert.deepEqual(ADMIN_ONLY_PATHS.sort(), ['/electricity', '/gate-access/view', '/payment-rules', '/users', '/water']);
 });
 
 
 test('охрана видит только въезд, просмотр не видит персональные заявки', () => {
- assert.deepEqual(navFor('guard').map((n) => n.href), ['/gate-access']);
- assert.ok(!navFor('viewer').some((n) => n.href === '/gate-access'));
- assert.ok(navFor('admin').some((n) => n.href === '/gate-access'));
+ const labels = (role) => navFor(role).flatMap((n) => (n.group ? n.items : [n]));
+ assert.deepEqual(labels('guard').map((n) => n.href), ['/gate-access']);
+ assert.ok(!labels('viewer').some((n) => n.href === '/gate-access'));
+ assert.ok(labels('admin').some((n) => n.href === '/gate-access'));
+ assert.ok(labels('admin').some((n) => n.href === '/gate-access/view'));
 });

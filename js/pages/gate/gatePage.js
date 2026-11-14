@@ -28,12 +28,10 @@ const badge = (r) =>
 export async function gatePage(container) {
   let offset = 0,
     version = 0;
-  const input = el('input', {
-    type: 'search',
-    placeholder: 'Телефон, имя, авто, помещение',
-    'aria-label': 'Поиск заявок',
-    maxlength: 120,
-  });
+  const recipient = el('input', { type:'search', placeholder:'Кому', 'aria-label':'Кому', maxlength:120 });
+  const phone = el('input', { type:'search', placeholder:'Телефон', 'aria-label':'Телефон', maxlength:32 });
+  const vehicle = el('input', { type:'search', placeholder:'Авто', 'aria-label':'Авто', maxlength:80 });
+  const premises = el('input', { type:'search', placeholder:'Номер помещения', 'aria-label':'Номер помещения', maxlength:80 });
   const status = el('select', { 'aria-label': 'Статус заявки' }, [
     el('option', { value: '' }, 'Все статусы'),
     ...Object.entries(GATE_STATUSES).map(([value, label]) =>
@@ -80,7 +78,7 @@ export async function gatePage(container) {
         load();
       },
     },
-    [input, status, zone, el('button', { type: 'submit', class: 'btn' }, 'Найти / обновить')],
+    [recipient, phone, vehicle, premises, status, zone, el('button', { type: 'submit', class: 'btn' }, 'Найти / обновить')],
   );
   for (const select of [status, zone])
     select.addEventListener('change', () => {
@@ -109,7 +107,7 @@ export async function gatePage(container) {
       const result = await gateApi.list({
         display_status: status.value,
         zone: zone.value,
-        q: input.value.trim(),
+        recipient: recipient.value.trim(), phone: phone.value.trim(), vehicle: vehicle.value.trim(), premises: premises.value.trim(),
         limit: 50,
         offset,
       });
