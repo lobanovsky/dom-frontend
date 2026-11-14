@@ -4,7 +4,7 @@ import { formatPhone } from '../../lib/format.js';
 import { describeApiError } from '../../lib/apiErrors.js';
 import { renderTable } from '../../ui/table.js';
 import { saveFile } from '../../ui/saveFile.js';
-import { bindGatePhoneInput, gateVehicles, gateVehicleLabel, gateZoneLabel, groupGateRequests, GATE_RELATIONS } from '../../lib/gate.js';
+import { bindGatePhoneInput, gateVehicles, gateVehicleLabel, gateZoneLabel, groupGateRequests, GATE_RELATIONS, gatePremisesTone } from '../../lib/gate.js';
 import { openModal } from '../../ui/modal.js';
 
 const kinds = [['apartment','Квартиры'],['parking_space','Машиноместа'],['commercial','Коммерческие помещения']];
@@ -83,8 +83,10 @@ export async function gateAccessViewPage(container) {
     grid.replaceChildren(...groups.map(([floor,items])=>el('section',{class:'gate-floor'},[
           el('h2',{},floor==='unknown'?'—':type.value==='parking_space'?parkingLevel(floor):floor),
       el('div',{class:'gate-floor-cells'},items.map((p)=>{
-        const count=activeByPremises.get(p.id)?.length||0;
-        return el('button',{type:'button',class:`gate-property-tile${count?' has-access':''}${selected?.id===p.id?' is-selected':''}`,'aria-pressed':String(selected?.id===p.id),'aria-label':`${objectType(p.kind)} ${p.number}${count?`, действующих доступов: ${count}`:', доступов нет'}`,onclick:()=>selectPremises(p)},[
+        const accesses=activeByPremises.get(p.id)||[];
+        const count=accesses.length;
+        const tone=gatePremisesTone(accesses);
+        return el('button',{type:'button',class:`gate-property-tile${tone==='tenant'?' has-tenant-access':tone==='access'?' has-access':''}${selected?.id===p.id?' is-selected':''}`,'aria-pressed':String(selected?.id===p.id),'aria-label':`${objectType(p.kind)} ${p.number}${count?`, действующих доступов: ${count}${tone==='tenant'?', есть арендатор':''}`:', доступов нет'}`,onclick:()=>selectPremises(p)},[
           el('strong',{},p.number),count?el('span',{class:'gate-property-count'},String(count)):null,
         ].filter(Boolean));
       })),

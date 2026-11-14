@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { groupGateRequests, gateZoneLabel, gatePropertyLabel, GATE_STATUSES, formatGatePhoneInput } from './gate.js';
+import { groupGateRequests, gateZoneLabel, gatePropertyLabel, GATE_STATUSES, formatGatePhoneInput, gatePremisesTone } from './gate.js';
 test('маска телефона доступа всегда начинает с +7 и оставляет только цифры номера', () => {
   assert.equal(formatGatePhoneInput(''), '+7');
   assert.equal(formatGatePhoneInput('+7 9'), '+7 9');
@@ -8,6 +8,11 @@ test('маска телефона доступа всегда начинает �
   assert.equal(formatGatePhoneInput('8 (900) 123-45-67'), '+7 900 123 45 67');
   assert.equal(formatGatePhoneInput('+7 921 788 28 28'), '+7 921 788 28 28');
   assert.equal(formatGatePhoneInput('abc 900x123-45-67'), '+7 900 123 45 67');
+});
+test('квартира или машиноместо с арендатором выделяется отдельно', () => {
+  assert.equal(gatePremisesTone([]), 'none');
+  assert.equal(gatePremisesTone([{ relation: 'owner' }]), 'access');
+  assert.equal(gatePremisesTone([{ relation: 'owner' }, { relation: 'tenant' }]), 'tenant');
 });
 test('охрана принимает одно решение для квартиры и машиноместа', () => {
   const groups = groupGateRequests([

@@ -17,6 +17,8 @@ export const gatePropertyLabel = (r) =>
     : `${{ parking_space: 'Машиноместо', commercial: 'Коммерческое помещение' }[r.premises_kind] || 'Квартира'} ${r.premises_number}`;
 export const gateZoneLabel = (r) => [...new Set((r.items || [r]).map((item) => GATE_ZONES[item.zone]))].join(', ');
 export const gateStatusLabel = (value) => GATE_STATUSES[value];
+export const gatePremisesTone = (accesses = []) =>
+  accesses.some((access) => access.relation === 'tenant') ? 'tenant' : accesses.length ? 'access' : 'none';
 
 export function formatGatePhoneInput(value) {
   const source = String(value || '').trim();

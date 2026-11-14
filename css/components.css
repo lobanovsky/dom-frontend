@@ -1537,6 +1537,7 @@ a.account-link:hover { text-decoration: underline; }
 .gate-property-tile { position: relative; display: grid; place-items: center; min-width: 0; min-height: 32px; margin: 2px 0; padding: 3px; border: 0; border-radius: 0; background: var(--color-bg); color: var(--color-text); font: inherit; font-size: .9rem; cursor: pointer; }
 .gate-property-tile:hover { border-color: var(--color-accent); }
 .gate-property-tile.has-access { border-color: var(--color-success); background: var(--color-success-bg); color: var(--color-success); }
+.gate-property-tile.has-tenant-access { border-color: #df9b37; background: #fff0d7; color: #8a5200; }
 .gate-property-tile.is-selected { outline: 2px solid var(--color-accent); outline-offset: -2px; }
 .gate-property-count { position: absolute; top: 3px; right: 5px; font-size: .7rem; font-weight: 700; }
 .gate-access-detail { min-width: 0; padding: 16px; border: 1px solid var(--color-border); border-radius: 12px; background: var(--color-surface); }
