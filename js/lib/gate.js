@@ -19,6 +19,8 @@ export const gateZoneLabel = (r) => [...new Set((r.items || [r]).map((item) => G
 export const gateStatusLabel = (value) => GATE_STATUSES[value];
 export const gatePremisesTone = (accesses = []) =>
   accesses.some((access) => access.relation === 'tenant') ? 'tenant' : accesses.length ? 'access' : 'none';
+export const gateOwnersFirst = (accesses = []) =>
+  [...accesses].sort((a, b) => Number(b.relation === 'owner') - Number(a.relation === 'owner'));
 
 export function formatGatePhoneInput(value) {
   const source = String(value || '').trim();

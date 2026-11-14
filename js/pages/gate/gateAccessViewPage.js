@@ -4,7 +4,7 @@ import { formatPhone, isActiveOn, todayIso } from '../../lib/format.js';
 import { describeApiError } from '../../lib/apiErrors.js';
 import { renderTable } from '../../ui/table.js';
 import { saveFile } from '../../ui/saveFile.js';
-import { bindGatePhoneInput, gateVehicles, gateVehicleLabel, gateZoneLabel, groupGateRequests, GATE_RELATIONS, gatePremisesTone } from '../../lib/gate.js';
+import { bindGatePhoneInput, gateVehicles, gateVehicleLabel, gateZoneLabel, groupGateRequests, GATE_RELATIONS, gatePremisesTone, gateOwnersFirst } from '../../lib/gate.js';
 import { openModal } from '../../ui/modal.js';
 
 const kinds = [['apartment','Квартиры'],['parking_space','Машиноместа'],['commercial','Коммерческие помещения']];
@@ -98,7 +98,7 @@ export async function gateAccessViewPage(container) {
   function selectPremises(p) {
     selected=p;
     renderGrid();
-    const entries=activeByPremises.get(p.id)||[];
+    const entries=gateOwnersFirst(activeByPremises.get(p.id)||[]);
     const ownerLine=el('p',{class:'muted'},'Собственник: загружается…');
     detail.replaceChildren(
       el('h2',{},`${objectType(p.kind)} ${p.number}`),
