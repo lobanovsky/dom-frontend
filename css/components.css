@@ -86,6 +86,7 @@ textarea:focus {
   margin-bottom: var(--space-4);
   font-size: var(--font-size-sm);
 }
+.form-error:empty { display: none; }
 
 .form-success {
   background: var(--color-success-bg);
