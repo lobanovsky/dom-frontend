@@ -2,10 +2,6 @@ export const GATE_STATUSES = {
   pending: 'На проверке',
   approved: 'Одобрено',
   rejected: 'Отклонено',
-  revoked: 'Отозвано',
-  cancelled: 'Отменено',
-  expired: 'Истёк срок',
-  ineligible: 'Нет права на объект',
 };
 export const GATE_ZONES = { courtyard: 'Двор', parking: 'Паркинг' };
 export const GATE_RELATIONS = {
@@ -20,8 +16,7 @@ export const gatePropertyLabel = (r) =>
     ? r.items.map(gatePropertyLabel).join(', ')
     : `${r.premises_kind === 'parking_space' ? 'Машиноместо' : 'Квартира'} ${r.premises_number}`;
 export const gateZoneLabel = (r) => [...new Set((r.items || [r]).map((item) => GATE_ZONES[item.zone]))].join(', ');
-export const gateStatusLabel = (value) =>
-  GATE_STATUSES[value] || { partial: 'Частично действует', attention: 'Требует уточнения' }[value];
+export const gateStatusLabel = (value) => GATE_STATUSES[value];
 
 export function groupGateRequests(rows) {
   const groups = new Map();
@@ -39,8 +34,24 @@ export function groupGateRequests(rows) {
       id,
       items,
       active,
+      display_status: active
+        ? 'approved'
+        : items.every((r) => (r.status || r.effective_status) === 'pending')
+          ? 'pending'
+          : 'rejected',
       eligible: items.every((r) => r.eligible),
       effective_status: states.size === 1 ? root.effective_status : active ? 'partial' : 'attention',
     };
   });
+}
+
+export function gateAccessNote(row) {
+  return (
+    {
+      revoked: 'Доступ отозван.',
+      cancelled: 'Заявка отменена заявителем.',
+      expired: 'Срок доступа истёк.',
+      ineligible: 'Право на объект не подтверждено.',
+    }[row.effective_status] || ''
+  );
 }

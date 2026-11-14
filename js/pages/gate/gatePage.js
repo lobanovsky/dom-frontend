@@ -12,15 +12,16 @@ import {
   gateZoneLabel,
   gateStatusLabel,
   groupGateRequests,
+  gateAccessNote,
 } from '../../lib/gate.js';
 
 const badge = (r) =>
   el(
     'span',
     {
-      class: `badge ${r.active ? 'badge-success' : r.effective_status === 'pending' ? 'badge-warning' : 'badge-neutral'}`,
+      class: `badge ${r.display_status === 'approved' ? 'badge-success' : r.display_status === 'pending' ? 'badge-warning' : 'badge-danger'}`,
     },
-    gateStatusLabel(r.effective_status),
+    gateStatusLabel(r.display_status),
   );
 export async function gatePage(container) {
   let offset = 0,
@@ -104,7 +105,7 @@ export async function gatePage(container) {
     host.replaceChildren(el('p', { role: 'status' }, 'Загрузка…'));
     try {
       const result = await gateApi.list({
-        status: status.value,
+        display_status: status.value,
         zone: zone.value,
         q: input.value.trim(),
         limit: 50,
@@ -177,46 +178,69 @@ export async function gatePage(container) {
       actions.push(
         el('button', { class: 'btn', type: 'button', onclick: () => decide(r, 'revoke') }, 'Отозвать доступ'),
       );
+    const facts = (entries) =>
+      el(
+        'dl',
+        { class: 'gate-detail-facts' },
+        entries
+          .filter(([, value]) => value != null && value !== '')
+          .map(([label, value]) => [el('dt', {}, label), el('dd', {}, value)]),
+      );
+    const section = (title, children) =>
+      el('section', { class: 'gate-detail-section' }, [el('h3', {}, title), ...children]);
+    const addresses = [...new Set(r.items.map((item) => item.address).filter(Boolean))];
     openModal({
       title: `Заявка № ${r.id}`,
       wide: true,
       content: el('div', { class: 'gate-detail' }, [
-        badge(r),
-        el('h3', {}, r.recipient_name),
-        el('p', {}, `${formatPhone(r.phone)} · ${GATE_RELATIONS[r.relation]}`),
-        el(
-          'div',
-          {},
-          r.items.map((item) =>
-            el(
-              'p',
-              {},
-              `${GATE_ZONES[item.zone]} · ${gatePropertyLabel(item)} · ${gateStatusLabel(item.effective_status)}`,
-            ),
+        el('div', { class: 'gate-detail-status' }, badge(r)),
+        el('div', { class: 'gate-detail-sections' }, [
+          section('Получатель доступа', [
+            el('strong', { class: 'gate-recipient-name' }, r.recipient_name),
+            facts([
+              ['Телефон', el('a', { href: `tel:+${r.phone}`, class: 'gate-detail-phone' }, formatPhone(r.phone))],
+              ['Кто пользуется', GATE_RELATIONS[r.relation]],
+            ]),
+          ]),
+          section(
+            'Куда нужен доступ',
+            [
+              el(
+                'ul',
+                { class: 'gate-object-list' },
+                r.items.map((item) =>
+                  el('li', {}, [
+                    el('strong', {}, GATE_ZONES[item.zone]),
+                    el('span', {}, gatePropertyLabel(item)),
+                    gateAccessNote(item) ? el('small', {}, gateAccessNote(item)) : null,
+                  ]),
+                ),
+              ),
+              ...addresses.map((address) => el('p', { class: 'muted gate-detail-address' }, address)),
+              r.valid_until ? facts([['Действует до', formatDate(r.valid_until)]]) : null,
+            ].filter(Boolean),
           ),
-        ),
-        el('p', { class: 'muted' }, r.address),
-        el('p', {}, `Заявитель: ${r.applicant_name}`),
-        el('p', {}, `Срок: ${r.valid_until ? `до ${formatDate(r.valid_until)} включительно` : 'без ограничения'}`),
-        el(
-          'p',
-          {},
-          [r.vehicle_plate, r.vehicle_brand, r.occasional_vehicle ? 'Редкие заезды (такси, доставка)' : '']
-            .filter(Boolean)
-            .join(' · ') || 'Автомобиль не указан',
-        ),
-        r.comment ? el('p', {}, `Комментарий заявителя: ${r.comment}`) : null,
-        r.review_note ? el('p', {}, `Решение: ${r.review_note}`) : null,
-        r.effective_status === 'ineligible'
-          ? el(
-              'p',
-              { class: 'form-error' },
-              'Действующее право собственности на этот объект не подтверждено. Одобрение недоступно.',
-            )
+          section(
+            'Автомобиль',
+            r.no_personal_vehicle
+              ? [el('p', {}, 'Нет личного автомобиля')]
+              : r.vehicle_plate || r.vehicle_brand
+                ? [
+                    facts([
+                      ['Номер', r.vehicle_plate],
+                      ['Марка', r.vehicle_brand],
+                    ]),
+                  ]
+                : [el('p', { class: 'muted' }, 'Не указан')],
+          ),
+          section('Заявитель', [el('p', {}, r.applicant_name), facts([['Подана', formatDateTime(r.created_at)]])]),
+        ]),
+        r.comment ? section('Комментарий заявителя', [el('p', {}, r.comment)]) : null,
+        r.review_note
+          ? section(r.status === 'rejected' ? 'Причина отказа' : 'Комментарий к решению', [el('p', {}, r.review_note)])
           : null,
-        el('div', { class: 'header-actions' }, actions),
-        el('h3', {}, 'История'),
-        history,
+        el('div', { class: 'gate-detail-actions' }, actions),
+        el('details', { class: 'gate-detail-history' }, [el('summary', {}, 'История заявки'), history]),
       ]),
     });
     try {
