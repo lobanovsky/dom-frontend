@@ -1513,3 +1513,13 @@ a.account-link:hover { text-decoration: underline; }
 .gate-detail-history summary { cursor: pointer; color: var(--color-text-muted); }
 .gate-detail-history > div { margin-top: 12px; display: grid; gap: 10px; font-size: .85rem; }
 @media (max-width: 600px) { .gate-detail-sections { grid-template-columns: 1fr; } }
+
+
+.gate-vehicle-detail {
+  display: grid;
+  gap: 8px;
+}
+.gate-vehicle-detail + .gate-vehicle-detail {
+  border-top: 1px solid var(--color-border);
+  padding-top: 12px;
+}

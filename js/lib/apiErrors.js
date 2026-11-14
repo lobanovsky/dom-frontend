@@ -6,6 +6,10 @@ import { ApiError } from '../api/client.js';
 
 const GATE_ERRORS = {
   'premises_ids: select 1 to 50 properties': 'Выберите хотя бы один объект недвижимости (не более 50).',
+  'vehicles: at most 10 cars are allowed': 'Можно указать не более 10 автомобилей.',
+  'vehicles: car number or brand is required': 'Укажите номер или марку автомобиля.',
+  'vehicles: invalid car number or brand': 'Проверьте номер и марку автомобиля.',
+  'vehicles: duplicate car number': 'Один автомобиль указан несколько раз.',
   'vehicle: car must be empty without a personal vehicle': 'При отметке «Нет личного автомобиля» номер и марка должны быть пустыми.',
   "gate: property is not eligible": "Для этого объекта нет действующего права выдавать доступ в выбранную зону.",
   "gate: expiry is in the past": "Дата окончания доступа уже прошла. Выберите сегодняшнюю или будущую дату.",

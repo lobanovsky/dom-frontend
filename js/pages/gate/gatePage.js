@@ -13,6 +13,8 @@ import {
   gateStatusLabel,
   groupGateRequests,
   gateAccessNote,
+  gateVehicles,
+  gateVehicleLabel,
 } from '../../lib/gate.js';
 
 const badge = (r) =>
@@ -135,16 +137,17 @@ export async function gatePage(container) {
             },
             {
               key: 'vehicle_plate',
-              label: 'Автомобиль',
+              label: 'Автомобили',
               render: (r) =>
-                [
-                  r.vehicle_plate,
-                  r.vehicle_brand,
-                  r.no_personal_vehicle ? 'Нет личного автомобиля' : '',
-                  r.occasional_vehicle ? 'Редкие заезды' : '',
-                ]
-                  .filter(Boolean)
-                  .join(' · ') || '—',
+                r.no_personal_vehicle
+                  ? 'Нет личного автомобиля'
+                  : gateVehicles(r).length
+                    ? el(
+                        'div',
+                        {},
+                        gateVehicles(r).map((car) => el('div', {}, gateVehicleLabel(car))),
+                      )
+                    : '—',
             },
             { key: 'effective_status', label: 'Статус', render: badge },
             { key: 'created_at', label: 'Подана', render: (r) => formatDateTime(r.created_at) },
@@ -221,17 +224,28 @@ export async function gatePage(container) {
             ].filter(Boolean),
           ),
           section(
-            'Автомобиль',
-            r.no_personal_vehicle
-              ? [el('p', {}, 'Нет личного автомобиля')]
-              : r.vehicle_plate || r.vehicle_brand
-                ? [
-                    facts([
-                      ['Номер', r.vehicle_plate],
-                      ['Марка', r.vehicle_brand],
-                    ]),
-                  ]
-                : [el('p', { class: 'muted' }, 'Не указан')],
+            'Автомобили',
+            [
+              ...(r.no_personal_vehicle
+                ? [el('p', {}, 'Нет личного автомобиля')]
+                : gateVehicles(r).length
+                  ? gateVehicles(r).map((car, index) =>
+                      el('div', { class: 'gate-vehicle-detail' }, [
+                        gateVehicles(r).length > 1 ? el('strong', {}, `Автомобиль ${index + 1}`) : null,
+                        facts([
+                          ['Номер', car.plate_number],
+                          ['Марка', car.brand],
+                        ]),
+                      ]),
+                    )
+                  : [el('p', { class: 'muted' }, 'Не указаны')]),
+              gateVehicles(r, false).length
+                ? el('details', {}, [
+                    el('summary', {}, 'Архив автомобилей'),
+                    ...gateVehicles(r, false).map((car) => el('p', {}, gateVehicleLabel(car))),
+                  ])
+                : null,
+            ].filter(Boolean),
           ),
           section('Заявитель', [el('p', {}, r.applicant_name), facts([['Подана', formatDateTime(r.created_at)]])]),
         ]),

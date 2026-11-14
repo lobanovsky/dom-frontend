@@ -14,7 +14,7 @@ export const GATE_RELATIONS = {
 export const gatePropertyLabel = (r) =>
   r.items
     ? r.items.map(gatePropertyLabel).join(', ')
-    : `${r.premises_kind === 'parking_space' ? 'Машиноместо' : 'Квартира'} ${r.premises_number}`;
+    : `${{ parking_space: 'Машиноместо', commercial: 'Коммерческое помещение' }[r.premises_kind] || 'Квартира'} ${r.premises_number}`;
 export const gateZoneLabel = (r) => [...new Set((r.items || [r]).map((item) => GATE_ZONES[item.zone]))].join(', ');
 export const gateStatusLabel = (value) => GATE_STATUSES[value];
 
@@ -55,3 +55,12 @@ export function gateAccessNote(row) {
     }[row.effective_status] || ''
   );
 }
+
+export function gateVehicles(row, active = true) {
+  if (Array.isArray(row?.vehicles) && row.vehicles.length)
+    return row.vehicles.filter((car) => (car.active !== false) === active);
+  return active && (row?.vehicle_plate || row?.vehicle_brand)
+    ? [{ plate_number: row.vehicle_plate || '', brand: row.vehicle_brand || '', active: true }]
+    : [];
+}
+export const gateVehicleLabel = (car) => [car.plate_number, car.brand].filter(Boolean).join(' · ');
