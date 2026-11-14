@@ -36,10 +36,8 @@ export async function gatePage(container) {
   const vehicle = el('input', { type:'search', placeholder:'Авто', 'aria-label':'Авто', maxlength:80 });
   const premises = el('input', { type:'search', placeholder:'Номер помещения', 'aria-label':'Номер помещения', maxlength:80 });
   const status = el('select', { 'aria-label': 'Статус заявки' }, [
-    el('option', { value: '' }, 'Все статусы'),
-    ...Object.entries(GATE_STATUSES).map(([value, label]) =>
-      el('option', { value, selected: value === 'pending' }, label),
-    ),
+    el('option', { value: '', selected: true }, 'Все статусы'),
+    ...Object.entries(GATE_STATUSES).map(([value, label]) => el('option', { value }, label)),
   ]);
   const zone = el('select', { 'aria-label': 'Куда доступ' }, [
     el('option', { value: '' }, 'Двор и паркинг'),
