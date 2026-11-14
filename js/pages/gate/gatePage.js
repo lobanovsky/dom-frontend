@@ -265,7 +265,7 @@ export async function gatePage(container) {
           el(
             'p',
             {},
-            `${formatDateTime(e.created_at)} · ${{ submitted: 'Заявка подана', approved: 'Одобрено', rejected: 'Отклонено', revoked: 'Отозвано', cancelled: 'Отменено', updated: 'Данные заявки изменены' }[e.action] || e.action} · ${e.actor_role === 'resident' ? 'Собственник' : e.actor_role === 'guard' ? 'Охрана' : 'Администратор'}${e.note ? `: ${e.note}` : ''}`,
+            `${formatDateTime(e.created_at)} · ${{ submitted: 'Заявка подана', created: 'Доступ добавлен администратором', approved: 'Одобрено', rejected: 'Отклонено', revoked: 'Отозвано', cancelled: 'Отменено', updated: 'Данные заявки изменены' }[e.action] || e.action} · ${e.actor_role === 'resident' ? 'Собственник' : e.actor_role === 'guard' ? 'Охрана' : 'Администратор'}${e.note ? `: ${e.note}` : ''}`,
           ),
         ),
       );

@@ -98,6 +98,7 @@ export async function gateAccessViewPage(container) {
     detail.replaceChildren(
       el('h2',{},`${objectType(p.kind)} ${p.number}`),
       el('p',{class:'muted'},`Этаж ${p.floor ?? 'не указан'} · ${entries.length} ${entries.length===1?'доступ':entries.length>1&&entries.length<5?'доступа':'доступов'}`),
+      el('button',{type:'button',class:'btn btn-primary',onclick:()=>createAccess(p)},'Добавить доступ'),
       renderTable({columns:[
         {key:'recipient_name',label:'Кому',primary:true},
         {key:'relation',label:'Тип',render:(r)=>GATE_RELATIONS[r.relation]||'—'},
@@ -105,8 +106,64 @@ export async function gateAccessViewPage(container) {
         {key:'vehicle',label:'Автомобиль',render:(r)=>gateVehicles(r).map(gateVehicleLabel).join(', ')||'—'},
         {key:'zone',label:'Зона',render:gateZoneLabel},
         {key:'valid_until',label:'Действует до',render:(r)=>r.valid_until||'Без срока'},
-      ],rows:entries,rowActions:(r)=>el('button',{type:'button',class:'btn btn-sm',onclick:()=>editAccess(r,p)},'Изменить'),emptyMessage:'У этого объекта нет действующих доступов'}),
+      ],rows:entries,rowActions:(r)=>[
+        el('button',{type:'button',class:'btn btn-sm',onclick:()=>editAccess(r,p)},'Изменить'),
+        el('button',{type:'button',class:'btn btn-sm btn-danger',onclick:()=>closeAccess(r,p)},'Закрыть'),
+      ],emptyMessage:'У этого объекта нет действующих доступов'}),
     );
+  }
+
+  function createAccess(premise) {
+    const name=el('input',{required:true,maxlength:120});
+    const phone=el('input',{required:true,type:'tel',maxlength:24,placeholder:'+7 900 000 00 00'});
+    const relation=el('select',{},Object.entries(GATE_RELATIONS).filter(([value])=>value!=='service').map(([value,label])=>el('option',{value,selected:value==='guest'},label)));
+    const validUntil=el('input',{type:'date'});
+    const noCar=el('input',{type:'checkbox'});
+    const cars=el('div',{class:'gate-edit-cars'});
+    const rows=[];
+    const sync=()=>rows.forEach((car)=>{car.plate.disabled=noCar.checked;car.brand.disabled=noCar.checked;car.remove.disabled=noCar.checked;});
+    const addCar=(vehicle={})=>{
+      const plate=el('input',{maxlength:24,placeholder:'Номер автомобиля',value:vehicle.plate_number||''});
+      const brand=el('input',{maxlength:80,placeholder:'Марка автомобиля',value:vehicle.brand||''});
+      let line;
+      const remove=el('button',{type:'button',class:'btn btn-sm',onclick:()=>{rows.splice(rows.indexOf(car),1);line.remove();sync();}},'Удалить');
+      const car={plate,brand,remove};line=el('div',{class:'gate-edit-car'},[plate,brand,remove]);rows.push(car);cars.append(line);sync();
+    };
+    addCar();noCar.addEventListener('change',sync);
+    const message=el('p',{role:'alert',class:'form-error'});
+    const save=el('button',{type:'submit',class:'btn btn-primary'},'Добавить доступ');
+    let modal;
+    const form=el('form',{class:'form',onsubmit:async(event)=>{
+      event.preventDefault();if(!form.reportValidity())return;save.disabled=true;
+      try{
+        await gateApi.create({premises_id:premise.id,zone:premise.kind==='parking_space'?'parking':'courtyard',phone:phone.value.trim(),recipient_name:name.value.trim(),relation:relation.value,valid_until:validUntil.value||null,no_personal_vehicle:noCar.checked,vehicles:noCar.checked?[]:rows.map(({plate,brand})=>({plate_number:plate.value.trim(),brand:brand.value.trim()})).filter((car)=>car.plate_number||car.brand)});
+        modal.close();await loadActiveAccesses();selectPremises(premise);
+      }catch(error){message.textContent=describeApiError(error).message;}finally{save.disabled=false;}
+    }},[
+      el('p',{class:'muted'},`${objectType(premise.kind)} ${premise.number}. Доступ будет активен сразу.`),
+      el('label',{class:'field'},['Имя',name]),el('label',{class:'field'},['Телефон',phone]),
+      el('label',{class:'field'},['Кто будет пользоваться',relation]),el('label',{class:'field'},['Действует до (необязательно)',validUntil]),
+      el('fieldset',{class:'field'},[el('legend',{},'Автомобили'),cars,el('button',{type:'button',class:'btn btn-sm',onclick:()=>addCar()},'Добавить автомобиль'),el('label',{},[noCar,' Нет личного автомобиля'])]),message,save,
+    ]);
+    modal=openModal({title:'Добавить доступ без заявки',content:form,wide:true});
+  }
+
+  function closeAccess(row,premise) {
+    const reason=el('textarea',{required:true,maxlength:500,rows:3,'aria-label':'Причина закрытия доступа'});
+    const message=el('p',{role:'alert',class:'form-error'});
+    const submit=el('button',{type:'submit',class:'btn btn-danger'},'Закрыть доступ');
+    let modal;
+    const form=el('form',{class:'form',onsubmit:async(event)=>{
+      event.preventDefault();if(!form.reportValidity())return;submit.disabled=true;
+      try{
+        await gateApi.decision(row.id,{action:'revoke',note:reason.value.trim()});
+        modal.close();await loadActiveAccesses();selectPremises(premise);
+      }catch(error){message.textContent=describeApiError(error).message;}finally{submit.disabled=false;}
+    }},[
+      el('p',{},`Закрыть доступ для ${row.recipient_name} (${formatPhone(row.phone)})?`),
+      el('label',{class:'field'},['Причина',reason]),message,submit,
+    ]);
+    modal=openModal({title:'Закрыть доступ',content:form});
   }
 
   function editAccess(row, premise) {
