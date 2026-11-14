@@ -6,6 +6,7 @@ import { openModal } from '../../ui/modal.js';
 import { isAdmin } from '../../lib/permissions.js';
 import { renderTable } from '../../ui/table.js';
 import { copyPhoneCell } from '../../ui/copyPhone.js';
+import { toast } from '../../ui/toast.js';
 import {
   GATE_STATUSES,
   GATE_ZONES,
@@ -170,11 +171,16 @@ export async function gatePage(container) {
   async function detail(r) {
     const history = el('div', {}, 'Загрузка истории…');
     const actions = [];
+    let detailModal;
     if (r.status === 'pending') {
-      if (r.effective_status === 'pending')
-        actions.push(
-          el('button', { class: 'btn btn-primary', type: 'button', onclick: () => decide(r, 'approve') }, 'Одобрить'),
-        );
+      if (r.effective_status === 'pending') {
+        const approveButton = el('button', {
+          class: 'btn btn-primary',
+          type: 'button',
+          onclick: () => approve(r, detailModal, approveButton),
+        }, 'Одобрить');
+        actions.push(approveButton);
+      }
       actions.push(el('button', { class: 'btn', type: 'button', onclick: () => decide(r, 'reject') }, 'Отклонить'));
     }
     if (r.status === 'approved')
@@ -194,7 +200,7 @@ export async function gatePage(container) {
     const section = (title, children) =>
       el('section', { class: 'gate-detail-section' }, [el('h3', {}, title), ...children]);
     const addresses = [...new Set(r.items.map((item) => item.address).filter(Boolean))];
-    openModal({
+    detailModal = openModal({
       title: `Заявка № ${r.id}`,
       wide: true,
       content: el('div', { class: 'gate-detail' }, [
@@ -272,6 +278,18 @@ export async function gatePage(container) {
       );
     } catch (e) {
       history.textContent = describeApiError(e).message;
+    }
+  }
+  async function approve(r, modal, button) {
+    button.disabled = true;
+    try {
+      await gateApi.decision(r.id, { action: 'approve', note: '' });
+      modal.close();
+      await load();
+    } catch (err) {
+      toast.error(describeApiError(err).message);
+    } finally {
+      button.disabled = false;
     }
   }
   function edit(r) {
