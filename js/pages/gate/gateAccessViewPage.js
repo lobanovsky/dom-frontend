@@ -4,7 +4,8 @@ import { formatPhone } from '../../lib/format.js';
 import { describeApiError } from '../../lib/apiErrors.js';
 import { renderTable } from '../../ui/table.js';
 import { saveFile } from '../../ui/saveFile.js';
-import { gateVehicles, gateVehicleLabel, gateZoneLabel, groupGateRequests } from '../../lib/gate.js';
+import { gateVehicles, gateVehicleLabel, gateZoneLabel, groupGateRequests, GATE_RELATIONS } from '../../lib/gate.js';
+import { openModal } from '../../ui/modal.js';
 
 const kinds = [['apartment','Квартиры'],['parking_space','Машиноместа'],['commercial','Коммерческие помещения']];
 const csvCell = (v) => `"${String(v ?? '').replaceAll('"','""')}"`;
@@ -80,7 +81,7 @@ export async function gateAccessViewPage(container) {
     const floorOrder=(a,b)=>a==='unknown'?1:b==='unknown'?-1:type.value==='parking_space'?parkingLevel(b)-parkingLevel(a):Number(b)-Number(a);
     const groups=[...floors].sort(([a],[b])=>floorOrder(a,b));
     grid.replaceChildren(...groups.map(([floor,items])=>el('section',{class:'gate-floor'},[
-          el('h2',{},floor==='unknown'?'Этаж не указан':type.value==='parking_space'?`Этаж ${parkingLevel(floor)}`:`Этаж ${floor}`),
+          el('h2',{},floor==='unknown'?'—':type.value==='parking_space'?parkingLevel(floor):floor),
       el('div',{class:'gate-floor-cells'},items.map((p)=>{
         const count=activeByPremises.get(p.id)?.length||0;
         return el('button',{type:'button',class:`gate-property-tile${count?' has-access':''}${selected?.id===p.id?' is-selected':''}`,'aria-pressed':String(selected?.id===p.id),'aria-label':`${objectType(p.kind)} ${p.number}${count?`, действующих доступов: ${count}`:', доступов нет'}`,onclick:()=>selectPremises(p)},[
@@ -99,12 +100,50 @@ export async function gateAccessViewPage(container) {
       el('p',{class:'muted'},`Этаж ${p.floor ?? 'не указан'} · ${entries.length} ${entries.length===1?'доступ':entries.length>1&&entries.length<5?'доступа':'доступов'}`),
       renderTable({columns:[
         {key:'recipient_name',label:'Кому',primary:true},
+        {key:'relation',label:'Тип',render:(r)=>GATE_RELATIONS[r.relation]||'—'},
         {key:'phone',label:'Телефон',render:(r)=>formatPhone(r.phone)},
         {key:'vehicle',label:'Автомобиль',render:(r)=>gateVehicles(r).map(gateVehicleLabel).join(', ')||'—'},
         {key:'zone',label:'Зона',render:gateZoneLabel},
         {key:'valid_until',label:'Действует до',render:(r)=>r.valid_until||'Без срока'},
-      ],rows:entries,emptyMessage:'У этого объекта нет действующих доступов'}),
+      ],rows:entries,rowActions:(r)=>el('button',{type:'button',class:'btn btn-sm',onclick:()=>editAccess(r,p)},'Изменить'),emptyMessage:'У этого объекта нет действующих доступов'}),
     );
+  }
+
+  function editAccess(row, premise) {
+    const name=el('input',{required:true,maxlength:120,value:row.recipient_name});
+    const relation=el('select',{},Object.entries(GATE_RELATIONS).filter(([value])=>value!=='service').map(([value,label])=>el('option',{value,selected:row.relation===value||(row.relation==='service'&&value==='guest')},label)));
+    const noCar=el('input',{type:'checkbox',checked:!!row.no_personal_vehicle});
+    const cars=el('div',{class:'gate-edit-cars'});
+    const rows=[];
+    const sync=()=>rows.forEach((car)=>{car.plate.disabled=noCar.checked;car.brand.disabled=noCar.checked;car.remove.disabled=noCar.checked;});
+    const addCar=(vehicle={})=>{
+      const plate=el('input',{maxlength:24,placeholder:'Номер автомобиля',value:vehicle.plate_number||''});
+      const brand=el('input',{maxlength:80,placeholder:'Марка автомобиля',value:vehicle.brand||''});
+      let line;
+      const remove=el('button',{type:'button',class:'btn btn-sm',onclick:()=>{rows.splice(rows.indexOf(car),1);line.remove();sync();}},'Удалить');
+      const car={plate,brand,remove};
+      line=el('div',{class:'gate-edit-car'},[plate,brand,remove]);
+      rows.push(car);cars.append(line);sync();
+    };
+    for(const car of gateVehicles(row))addCar(car);
+    if(!rows.length)addCar();
+    noCar.addEventListener('change',sync);
+    const message=el('p',{role:'alert',class:'form-error'});
+    const save=el('button',{type:'submit',class:'btn btn-primary'},'Сохранить');
+    let modal;
+    const form=el('form',{class:'form',onsubmit:async(event)=>{
+      event.preventDefault();if(!form.reportValidity())return;save.disabled=true;
+      try{
+        await gateApi.update(row.id,{recipient_name:name.value.trim(),relation:relation.value,no_personal_vehicle:noCar.checked,vehicles:noCar.checked?[]:rows.map(({plate,brand})=>({plate_number:plate.value.trim(),brand:brand.value.trim()})).filter((car)=>car.plate_number||car.brand)});
+        modal.close();await loadActiveAccesses();selectPremises(premise);
+      }catch(error){message.textContent=describeApiError(error).message;}finally{save.disabled=false;}
+    }},[
+      el('label',{class:'field'},['Имя',name]),
+      el('label',{class:'field'},['Кто будет пользоваться',relation]),
+      el('fieldset',{class:'field'},[el('legend',{},'Автомобили'),cars,el('button',{type:'button',class:'btn btn-sm',onclick:()=>addCar()},'Добавить автомобиль'),el('label',{},[noCar,' Нет личного автомобиля'])]),
+      message,save,
+    ]);
+    modal=openModal({title:`Доступ · ${objectType(premise.kind)} ${premise.number}`,content:form,wide:true});
   }
 
   async function exportAll() {
@@ -131,10 +170,10 @@ export async function gateAccessViewPage(container) {
           offset+=200;
         }
       }
-      const rows=[['Тип объекта','Номер помещения','Дом','Этаж','Зона','Кому','Телефон','Автомобиль','Действует до']];
+      const rows=[['Тип объекта','Номер помещения','Дом','Этаж','Зона','Кому','Тип пользователя','Телефон','Автомобиль','Действует до']];
       for(const r of grouped) {
         const cars=gateVehicles(r);
-        for(const car of cars.length?cars:[null]) rows.push([objectType(r.premises_kind),r.premises_number,r.address,premiseByID.get(r.premises_id)?.floor??'',gateZoneLabel(r),r.recipient_name,formatPhone(r.phone),car?gateVehicleLabel(car):'',r.valid_until||'Без срока']);
+        for(const car of cars.length?cars:[null]) rows.push([objectType(r.premises_kind),r.premises_number,r.address,premiseByID.get(r.premises_id)?.floor??'',gateZoneLabel(r),r.recipient_name,GATE_RELATIONS[r.relation]||'',formatPhone(r.phone),car?gateVehicleLabel(car):'',r.valid_until||'Без срока']);
       }
       const csv='\ufeff'+rows.map((r)=>r.map(csvCell).join(';')).join('\r\n');
       saveFile({blob:new Blob([csv],{type:'text/csv;charset=utf-8'}),fileName:'доступы-по-объектам.csv'});
