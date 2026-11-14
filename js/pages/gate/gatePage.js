@@ -3,6 +3,7 @@ import { el } from '../../lib/dom.js';
 import { formatPhone, formatDate, formatDateTime } from '../../lib/format.js';
 import { describeApiError } from '../../lib/apiErrors.js';
 import { openModal } from '../../ui/modal.js';
+import { isAdmin } from '../../lib/permissions.js';
 import { renderTable } from '../../ui/table.js';
 import {
   GATE_STATUSES,
@@ -179,6 +180,8 @@ export async function gatePage(container) {
       actions.push(
         el('button', { class: 'btn', type: 'button', onclick: () => decide(r, 'revoke') }, 'Отозвать доступ'),
       );
+    if (isAdmin() && ['pending', 'approved'].includes(r.display_status))
+      actions.push(el('button', { class: 'btn', type: 'button', onclick: () => edit(r) }, 'Редактировать данные'));
     const facts = (entries) =>
       el(
         'dl',
@@ -262,13 +265,46 @@ export async function gatePage(container) {
           el(
             'p',
             {},
-            `${formatDateTime(e.created_at)} · ${{ submitted: 'Заявка подана', approved: 'Одобрено', rejected: 'Отклонено', revoked: 'Отозвано', cancelled: 'Отменено' }[e.action]} · ${e.actor_role === 'resident' ? 'Собственник' : e.actor_role === 'guard' ? 'Охрана' : 'Администратор'}${e.note ? `: ${e.note}` : ''}`,
+            `${formatDateTime(e.created_at)} · ${{ submitted: 'Заявка подана', approved: 'Одобрено', rejected: 'Отклонено', revoked: 'Отозвано', cancelled: 'Отменено', updated: 'Данные заявки изменены' }[e.action] || e.action} · ${e.actor_role === 'resident' ? 'Собственник' : e.actor_role === 'guard' ? 'Охрана' : 'Администратор'}${e.note ? `: ${e.note}` : ''}`,
           ),
         ),
       );
     } catch (e) {
       history.textContent = describeApiError(e).message;
     }
+  }
+  function edit(r) {
+    const name = el('input', { class: 'input', required: true, maxlength: 120, value: r.recipient_name });
+    const relation = el('select', { class: 'input' }, Object.entries(GATE_RELATIONS).map(([value, label]) => el('option', { value, selected: r.relation === value || (r.relation === 'service' && value === 'guest') }, label)));
+    const noCar = el('input', { type: 'checkbox', checked: r.no_personal_vehicle });
+    const cars = el('div', { class: 'gate-car-rows' });
+    const rows = [];
+    const refreshCars = () => rows.forEach((row) => { row.plate.disabled = noCar.checked; row.brand.disabled = noCar.checked; });
+    const addCar = (car = {}) => {
+      const plate = el('input', { class: 'input', maxlength: 24, placeholder: 'Номер автомобиля', value: car.plate_number || '' });
+      const brand = el('input', { class: 'input', maxlength: 80, placeholder: 'Марка автомобиля', value: car.brand || '' });
+      const row = { plate, brand };
+      rows.push(row);
+      cars.append(el('div', { class: 'gate-vehicle-detail' }, [plate, brand]));
+      refreshCars();
+    };
+    for (const car of gateVehicles(r)) addCar(car);
+    if (!rows.length) addCar();
+    noCar.addEventListener('change', refreshCars);
+    const message = el('p', { role: 'alert', class: 'form-error' });
+    const submit = el('button', { class: 'btn btn-primary', type: 'submit' }, 'Сохранить');
+    const form = el('form', { class: 'form', onsubmit: async (event) => {
+      event.preventDefault();
+      if (!form.reportValidity()) return;
+      submit.disabled = true;
+      try {
+        await gateApi.update(r.id, { recipient_name: name.value.trim(), relation: relation.value, no_personal_vehicle: noCar.checked, vehicles: noCar.checked ? [] : rows.map(({ plate, brand }) => ({ plate_number: plate.value.trim(), brand: brand.value.trim() })).filter((car) => car.plate_number || car.brand) });
+        modal.close();
+        await load();
+      } catch (error) { message.textContent = describeApiError(error).message; }
+      finally { submit.disabled = false; }
+    } }, [el('label', { class: 'field' }, ['Имя', name]), el('label', { class: 'field' }, ['Кто пользуется', relation]), el('fieldset', { class: 'field' }, [el('legend', {}, 'Автомобили'), cars, el('button', { type: 'button', class: 'btn', onclick: () => addCar() }, 'Добавить автомобиль'), el('label', {}, [noCar, ' Нет личного автомобиля'])]), message, submit]);
+    const modal = openModal({ title: 'Редактировать данные заявки', content: form });
   }
   function decide(r, action) {
     const label = { approve: 'Одобрить', reject: 'Отклонить', revoke: 'Отозвать доступ' }[action];

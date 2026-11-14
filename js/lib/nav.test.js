@@ -24,6 +24,8 @@ test('active item and group by path', () => {
   assert.equal(isActive('/', '/persons'), false);
   assert.equal(isActive('/payment-registries', '/payment-registries/7'), true);
   assert.equal(isActive('/payment-registries', '/payment-rules'), false);
+  assert.equal(isActive('/gate-access', '/gate-access/view'), false);
+  assert.equal(isActive('/gate-access/view', '/gate-access/view'), true);
   assert.equal(isActive('/buildings', '/premises/5'), true);
   assert.equal(groupIsActive(finance, '/bank-statements/3'), true);
   assert.equal(groupIsActive(finance, '/bank-accounts'), false);

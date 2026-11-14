@@ -24,7 +24,7 @@ export async function gateAccessViewPage(container) {
   const download = el('button',{class:'btn',type:'button',onclick:exportAll},'Скачать список доступов (CSV)');
   const note = el('p',{class:'field-help'},'Зелёная ячейка означает, что у объекта есть действующий доступ. Коммерческие помещения дают доступ во двор.');
   container.replaceChildren(el('div',{class:'page'},[
-    el('h1',{},'Просмотр доступов'), note,
+    el('h1',{},'Доступы'), note,
     el('div',{class:'gate-filters gate-access-filters'},[type,building,download]),
     el('div',{class:'gate-access-layout'},[grid,detail]),
   ]));

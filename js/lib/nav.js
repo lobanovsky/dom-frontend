@@ -8,7 +8,7 @@ export const NAV = [
   { href: '/legal-entities', label: 'Юрлица', icon: '<rect x="3" y="7" width="18" height="14" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 13h18"/>' },
   { group: 'Двор и паркинг', gateOnly: true, icon: '<path d="M3 21V5h18v16M7 21V9h10v12M12 9v12"/>', items: [
     { href:'/gate-access', label:'Заявки', icon:'<path d="M4 4h16v16H4zM8 9h8M8 13h8M8 17h5"/>' },
-    { href:'/gate-access/view', adminOnly:true, label:'Просмотр доступов', icon:'<circle cx="10" cy="10" r="6"/><path d="m15 15 6 6M10 7v6M7 10h6"/>' },
+    { href:'/gate-access/view', adminOnly:true, label:'Доступы', icon:'<circle cx="10" cy="10" r="6"/><path d="m15 15 6 6M10 7v6M7 10h6"/>' },
   ] },
   { href: '/meters', label: 'Счётчики', icon: '<circle cx="12" cy="12" r="9"/><path d="M12 12l4-4M7 12h1M12 7v1M17 12h-1"/>' },
   {
@@ -57,6 +57,7 @@ export function navFor(role) {
 // Пункт активен для адреса path. Карточка помещения — часть раздела «Дома».
 export function isActive(href, path) {
   const section = path.startsWith('/premises/') ? '/buildings' : path;
+  if (href === '/gate-access') return section === href;
   return href === '/' ? section === '/' : section === href || section.startsWith(`${href}/`);
 }
 
