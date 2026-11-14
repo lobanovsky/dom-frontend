@@ -1,6 +1,6 @@
 import { buildingsApi, gateApi, premisesApi } from '../../api/resources.js';
 import { el } from '../../lib/dom.js';
-import { formatPhone } from '../../lib/format.js';
+import { formatPhone, isActiveOn, todayIso } from '../../lib/format.js';
 import { describeApiError } from '../../lib/apiErrors.js';
 import { renderTable } from '../../ui/table.js';
 import { saveFile } from '../../ui/saveFile.js';
@@ -17,6 +17,8 @@ export async function gateAccessViewPage(container) {
   let buildings = [];
   let premises = [];
   let activeByPremises = new Map();
+  const ownersByPremises = new Map();
+  const today = todayIso();
   let selected = null;
   const type = el('select', { 'aria-label':'Тип объекта' }, kinds.map(([value,label]) => el('option',{value},label)));
   const building = el('select', { 'aria-label':'Дом' }, [el('option',{value:''},'Загрузка домов…')]);
@@ -97,9 +99,11 @@ export async function gateAccessViewPage(container) {
     selected=p;
     renderGrid();
     const entries=activeByPremises.get(p.id)||[];
+    const ownerLine=el('p',{class:'muted'},'Собственник: загружается…');
     detail.replaceChildren(
       el('h2',{},`${objectType(p.kind)} ${p.number}`),
       el('p',{class:'muted'},`Этаж ${p.floor ?? 'не указан'} · ${entries.length} ${entries.length===1?'доступ':entries.length>1&&entries.length<5?'доступа':'доступов'}`),
+      ownerLine,
       el('button',{type:'button',class:'btn btn-primary',onclick:()=>createAccess(p)},'Добавить доступ'),
       renderTable({columns:[
         {key:'recipient_name',label:'Кому',primary:true},
@@ -113,6 +117,23 @@ export async function gateAccessViewPage(container) {
         el('button',{type:'button',class:'btn btn-sm btn-danger',onclick:()=>closeAccess(r,p)},'Закрыть'),
       ],emptyMessage:'У этого объекта нет действующих доступов'}),
     );
+    loadOwners(p,ownerLine);
+  }
+
+  async function loadOwners(p,line) {
+    try {
+      if(!ownersByPremises.has(p.id)) {
+        ownersByPremises.set(p.id,premisesApi.ownerships(p.id).then(({items=[]})=>items
+          .filter((owner)=>isActiveOn(owner.valid_from,owner.valid_to,today))
+          .map((owner)=>owner.owner_name).filter(Boolean)));
+      }
+      const owners=await ownersByPremises.get(p.id);
+      if(selected?.id!==p.id||!line.isConnected)return;
+      line.textContent=`Собственник: ${owners.length?owners.join(', '):'не указан'}`;
+    } catch {
+      ownersByPremises.delete(p.id);
+      if(selected?.id===p.id&&line.isConnected)line.textContent='Собственник: не удалось загрузить';
+    }
   }
 
   function createAccess(premise) {
