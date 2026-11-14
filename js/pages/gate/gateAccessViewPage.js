@@ -4,7 +4,7 @@ import { formatPhone } from '../../lib/format.js';
 import { describeApiError } from '../../lib/apiErrors.js';
 import { renderTable } from '../../ui/table.js';
 import { saveFile } from '../../ui/saveFile.js';
-import { gateVehicles, gateVehicleLabel, gateZoneLabel, groupGateRequests, GATE_RELATIONS } from '../../lib/gate.js';
+import { bindGatePhoneInput, gateVehicles, gateVehicleLabel, gateZoneLabel, groupGateRequests, GATE_RELATIONS } from '../../lib/gate.js';
 import { openModal } from '../../ui/modal.js';
 
 const kinds = [['apartment','Квартиры'],['parking_space','Машиноместа'],['commercial','Коммерческие помещения']];
@@ -115,7 +115,8 @@ export async function gateAccessViewPage(container) {
 
   function createAccess(premise) {
     const name=el('input',{required:true,maxlength:120});
-    const phone=el('input',{required:true,type:'tel',maxlength:24,placeholder:'+7 900 000 00 00'});
+    const phone=el('input',{required:true,type:'tel',inputmode:'numeric',autocomplete:'tel',maxlength:16,pattern:'\\+7 [0-9]{3} [0-9]{3} [0-9]{2} [0-9]{2}',placeholder:'+7 900 000 00 00'});
+    bindGatePhoneInput(phone);
     const relation=el('select',{},Object.entries(GATE_RELATIONS).filter(([value])=>value!=='service').map(([value,label])=>el('option',{value,selected:value==='guest'},label)));
     const validUntil=el('input',{type:'date'});
     const noCar=el('input',{type:'checkbox'});

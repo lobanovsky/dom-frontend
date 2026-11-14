@@ -18,6 +18,33 @@ export const gatePropertyLabel = (r) =>
 export const gateZoneLabel = (r) => [...new Set((r.items || [r]).map((item) => GATE_ZONES[item.zone]))].join(', ');
 export const gateStatusLabel = (value) => GATE_STATUSES[value];
 
+export function formatGatePhoneInput(value) {
+  const source = String(value || '').trim();
+  let digits = String(value || '').replace(/\D/g, '');
+  if (source.startsWith('+7') || (digits.length === 11 && /^[78]/.test(digits))) digits = digits.slice(1);
+  digits = digits.slice(0, 10);
+  return ['+7', digits.slice(0, 3), digits.slice(3, 6), digits.slice(6, 8), digits.slice(8, 10)].filter(Boolean).join(' ');
+}
+
+export function bindGatePhoneInput(input) {
+  input.value = formatGatePhoneInput(input.value);
+  input.setSelectionRange(input.value.length, input.value.length);
+  input.addEventListener('input', () => {
+    const before = input.value;
+    const position = input.selectionStart ?? before.length;
+    const digitsBefore = before.slice(0, position).replace(/\D/g, '').length;
+    input.value = formatGatePhoneInput(before);
+    let cursor = 0;
+    let digits = 0;
+    while (cursor < input.value.length && digits < digitsBefore) {
+      if (/\d/.test(input.value[cursor])) digits++;
+      cursor++;
+    }
+    cursor = Math.max(2, cursor);
+    input.setSelectionRange(cursor, cursor);
+  });
+}
+
 export function groupGateRequests(rows) {
   const groups = new Map();
   for (const row of rows) {
