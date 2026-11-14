@@ -1,5 +1,6 @@
 import { buildingsApi, gateApi, premisesApi } from '../../api/resources.js';
 import { el } from '../../lib/dom.js';
+import { copyPhoneCell } from '../../ui/copyPhone.js';
 import { formatPhone, isActiveOn, todayIso } from '../../lib/format.js';
 import { describeApiError } from '../../lib/apiErrors.js';
 import { renderTable } from '../../ui/table.js';
@@ -108,7 +109,7 @@ export async function gateAccessViewPage(container) {
       renderTable({columns:[
         {key:'recipient_name',label:'Кому',primary:true},
         {key:'relation',label:'Тип',render:(r)=>GATE_RELATIONS[r.relation]||'—'},
-        {key:'phone',label:'Телефон',render:(r)=>formatPhone(r.phone)},
+        {key:'phone',label:'Телефон',render:(r)=>copyPhoneCell(r.phone,formatPhone)},
         {key:'vehicle',label:'Автомобиль',render:(r)=>gateVehicles(r).map(gateVehicleLabel).join(', ')||'—'},
         {key:'zone',label:'Зона',render:gateZoneLabel},
         {key:'valid_until',label:'Действует до',render:(r)=>r.valid_until||'Без срока'},

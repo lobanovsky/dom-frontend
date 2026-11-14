@@ -5,6 +5,7 @@ import { describeApiError } from '../../lib/apiErrors.js';
 import { openModal } from '../../ui/modal.js';
 import { isAdmin } from '../../lib/permissions.js';
 import { renderTable } from '../../ui/table.js';
+import { copyPhoneCell } from '../../ui/copyPhone.js';
 import {
   GATE_STATUSES,
   GATE_ZONES,
@@ -127,7 +128,7 @@ export async function gatePage(container) {
                   el('p', { class: 'muted' }, GATE_RELATIONS[r.relation]),
                 ]),
             },
-            { key: 'phone', label: 'Телефон', render: (r) => formatPhone(r.phone) },
+            { key: 'phone', label: 'Телефон', render: (r) => copyPhoneCell(r.phone, formatPhone) },
             { key: 'zone', label: 'Куда', render: (r) => gateZoneLabel(r) },
             {
               key: 'premises_number',

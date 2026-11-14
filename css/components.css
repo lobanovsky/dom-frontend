@@ -1503,6 +1503,10 @@ a.account-link:hover { text-decoration: underline; }
 .gate-detail-facts dt { color: var(--color-text-muted); }
 .gate-detail-facts dd { margin: 0; min-width: 0; }
 .gate-detail-phone { font-weight: 600; text-decoration: none; }
+.gate-phone-cell { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.gate-copy-phone { display: inline-grid; place-items: center; min-width: 28px; min-height: 28px; padding: 4px; border: 0; border-radius: 6px; color: var(--color-text-muted); background: transparent; cursor: pointer; }
+.gate-copy-phone:hover, .gate-copy-phone:focus-visible { color: var(--color-accent); background: var(--color-bg); }
+.gate-copy-phone:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 1px; }
 .gate-object-list { list-style: none; display: grid; gap: 12px; margin: 0; padding: 0; }
 .gate-object-list li { display: grid; gap: 4px; }
 .gate-object-list small { color: var(--color-danger); }
