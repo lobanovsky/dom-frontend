@@ -1502,6 +1502,10 @@ a.account-link:hover { text-decoration: underline; }
 .gate-detail-facts { display: grid; grid-template-columns: minmax(80px, auto) minmax(0, 1fr); gap: 8px 12px; margin: 0; font-size: .9rem; }
 .gate-detail-facts dt { color: var(--color-text-muted); }
 .gate-detail-facts dd { margin: 0; min-width: 0; }
+.gate-decision-summary { display: grid; gap: 10px; margin: 0; }
+.gate-decision-summary > div { display: grid; gap: 2px; }
+.gate-decision-summary dt { color: var(--color-text-muted); font-size: .8rem; }
+.gate-decision-summary dd { margin: 0; }
 .gate-detail-phone { font-weight: 600; text-decoration: none; }
 .gate-phone-cell { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
 .gate-copy-phone { display: inline-grid; place-items: center; min-width: 28px; min-height: 28px; padding: 4px; border: 0; border-radius: 6px; color: var(--color-text-muted); background: transparent; cursor: pointer; }

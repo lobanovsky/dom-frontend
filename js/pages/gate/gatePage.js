@@ -120,6 +120,7 @@ export async function gatePage(container) {
       host.replaceChildren(
         renderTable({
           columns: [
+            { key: 'id', label: '№ заявки', render: (r) => `№ ${r.id}` },
             {
               key: 'recipient_name',
               label: 'Кому',
@@ -158,11 +159,11 @@ export async function gatePage(container) {
           emptyMessage: 'Заявок с такими условиями нет',
           rowActions: (r) => [
             el('button', { class: 'btn btn-sm', type: 'button', onclick: () => detail(r) }, 'Открыть'),
-            ...(isAdmin() && r.status === 'rejected'
+            ...(isAdmin() && r.display_status === 'rejected'
               ? [el('button', {
                   class: 'btn btn-ghost btn-sm btn-danger-text',
                   type: 'button',
-                  title: 'Удалить отклонённую заявку',
+                  title: 'Удалить заявку со статусом «Отклонено»',
                   onclick: () => removeRejected(r),
                 }, 'Удалить')]
               : []),
@@ -291,7 +292,7 @@ export async function gatePage(container) {
   }
   async function removeRejected(r) {
     const confirmed = await confirmDialog({
-      title: 'Удалить отклонённую заявку',
+      title: 'Удалить заявку со статусом «Отклонено»',
       message: `Удалить заявку № ${r.id} вместе со всеми объектами группы и её историей? Восстановить её будет нельзя.`,
       confirmLabel: 'Удалить',
       danger: true,
@@ -299,7 +300,7 @@ export async function gatePage(container) {
     if (!confirmed) return;
     try {
       await gateApi.remove(r.id);
-      toast.success('Отклонённая заявка удалена.');
+      toast.success('Заявка удалена.');
       if (pageItemCount === 1 && offset > 0) offset = Math.max(0, offset - 50);
       await load();
     } catch (e) {
@@ -353,9 +354,15 @@ export async function gatePage(container) {
   }
   function decide(r, action) {
     const label = { approve: 'Одобрить', reject: 'Отклонить', revoke: 'Отозвать доступ' }[action];
+    const requestSummary = el('dl', { class: 'gate-decision-summary' }, [
+      el('div', {}, [el('dt', {}, 'ФИО'), el('dd', {}, r.recipient_name)]),
+      el('div', {}, [el('dt', {}, 'Телефон'), el('dd', {}, formatPhone(r.phone))]),
+      el('div', {}, [el('dt', {}, 'Зона'), el('dd', {}, gateZoneLabel(r))]),
+      ...r.items.map((item) => el('div', {}, [el('dt', {}, 'Помещение'), el('dd', {}, gatePropertyLabel(item))])),
+    ]);
     const note = el('textarea', {
       maxlength: 500,
-      required: action === 'revoke',
+      required: false,
       rows: 3,
       'aria-label': action === 'approve' ? 'Комментарий к решению' : action === 'reject' ? 'Причина отказа' : 'Причина отзыва',
     });
@@ -381,13 +388,13 @@ export async function gatePage(container) {
         },
       },
       [
-        el('p', {}, `${r.recipient_name} · ${formatPhone(r.phone)} · ${gateZoneLabel(r)} · ${gatePropertyLabel(r)}`),
+        requestSummary,
         el('label', { class: 'field' }, [
           action === 'approve'
             ? 'Комментарий (необязательно)'
             : action === 'reject'
               ? 'Причина отказа (необязательно)'
-              : 'Причина отзыва (обязательно)',
+              : 'Причина отзыва (необязательно)',
           note,
         ]),
         message,
