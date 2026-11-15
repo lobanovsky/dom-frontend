@@ -8,6 +8,7 @@ import { renderTable } from '../../ui/table.js';
 import { confirmDialog } from '../../ui/confirmDialog.js';
 import { copyPhoneCell } from '../../ui/copyPhone.js';
 import { toast } from '../../ui/toast.js';
+import { PAGE_SIZES, loadPageSize, savePageSize } from '../../lib/pageSize.js';
 import {
   GATE_STATUSES,
   GATE_ZONES,
@@ -32,7 +33,8 @@ const badge = (r) =>
 export async function gatePage(container) {
   let offset = 0,
     version = 0,
-    pageItemCount = 0;
+    pageItemCount = 0,
+    pageSize = loadPageSize();
   const recipient = el('input', { type:'search', placeholder:'Кому', 'aria-label':'Кому', maxlength:120 });
   const phone = el('input', { type:'search', placeholder:'Телефон', 'aria-label':'Телефон', maxlength:32 });
   const vehicle = el('input', { type:'search', placeholder:'Авто', 'aria-label':'Авто', maxlength:80 });
@@ -52,7 +54,7 @@ export async function gatePage(container) {
       class: 'btn',
       type: 'button',
       onclick: () => {
-        offset = Math.max(0, offset - 50);
+        offset = Math.max(0, offset - pageSize);
         load();
       },
     },
@@ -64,13 +66,22 @@ export async function gatePage(container) {
       class: 'btn',
       type: 'button',
       onclick: () => {
-        offset += 50;
+        offset += pageSize;
         load();
       },
     },
-    'Далее →',
+    'Вперёд →',
   );
-  const page = el('span', { class: 'muted', 'aria-live': 'polite' });
+  const page = el('span', { class: 'pager-info', 'aria-live': 'polite' });
+  const sizeSelect = el('select', { 'aria-label': 'Строк на странице' }, PAGE_SIZES.map((size) => el('option', { value: String(size) }, String(size))));
+  sizeSelect.value = String(pageSize);
+  sizeSelect.addEventListener('change', () => {
+    pageSize = Number(sizeSelect.value);
+    savePageSize(pageSize);
+    offset = 0;
+    load();
+  });
+  const pager = el('div', { class: 'pager' }, [prev, page, next, el('label', { class: 'pager-size' }, ['На странице: ', sizeSelect])]);
   const filters = el(
     'form',
     {
@@ -98,7 +109,7 @@ export async function gatePage(container) {
       ),
       filters,
       host,
-      el('div', { class: 'gate-pagination' }, [prev, page, next]),
+      pager,
     ]),
   );
   async function load() {
@@ -111,7 +122,7 @@ export async function gatePage(container) {
         display_status: status.value,
         zone: zone.value,
         recipient: recipient.value.trim(), phone: phone.value.trim(), vehicle: vehicle.value.trim(), premises: premises.value.trim(),
-        limit: 50,
+        limit: pageSize,
         offset,
       });
       const items = groupGateRequests(result.items);
@@ -171,11 +182,15 @@ export async function gatePage(container) {
         }),
       );
       prev.disabled = offset === 0;
-      next.disabled = items.length < 50;
+      next.disabled = items.length < pageSize;
+      pager.hidden = offset === 0 && items.length < pageSize && pageSize === PAGE_SIZES[0];
       page.textContent = items.length ? `${offset + 1}–${offset + items.length}` : 'Нет заявок';
     } catch (e) {
-      if (request === version)
+      if (request === version) {
         host.replaceChildren(el('p', { class: 'form-error', role: 'alert' }, describeApiError(e).message));
+        prev.disabled = true;
+        next.disabled = true;
+      }
     }
   }
   async function detail(r) {
@@ -303,7 +318,7 @@ export async function gatePage(container) {
     try {
       await gateApi.remove(r.id);
       toast.success('Заявка удалена.');
-      if (pageItemCount === 1 && offset > 0) offset = Math.max(0, offset - 50);
+      if (pageItemCount === 1 && offset > 0) offset = Math.max(0, offset - pageSize);
       await load();
     } catch (e) {
       toast.error(describeApiError(e).message);
