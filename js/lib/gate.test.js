@@ -65,8 +65,10 @@ test('видимые статусы: проверка, одобрение и о�
   assert.equal(groupGateRequests(mixed)[0].display_status, 'rejected');
 });
 
-test('в фильтре охраны только три статуса', () =>
-  assert.deepEqual(Object.keys(GATE_STATUSES), ['pending', 'approved', 'rejected']));
+test('фильтр заявок включает ожидание удаления доступа с устройства', () => {
+  assert.deepEqual(Object.keys(GATE_STATUSES), ['pending', 'approved', 'revoke_requested', 'rejected']);
+  assert.equal(GATE_STATUSES.revoke_requested, 'Ожидает удаления с устройства');
+});
 
 test('ожидающая заявка сохраняет проверку даже при утрате права', () => {
   assert.equal(
