@@ -5,6 +5,7 @@ import { describeApiError } from '../../lib/apiErrors.js';
 import { openModal } from '../../ui/modal.js';
 import { isAdmin } from '../../lib/permissions.js';
 import { renderTable } from '../../ui/table.js';
+import { confirmDialog } from '../../ui/confirmDialog.js';
 import { copyPhoneCell } from '../../ui/copyPhone.js';
 import { toast } from '../../ui/toast.js';
 import {
@@ -30,7 +31,8 @@ const badge = (r) =>
   );
 export async function gatePage(container) {
   let offset = 0,
-    version = 0;
+    version = 0,
+    pageItemCount = 0;
   const recipient = el('input', { type:'search', placeholder:'Кому', 'aria-label':'Кому', maxlength:120 });
   const phone = el('input', { type:'search', placeholder:'Телефон', 'aria-label':'Телефон', maxlength:32 });
   const vehicle = el('input', { type:'search', placeholder:'Авто', 'aria-label':'Авто', maxlength:80 });
@@ -114,6 +116,7 @@ export async function gatePage(container) {
       });
       const items = groupGateRequests(result.items);
       if (request !== version) return;
+      pageItemCount = items.length;
       host.replaceChildren(
         renderTable({
           columns: [
@@ -155,6 +158,14 @@ export async function gatePage(container) {
           emptyMessage: 'Заявок с такими условиями нет',
           rowActions: (r) => [
             el('button', { class: 'btn btn-sm', type: 'button', onclick: () => detail(r) }, 'Открыть'),
+            ...(isAdmin() && r.status === 'rejected'
+              ? [el('button', {
+                  class: 'btn btn-ghost btn-sm btn-danger-text',
+                  type: 'button',
+                  title: 'Удалить отклонённую заявку',
+                  onclick: () => removeRejected(r),
+                }, 'Удалить')]
+              : []),
           ],
         }),
       );
@@ -276,6 +287,23 @@ export async function gatePage(container) {
       );
     } catch (e) {
       history.textContent = describeApiError(e).message;
+    }
+  }
+  async function removeRejected(r) {
+    const confirmed = await confirmDialog({
+      title: 'Удалить отклонённую заявку',
+      message: `Удалить заявку № ${r.id} вместе со всеми объектами группы и её историей? Восстановить её будет нельзя.`,
+      confirmLabel: 'Удалить',
+      danger: true,
+    });
+    if (!confirmed) return;
+    try {
+      await gateApi.remove(r.id);
+      toast.success('Отклонённая заявка удалена.');
+      if (pageItemCount === 1 && offset > 0) offset = Math.max(0, offset - 50);
+      await load();
+    } catch (e) {
+      toast.error(describeApiError(e).message);
     }
   }
   async function approve(r, modal, button) {

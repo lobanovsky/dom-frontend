@@ -15,6 +15,7 @@ const GATE_ERRORS = {
   "gate: expiry is in the past": "Дата окончания доступа уже прошла. Выберите сегодняшнюю или будущую дату.",
   "gate: duplicate request": "Для этого телефона и объекта уже есть заявка на проверке или одобренный доступ.",
   "gate: request status changed": "Статус заявки уже изменился. Обновите список.",
+  "gate: only rejected requests can be deleted": "Удалять можно только отклонённые заявки.",
   "gate: property or expiry is no longer eligible": "Заявку нельзя одобрить: право собственности утрачено или срок доступа истёк.",
   "gate: decision reason is required": "Укажите причину отклонения или отзыва доступа.",
   "gate: invalid decision note": "Комментарий должен содержать не более 500 символов без служебных знаков.",
