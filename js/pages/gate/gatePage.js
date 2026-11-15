@@ -355,9 +355,9 @@ export async function gatePage(container) {
     const label = { approve: 'Одобрить', reject: 'Отклонить', revoke: 'Отозвать доступ' }[action];
     const note = el('textarea', {
       maxlength: 500,
-      required: action !== 'approve',
+      required: action === 'revoke',
       rows: 3,
-      'aria-label': action === 'approve' ? 'Комментарий к решению' : 'Причина решения',
+      'aria-label': action === 'approve' ? 'Комментарий к решению' : action === 'reject' ? 'Причина отказа' : 'Причина отзыва',
     });
     const message = el('p', { role: 'alert', class: 'form-error' });
     const submit = el('button', { type: 'submit', class: 'btn btn-primary' }, label);
@@ -383,7 +383,11 @@ export async function gatePage(container) {
       [
         el('p', {}, `${r.recipient_name} · ${formatPhone(r.phone)} · ${gateZoneLabel(r)} · ${gatePropertyLabel(r)}`),
         el('label', { class: 'field' }, [
-          action === 'approve' ? 'Комментарий (необязательно)' : 'Причина (обязательно)',
+          action === 'approve'
+            ? 'Комментарий (необязательно)'
+            : action === 'reject'
+              ? 'Причина отказа (необязательно)'
+              : 'Причина отзыва (обязательно)',
           note,
         ]),
         message,

@@ -17,7 +17,7 @@ const GATE_ERRORS = {
   "gate: request status changed": "Статус заявки уже изменился. Обновите список.",
   "gate: only rejected requests can be deleted": "Удалять можно только отклонённые заявки.",
   "gate: property or expiry is no longer eligible": "Заявку нельзя одобрить: право собственности утрачено или срок доступа истёк.",
-  "gate: decision reason is required": "Укажите причину отклонения или отзыва доступа.",
+  "gate: decision reason is required": "Укажите причину отзыва доступа.",
   "gate: invalid decision note": "Комментарий должен содержать не более 500 символов без служебных знаков.",
   "gate: invalid action": "Это действие недоступно для вашей роли.",
   "phone: gate phone must contain 11 to 15 digits": "Укажите телефон с кодом страны, например +7 999 123-45-67.",
