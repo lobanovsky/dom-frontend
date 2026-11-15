@@ -270,3 +270,9 @@ export const gateApi = {
  deleteVehicle: (id) => client.delete(`/api/v1/gate-vehicles/${id}`),
  remove: (id) => client.delete(`/api/v1/gate-access/${id}`),
 };
+
+export const gateServiceAccessApi = {
+ list: () => client.get('/api/v1/gate-service-accesses'),
+ create: (body) => client.post('/api/v1/gate-service-accesses', body),
+ revoke: (id, zone) => client.post(`/api/v1/gate-service-accesses/${id}/${zone}/revoke`),
+};

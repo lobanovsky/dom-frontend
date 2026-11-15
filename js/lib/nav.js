@@ -9,6 +9,7 @@ export const NAV = [
   { group: 'Двор и паркинг', gateOnly: true, icon: '<path d="M3 21V5h18v16M7 21V9h10v12M12 9v12"/>', items: [
     { href:'/gate-access', label:'Заявки', icon:'<path d="M4 4h16v16H4zM8 9h8M8 13h8M8 17h5"/>' },
     { href:'/gate-access/view', adminOnly:true, label:'Доступы', icon:'<circle cx="10" cy="10" r="6"/><path d="m15 15 6 6M10 7v6M7 10h6"/>' },
+    { href:'/gate-access/service', adminOnly:true, label:'Служебные доступы', icon:'<path d="M12 3v18M3 12h18"/><circle cx="12" cy="12" r="9"/>' },
   ] },
   { href: '/meters', label: 'Счётчики', icon: '<circle cx="12" cy="12" r="9"/><path d="M12 12l4-4M7 12h1M12 7v1M17 12h-1"/>' },
   {

@@ -42,6 +42,7 @@ import { usersPage } from './pages/users/usersPage.js';
 import { waterPage } from './pages/water/waterPage.js';
 import { gatePage } from './pages/gate/gatePage.js';
 import { gateAccessViewPage } from './pages/gate/gateAccessViewPage.js';
+import { gateServiceAccessPage } from './pages/gate/gateServiceAccessPage.js';
 import { electricityPage } from './pages/electricity/electricityPage.js';
 
 const appRoot = document.getElementById('app');
@@ -59,6 +60,7 @@ const routes = [
   { pattern: '/', mount: dashboardPage },
   { pattern: '/gate-access', mount: (container) => { if (canManageGate()) return gatePage(container); container.textContent = 'Недостаточно прав'; } },
   { pattern: '/gate-access/view', mount: adminOnly(gateAccessViewPage) },
+  { pattern: '/gate-access/service', mount: adminOnly(gateServiceAccessPage) },
   { pattern: '/organizations', mount: organizationsPage },
   { pattern: '/legal-entities', mount: legalEntitiesPage },
   { pattern: '/persons', mount: personsPage },

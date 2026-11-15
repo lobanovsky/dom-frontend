@@ -1,0 +1,58 @@
+import { gateServiceAccessApi } from '../../api/resources.js';
+import { el } from '../../lib/dom.js';
+import { describeApiError } from '../../lib/apiErrors.js';
+import { formatPhone, formatDate } from '../../lib/format.js';
+import { toast } from '../../ui/toast.js';
+import { confirmDialog } from '../../ui/confirmDialog.js';
+import { bindGatePhoneInput } from '../../lib/gate.js';
+
+const zoneNames = {courtyard:'Двор',parking:'Паркинг'};
+const categoryNames = {staff:'Сотрудник ТСН',contractor:'Подрядчик',special_vehicle:'Спецтехника'};
+const statusNames = {active:'Активен',revoke_pending:'Ожидает удаления из ELDES',revoked:'Отозван',expired:'Срок истёк'};
+
+export async function gateServiceAccessPage(container) {
+  const form = el('form',{class:'card service-access-form'});
+  const category=el('select',{},Object.entries(categoryNames).map(([value,label])=>el('option',{value},label)));
+  const name=el('input',{required:true,maxlength:120,placeholder:'Например, электрик или трактор'});
+  const phone=el('input',{required:true,inputmode:'numeric',autocomplete:'tel',placeholder:'+7 900 000-00-00'});
+  bindGatePhoneInput(phone);
+  const plate=el('input',{maxlength:24,placeholder:'Номер автомобиля'});
+  const brand=el('input',{maxlength:80,placeholder:'Марка / модель'});
+  const validUntil=el('input',{type:'date'});
+  const comment=el('input',{maxlength:1000,placeholder:'Комментарий (необязательно)'});
+  const courtyard=el('input',{type:'checkbox',checked:true});
+  const parking=el('input',{type:'checkbox'});
+  const save=el('button',{type:'submit',class:'btn btn-primary'},'Добавить доступ');
+  form.replaceChildren(
+    el('h2',{},'Новый служебный доступ'),
+    el('label',{},['Категория',category]),el('label',{},['Кому / описание',name]),el('label',{},['Телефон',phone]),
+    el('label',{},['Автомобиль',plate]),el('label',{},['Марка',brand]),el('label',{},['Действует до (необязательно)',validUntil]),
+    el('label',{},['Комментарий',comment]),el('fieldset',{},[el('legend',{},'Зоны доступа'),el('label',{},[courtyard,' Двор']),el('label',{},[parking,' Паркинг'])]),save,
+  );
+  const list=el('div',{class:'crud-table'},el('p',{class:'muted'},'Загрузка…'));
+  container.replaceChildren(el('div',{class:'page'},[el('h1',{},'Служебные доступы'),el('p',{class:'muted'},'Доступы сотрудников ТСН, подрядчиков и спецтехники без привязки к квартире или машиноместу. При выборе обеих зон они закрываются независимо.'),form,el('h2',{},'Текущие и закрытые доступы'),list]));
+  form.addEventListener('submit',async(e)=>{
+    e.preventDefault();save.disabled=true;
+    try {
+      const digits=phone.value.replace(/\D/g,'');
+      await gateServiceAccessApi.create({category:category.value,name:name.value,phone:digits,vehicle_plate:plate.value,vehicle_brand:brand.value,valid_until:validUntil.value||null,comment:comment.value,zones:[...(courtyard.checked?['courtyard']:[]),...(parking.checked?['parking']:[])]});
+      toast.success('Служебный доступ добавлен');form.reset();courtyard.checked=true;await load();
+    } catch(err){toast.error(describeApiError(err).message)} finally{save.disabled=false}
+  });
+  await load();
+  async function load(){
+    try{
+      const {items=[]}=await gateServiceAccessApi.list();
+      if(!items.length){list.replaceChildren(el('p',{class:'muted'},'Записей пока нет'));return}
+      list.replaceChildren(el('table',{class:'table'},[
+        el('thead',{},el('tr',{},['Категория / описание','Телефон','Автомобиль','Зоны','Срок'].map(x=>el('th',{},x)))),
+        el('tbody',{},items.map(item=>el('tr',{},[
+          el('td',{},[el('strong',{},categoryNames[item.category]||item.category),el('div',{},item.name),item.comment?el('small',{class:'muted'},item.comment):null].filter(Boolean)),
+          el('td',{},formatPhone(item.phone)),el('td',{},[item.vehicle_plate,item.vehicle_brand].filter(Boolean).join(' · ')||'—'),
+          el('td',{},item.zones.map(z=>{const canClose=z.status==='active';const btn=el('button',{class:'btn btn-small',type:'button',disabled:!canClose,onclick:async()=>{if(!await confirmDialog({title:'Отозвать служебный доступ',message:`Закрыть доступ во зону «${zoneNames[z.zone]}» для ${item.name}?`,confirmLabel:'Отозвать',danger:true}))return;try{await gateServiceAccessApi.revoke(item.id,z.zone);toast.success('Доступ закрыт');await load()}catch(err){toast.error(describeApiError(err).message);await load()}}},'Отозвать');return el('div',{class:'service-access-zone'},[`${zoneNames[z.zone]} — ${statusNames[z.status]||z.status}`,z.sync_error?el('div',{class:'form-error'},z.sync_error):null,canClose?btn:null].filter(Boolean))})),
+          el('td',{},item.valid_until?formatDate(item.valid_until):'Без срока'),
+        ]))),
+      ]));
+    }catch(err){list.replaceChildren(el('p',{class:'form-error'},describeApiError(err).message))}
+  }
+}
