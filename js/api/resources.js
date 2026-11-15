@@ -267,6 +267,6 @@ export const gateApi = {
  decision: (id, body) => client.post(`/api/v1/gate-access/${id}/decision`, body),
  update: (id, body) => client.put(`/api/v1/gate-access/${id}`, body),
  updateVehicle: (id, body) => client.put(`/api/v1/gate-vehicles/${id}`, body),
- archiveVehicle: (id) => client.delete(`/api/v1/gate-vehicles/${id}`),
+ deleteVehicle: (id) => client.delete(`/api/v1/gate-vehicles/${id}`),
  remove: (id) => client.delete(`/api/v1/gate-access/${id}`),
 };

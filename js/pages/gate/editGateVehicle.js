@@ -24,12 +24,12 @@ export function editGateVehicle(vehicle, refreshed) {
     } catch (error) { message.textContent = describeApiError(error).message; save.disabled = false; }
   } }, [el('label', { class: 'field' }, ['Государственный номер', plate]), el('label', { class: 'field' }, ['Марка автомобиля', brand]), message, save]);
   modal = openModal({ title: 'Автомобиль собственника', content: form });
-  const archive = el('button', { type: 'button', class: 'btn btn-danger', onclick: async () => {
-    const confirmed = await confirmDialog({ title: 'Убрать автомобиль из реестра', message: `Автомобиль ${vehicle.plate_number} пропадёт из выбора новых заявок. Связанные заявки сохранят историю.`, confirmLabel: 'Убрать', danger: true });
+  const remove = el('button', { type: 'button', class: 'btn btn-danger', onclick: async () => {
+    const confirmed = await confirmDialog({ title: 'Удалить автомобиль из реестра', message: `Автомобиль ${vehicle.plate_number} будет удалён из реестра и связанных заявок.`, confirmLabel: 'Удалить', danger: true });
     if (!confirmed) return;
-    archive.disabled = true;
-    try { await gateApi.archiveVehicle(vehicle.id); modal.close(); toast.success('Автомобиль убран из реестра.'); await refreshed(); }
-    catch (error) { message.textContent = describeApiError(error).message; archive.disabled = false; }
-  } }, 'Убрать из реестра');
-  form.append(archive);
+    remove.disabled = true;
+    try { await gateApi.deleteVehicle(vehicle.id); modal.close(); toast.success('Автомобиль удалён из реестра.'); await refreshed(); }
+    catch (error) { message.textContent = describeApiError(error).message; remove.disabled = false; }
+  } }, 'Удалить автомобиль');
+  form.append(remove);
 }

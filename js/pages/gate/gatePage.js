@@ -276,12 +276,6 @@ export async function gatePage(container) {
                       ]),
                     )
                   : [el('p', { class: 'muted' }, 'Не указаны')]),
-              gateVehicles(r, false).length
-                ? el('details', {}, [
-                    el('summary', {}, 'Архив автомобилей'),
-                    ...gateVehicles(r, false).map((car) => el('p', {}, gateVehicleLabel(car))),
-                  ])
-                : null,
             ].filter(Boolean),
           ),
           section('Заявитель', [el('p', {}, r.applicant_name), facts([['Подана', formatDateTime(r.created_at)]])]),
