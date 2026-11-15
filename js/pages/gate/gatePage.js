@@ -25,7 +25,7 @@ const badge = (r) =>
   el(
     'span',
     {
-      class: `badge ${r.display_status === 'approved' ? 'badge-success' : r.display_status === 'pending' ? 'badge-warning' : 'badge-danger'}`,
+      class: `badge ${r.display_status === 'approved' ? 'badge-success' : ['pending', 'revoke_requested'].includes(r.display_status) ? 'badge-warning' : 'badge-danger'}`,
     },
     gateStatusLabel(r.display_status),
   );
@@ -94,7 +94,7 @@ export async function gatePage(container) {
       el(
         'p',
         { class: 'field-help' },
-        'Одобрение пока фиксируется в сервисе. Автоматическое открытие ворот и шлагбаумов ещё не подключено.',
+        'Отзыв жителем скрывает доступ в кабинете сразу. Администратор завершает удаление номера на устройствах ELDES из заявки.',
       ),
       filters,
       host,
@@ -197,6 +197,8 @@ export async function gatePage(container) {
       actions.push(
         el('button', { class: 'btn', type: 'button', onclick: () => decide(r, 'revoke') }, 'Отозвать доступ'),
       );
+    if (isAdmin() && r.status === 'revoke_requested')
+      actions.push(el('button', { class: 'btn btn-primary', type: 'button', onclick: () => decide(r, 'revoke_device') }, 'Отозвать доступ с устройства'));
     if (isAdmin() && ['pending', 'approved'].includes(r.display_status))
       actions.push(el('button', { class: 'btn', type: 'button', onclick: () => edit(r) }, 'Редактировать данные'));
     const facts = (entries) =>
@@ -282,7 +284,7 @@ export async function gatePage(container) {
           el(
             'p',
             {},
-            `${formatDateTime(e.created_at)} · ${{ submitted: 'Заявка подана', created: 'Доступ добавлен администратором', approved: 'Одобрено', rejected: 'Отклонено', revoked: 'Отозвано', cancelled: 'Отменено', updated: 'Данные заявки изменены' }[e.action] || e.action} · ${e.actor_role === 'resident' ? 'Собственник' : e.actor_role === 'guard' ? 'Охрана' : 'Администратор'}${e.note ? `: ${e.note}` : ''}`,
+            `${formatDateTime(e.created_at)} · ${{ submitted: 'Заявка подана', created: 'Доступ добавлен администратором', approved: 'Одобрено', rejected: 'Отклонено', revoked: 'Доступ отозван', revoke_requested: 'Пользователь запросил отзыв доступа', cancelled: 'Отменено', updated: 'Данные заявки изменены' }[e.action] || e.action} · ${e.actor_role === 'resident' ? 'Собственник' : e.actor_role === 'guard' ? 'Охрана' : 'Администратор'}${e.note ? `: ${e.note}` : ''}`,
           ),
         ),
       );
@@ -353,7 +355,7 @@ export async function gatePage(container) {
     const modal = openModal({ title: 'Редактировать данные заявки', content: form });
   }
   function decide(r, action) {
-    const label = { approve: 'Одобрить', reject: 'Отклонить', revoke: 'Отозвать доступ' }[action];
+    const label = { approve: 'Одобрить', reject: 'Отклонить', revoke: 'Отозвать доступ', revoke_device: 'Отозвать доступ с устройства' }[action];
     const requestSummary = el('dl', { class: 'gate-decision-summary' }, [
       el('div', {}, [el('dt', {}, 'ФИО'), el('dd', {}, r.recipient_name)]),
       el('div', {}, [el('dt', {}, 'Телефон'), el('dd', {}, formatPhone(r.phone))]),

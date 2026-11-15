@@ -1,6 +1,7 @@
 export const GATE_STATUSES = {
   pending: 'На проверке',
   approved: 'Одобрено',
+  revoke_requested: 'Ожидает удаления с устройства',
   rejected: 'Отклонено',
 };
 export const GATE_ZONES = { courtyard: 'Двор', parking: 'Паркинг' };
@@ -67,7 +68,9 @@ export function groupGateRequests(rows) {
       active,
       display_status: active
         ? 'approved'
-        : items.every((r) => (r.status || r.effective_status) === 'pending')
+        : items.every((r) => (r.status || r.effective_status) === 'revoke_requested')
+          ? 'revoke_requested'
+          : items.every((r) => (r.status || r.effective_status) === 'pending')
           ? 'pending'
           : 'rejected',
       eligible: items.every((r) => r.eligible),
@@ -80,6 +83,7 @@ export function gateAccessNote(row) {
   return (
     {
       revoked: 'Доступ отозван.',
+      revoke_requested: 'Пользователь запросил отзыв доступа.',
       cancelled: 'Заявка отменена заявителем.',
       expired: 'Срок доступа истёк.',
       ineligible: 'Право на объект не подтверждено.',
