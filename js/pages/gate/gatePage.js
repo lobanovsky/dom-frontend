@@ -4,6 +4,7 @@ import { formatPhone, formatDate, formatDateTime } from '../../lib/format.js';
 import { describeApiError } from '../../lib/apiErrors.js';
 import { openModal } from '../../ui/modal.js';
 import { isAdmin } from '../../lib/permissions.js';
+import { editGateVehicle } from './editGateVehicle.js';
 import { renderTable } from '../../ui/table.js';
 import { confirmDialog } from '../../ui/confirmDialog.js';
 import { copyPhoneCell } from '../../ui/copyPhone.js';
@@ -271,6 +272,7 @@ export async function gatePage(container) {
                           ['Номер', car.plate_number],
                           ['Марка', car.brand],
                         ]),
+                        isAdmin() && car.id ? el('button', { type: 'button', class: 'btn btn-sm', onclick: () => editGateVehicle(car, load) }, 'Редактировать в реестре') : null,
                       ]),
                     )
                   : [el('p', { class: 'muted' }, 'Не указаны')]),
