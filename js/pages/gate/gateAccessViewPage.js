@@ -7,6 +7,8 @@ import { renderTable } from '../../ui/table.js';
 import { saveFile } from '../../ui/saveFile.js';
 import { bindGatePhoneInput, gateVehicles, gateVehicleLabel, gateZoneLabel, groupGateRequests, GATE_RELATIONS, gatePremisesTone, gateOwnersFirst } from '../../lib/gate.js';
 import { openModal } from '../../ui/modal.js';
+import { confirmDialog } from '../../ui/confirmDialog.js';
+import { toast } from '../../ui/toast.js';
 
 const kinds = [['apartment','Квартиры'],['parking_space','Машиноместа'],['commercial','Коммерческие помещения']];
 const csvCell = (v) => `"${String(v ?? '').replaceAll('"','""')}"`;
@@ -21,6 +23,7 @@ export async function gateAccessViewPage(container) {
   const ownersByPremises = new Map();
   const today = todayIso();
   let selected = null;
+  let showRejected = false;
   const type = el('select', { 'aria-label':'Тип объекта' }, kinds.map(([value,label]) => el('option',{value},label)));
   const building = el('select', { 'aria-label':'Дом' }, [el('option',{value:''},'Загрузка домов…')]);
   const grid = el('div',{class:'gate-access-grid',role:'list','aria-label':'Объекты по этажам'});
@@ -74,6 +77,18 @@ export async function gateAccessViewPage(container) {
     }
   }
 
+  async function loadRejectedAccesses(premise) {
+    const rows=[];
+    let offset=0;
+    while(true) {
+      const {items=[]}=await gateApi.list({premises_id:premise.id,display_status:'rejected',limit:200,offset});
+      rows.push(...items.filter((row)=>row.premises_id===premise.id));
+      if(groupGateRequests(items).length<200) break;
+      offset+=200;
+    }
+    return rows.sort((a,b)=>b.created_at.localeCompare(a.created_at)||b.id-a.id);
+  }
+
   function renderGrid() {
     const floors=new Map();
     for(const p of premises) {
@@ -101,6 +116,14 @@ export async function gateAccessViewPage(container) {
     renderGrid();
     const entries=gateOwnersFirst(activeByPremises.get(p.id)||[]);
     const ownerLine=el('p',{class:'muted'},'Собственник: загружается…');
+    const rejectedToggle=el('input',{type:'checkbox',checked:showRejected});
+    const rejectedHost=el('div',{class:'gate-rejected-accesses',hidden:!showRejected});
+    rejectedToggle.addEventListener('change',async()=>{
+      showRejected=rejectedToggle.checked;
+      rejectedHost.hidden=!showRejected;
+      rejectedHost.replaceChildren();
+      if(showRejected) await renderRejectedAccesses(p,rejectedHost);
+    });
     detail.replaceChildren(
       el('h2',{},`${objectType(p.kind)} ${p.number}`),
       el('p',{class:'muted'},`Этаж ${p.floor ?? 'не указан'} · ${entries.length} ${entries.length===1?'доступ':entries.length>1&&entries.length<5?'доступа':'доступов'}`),
@@ -117,8 +140,45 @@ export async function gateAccessViewPage(container) {
         el('button',{type:'button',class:'btn btn-sm',onclick:()=>editAccess(r,p)},'Изменить'),
         el('button',{type:'button',class:'btn btn-sm btn-danger',onclick:()=>closeAccess(r,p)},'Закрыть'),
       ],emptyMessage:'У этого объекта нет действующих доступов'}),
+      el('label',{class:'gate-rejected-toggle'},[rejectedToggle,' Показать отклонённые доступы']),
+      rejectedHost,
     );
     loadOwners(p,ownerLine);
+    if(showRejected) renderRejectedAccesses(p,rejectedHost);
+  }
+
+  async function renderRejectedAccesses(premise,host) {
+    host.hidden=false;
+    host.replaceChildren(el('p',{role:'status',class:'muted'},'Загрузка отклонённых доступов…'));
+    try {
+      const rows=await loadRejectedAccesses(premise);
+      if(selected?.id!==premise.id||!showRejected||!host.isConnected)return;
+      const statusLabel={rejected:'Отклонена',cancelled:'Отозвана заявителем',revoked:'Отозвана',expired:'Срок истёк',ineligible:'Право на объект утрачено'};
+      host.replaceChildren(
+        el('h3',{},'Отклонённые доступы'),
+        rows.length?renderTable({columns:[
+          {key:'recipient_name',label:'Кому',primary:true},
+          {key:'relation',label:'Тип',render:(r)=>GATE_RELATIONS[r.relation]||'—'},
+          {key:'phone',label:'Телефон',render:(r)=>copyPhoneCell(r.phone,formatPhone)},
+          {key:'vehicle',label:'Автомобиль',render:(r)=>gateVehicles(r).map(gateVehicleLabel).join(', ')||'—'},
+          {key:'status',label:'Статус',render:(r)=>statusLabel[r.effective_status]||'Отклонена'},
+          {key:'review_note',label:'Причина',render:(r)=>r.review_note||'—'},
+        ],rows,rowActions:(r)=>[el('button',{type:'button',class:'btn btn-sm btn-danger',onclick:()=>deleteRejected(r,premise)},'Удалить')],emptyMessage:'Отклонённых доступов нет'}):el('p',{class:'muted'},'Отклонённых доступов нет.'),
+      );
+    } catch(error) {
+      if(selected?.id===premise.id&&showRejected&&host.isConnected) host.replaceChildren(el('p',{class:'form-error'},describeApiError(error).message));
+    }
+  }
+
+  async function deleteRejected(row,premise) {
+    const confirmed=await confirmDialog({title:'Удалить отклонённый доступ',message:`Удалить заявку № ${row.id} целиком, включая все помещения группы и её историю? Это действие нельзя отменить.`,confirmLabel:'Удалить',danger:true});
+    if(!confirmed)return;
+    try {
+      await gateApi.remove(row.id);
+      toast.success('Заявка удалена.');
+      await loadActiveAccesses();
+      selectPremises(premise);
+    } catch(error) { toast.error(describeApiError(error).message); }
   }
 
   async function loadOwners(p,line) {
