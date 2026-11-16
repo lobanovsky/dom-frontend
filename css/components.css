@@ -1564,9 +1564,14 @@ a.account-link:hover { text-decoration: underline; }
 .service-access-form fieldset { display: flex; flex-wrap: wrap; gap: var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); }
 .service-access-form fieldset label { display: flex; align-items: center; color: var(--color-text); }
 .service-access-table tbody tr:nth-child(even) { background: var(--color-bg); }
-.service-access-table th { text-align: center; }
+.service-access-table th { text-align: left; }
 .service-access-table td { text-align: left; }
 .service-access-category { color: var(--color-text-muted); font-size: var(--font-size-sm); }
+.service-access-zone-badge { display: inline-flex; align-items: center; gap: var(--space-1); white-space: nowrap; }
+.service-access-progress { position: fixed; inset: 0; z-index: 10000; display: grid; place-items: center; padding: var(--space-4); background: rgb(20 25 30 / 35%); }
+.service-access-progress-card { display: flex; align-items: center; gap: var(--space-3); max-width: calc(100vw - 32px); padding: var(--space-4) var(--space-5); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); box-shadow: 0 8px 32px rgb(0 0 0 / 18%); font-weight: 600; }
+.service-access-spinner { width: 24px; height: 24px; flex: 0 0 24px; border: 3px solid var(--color-border); border-top-color: var(--color-accent); border-radius: 50%; animation: service-access-spin .8s linear infinite; }
+@keyframes service-access-spin { to { transform: rotate(360deg); } }
 @media (max-width: 640px) { .service-access-form { grid-template-columns: 1fr; } }
 .gate-rejected-toggle { display: inline-flex; align-items: center; gap: 7px; margin-top: 14px; color: var(--color-text-muted); font-size: .9rem; cursor: pointer; }
 .gate-rejected-accesses { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--color-border); }
