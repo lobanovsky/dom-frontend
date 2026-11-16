@@ -47,7 +47,7 @@ export async function gateServiceAccessPage(container) {
       list.replaceChildren(el('div',{class:'data-table-wrap'},el('table',{class:'data-table service-access-table'},[
         el('thead',{},el('tr',{},['Категория / описание','Телефон','Автомобиль','Зона','Статус','Действует до','Действие'].map(x=>el('th',{},x)))),
         el('tbody',{},items.flatMap(item=>item.zones.map(zone=>el('tr',{},[
-          el('td',{},[el('strong',{},categoryNames[item.category]||item.category),el('div',{},item.name),item.comment?el('small',{class:'muted'},item.comment):null].filter(Boolean)),
+          el('td',{},[el('div',{},categoryNames[item.category]||item.category),el('strong',{},item.name),item.comment?el('small',{class:'muted'},item.comment):null].filter(Boolean)),
           el('td',{},formatPhone(item.phone)),
           el('td',{},[item.vehicle_plate,item.vehicle_brand].filter(Boolean).join(' · ')||'—'),
           el('td',{},zoneNames[zone.zone]||zone.zone),
