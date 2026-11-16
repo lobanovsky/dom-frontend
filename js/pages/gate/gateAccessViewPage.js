@@ -68,7 +68,7 @@ export async function gateAccessViewPage(container) {
         el('thead',{},el('tr',{},['Зона','Основание','Кому','Статус в Dom','Устройство'].map((label)=>el('th',{},label)))),
         el('tbody',{},items.map((item)=>el('tr',{},[
           el('td',{},item.zone==='parking'?'Паркинг':'Двор'),
-          el('td',{},item.source==='service'?'Служебный доступ':item.location),
+          el('td',{},item.source==='service'?'Служебный доступ':el('button',{type:'button',class:'gate-phone-lookup-link',onclick:()=>openLookupPremise(item)},item.location)),
           el('td',{},item.name||'—'),
           el('td',{},[statusLabel(item),item.sync_error?el('div',{class:'form-error'},item.sync_error):null].filter(Boolean)),
           el('td',{},deviceLabel(item)),
@@ -77,6 +77,24 @@ export async function gateAccessViewPage(container) {
     } catch(error) {
       lookupResults.replaceChildren(el('p',{class:'form-error'},describeApiError(error).message));
     }
+  }
+
+  async function openLookupPremise(item) {
+    if(!item.premises_id||!item.building_id) return;
+    if(!buildings.some((b)=>b.id===item.building_id)) {
+      toast.error('Дом для этого помещения не найден в списке');
+      return;
+    }
+    type.value=item.premises_kind;
+    building.value=String(item.building_id);
+    await loadPremises();
+    const premise=premises.find((p)=>p.id===item.premises_id);
+    if(!premise) {
+      toast.error('Помещение больше не отображается в схеме доступов');
+      return;
+    }
+    selectPremises(premise);
+    grid.querySelector(`[data-premises-id="${item.premises_id}"]`)?.scrollIntoView({behavior:'smooth',block:'center'});
   }
   try {
     let offset=0;
@@ -145,7 +163,7 @@ export async function gateAccessViewPage(container) {
         const accesses=activeByPremises.get(p.id)||[];
         const count=accesses.length;
         const tone=gatePremisesTone(accesses);
-        return el('button',{type:'button',class:`gate-property-tile${tone==='tenant'?' has-tenant-access':tone==='access'?' has-access':''}${selected?.id===p.id?' is-selected':''}`,'aria-pressed':String(selected?.id===p.id),'aria-label':`${objectType(p.kind)} ${p.number}${count?`, действующих доступов: ${count}${tone==='tenant'?', есть арендатор':''}`:', доступов нет'}`,onclick:()=>selectPremises(p)},[
+        return el('button',{type:'button',class:`gate-property-tile${tone==='tenant'?' has-tenant-access':tone==='access'?' has-access':''}${selected?.id===p.id?' is-selected':''}`,'data-premises-id':String(p.id),'aria-pressed':String(selected?.id===p.id),'aria-label':`${objectType(p.kind)} ${p.number}${count?`, действующих доступов: ${count}${tone==='tenant'?', есть арендатор':''}`:', доступов нет'}`,onclick:()=>selectPremises(p)},[
           el('strong',{},p.number),count?el('span',{class:'gate-property-count'},String(count)):null,
         ].filter(Boolean));
       })),
