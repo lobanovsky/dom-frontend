@@ -1559,6 +1559,7 @@ a.account-link:hover { text-decoration: underline; }
 .service-access-table tbody tr:nth-child(even) { background: var(--color-bg); }
 .service-access-table th { text-align: center; }
 .service-access-table td { text-align: left; }
+.service-access-category { color: var(--color-text-muted); font-size: var(--font-size-sm); }
 @media (max-width: 640px) { .service-access-form { grid-template-columns: 1fr; } }
 .gate-rejected-toggle { display: inline-flex; align-items: center; gap: 7px; margin-top: 14px; color: var(--color-text-muted); font-size: .9rem; cursor: pointer; }
 .gate-rejected-accesses { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--color-border); }
