@@ -30,14 +30,54 @@ export async function gateAccessViewPage(container) {
   const grid = el('div',{class:'gate-access-grid',role:'list','aria-label':'Объекты по этажам'});
   const detail = el('section',{class:'gate-access-detail','aria-live':'polite'},el('p',{class:'muted'},'Выберите помещение на схеме'));
   const download = el('button',{class:'btn',type:'button',onclick:exportAll},'Скачать список доступов (CSV)');
+  const lookupPhone = el('input',{type:'tel',inputmode:'tel',autocomplete:'tel',placeholder:'+7 900 000-00-00','aria-label':'Телефон для поиска'});
+  bindGatePhoneInput(lookupPhone);
+  const lookupResults = el('div',{class:'gate-phone-lookup-results','aria-live':'polite'});
+  const lookupForm = el('form',{class:'gate-phone-lookup',onsubmit:searchPhone},[
+    lookupPhone,
+    el('button',{type:'submit',class:'btn btn-primary'},'Найти доступы'),
+    el('span',{class:'field-help'},'Поиск по активным доступам и заявкам в данных Dom; устройства ELDES напрямую не опрашиваются.'),
+    lookupResults,
+  ]);
   const note = el('p',{class:'field-help'},'Зелёная ячейка означает, что у объекта есть действующий доступ. Коммерческие помещения дают доступ во двор.');
   container.replaceChildren(el('div',{class:'page'},[
     el('h1',{},'Доступы'), note,
+    lookupForm,
     el('div',{class:'gate-filters gate-access-filters'},[type,building,download]),
     el('div',{class:'gate-access-layout'},[grid,detail]),
   ]));
   type.addEventListener('change',loadPremises);
   building.addEventListener('change',loadPremises);
+
+  async function searchPhone(event) {
+    event.preventDefault();
+    lookupResults.replaceChildren(el('p',{class:'muted'},'Ищем…'));
+    try {
+      const {items=[]}=await gateApi.lookupPhone(lookupPhone.value);
+      if(!items.length) {
+        lookupResults.replaceChildren(el('p',{class:'muted'},'По этому номеру не найдено активных доступов или заявок на согласовании.'));
+        return;
+      }
+      const statusLabel=(item)=>({
+        approved:'Активен',active:'Активен',
+        revoke_requested:'Ожидает отзыва администратором',revoke_pending:'Удаление с устройства не подтверждено',
+        pending:'Заявка на согласовании',
+      }[item.status]||item.status);
+      const deviceLabel=(item)=>item.status==='revoke_requested'||item.status==='revoke_pending'?'Возможно, ещё есть на устройстве':item.on_device?'Есть':'Ещё не выдан';
+      lookupResults.replaceChildren(el('p',{class:'field-help'},`Найдено оснований: ${items.length}`),el('div',{class:'data-table-wrap'},el('table',{class:'data-table'},[
+        el('thead',{},el('tr',{},['Зона','Основание','Кому','Статус в Dom','Устройство'].map((label)=>el('th',{},label)))),
+        el('tbody',{},items.map((item)=>el('tr',{},[
+          el('td',{},item.zone==='parking'?'Паркинг':'Двор'),
+          el('td',{},item.source==='service'?'Служебный доступ':item.location),
+          el('td',{},item.name||'—'),
+          el('td',{},[statusLabel(item),item.sync_error?el('div',{class:'form-error'},item.sync_error):null].filter(Boolean)),
+          el('td',{},deviceLabel(item)),
+        ]))),
+      ])));
+    } catch(error) {
+      lookupResults.replaceChildren(el('p',{class:'form-error'},describeApiError(error).message));
+    }
+  }
   try {
     let offset=0;
     while(true) {
