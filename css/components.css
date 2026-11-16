@@ -1560,6 +1560,7 @@ a.account-link:hover { text-decoration: underline; }
 
 .service-access-form { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: var(--space-3) var(--space-4); margin-bottom: var(--space-5); }
 .service-access-form h2, .service-access-form fieldset, .service-access-form > button { grid-column: 1 / -1; }
+.service-access-form-column { display: grid; align-content: start; gap: var(--space-3); }
 .service-access-form label { display: grid; gap: var(--space-1); color: var(--color-text-muted); font-size: var(--font-size-sm); }
 .service-access-form fieldset { display: flex; flex-wrap: wrap; gap: var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); }
 .service-access-form fieldset label { display: flex; align-items: center; color: var(--color-text); }

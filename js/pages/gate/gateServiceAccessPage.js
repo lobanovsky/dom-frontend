@@ -27,11 +27,17 @@ export async function gateServiceAccessPage(container) {
   const progress=el('div',{class:'service-access-progress',hidden:true,role:'status','aria-live':'polite'},el('div',{class:'service-access-progress-card'},[
     el('span',{class:'service-access-spinner','aria-hidden':'true'}),el('span',{},'Обновляем доступ на устройствах…'),
   ]));
+  const leftColumn=el('div',{class:'service-access-form-column'},[
+    el('label',{},['Категория',category]),el('label',{},['Телефон',phone]),
+    el('label',{},['Кому / описание',name]),el('label',{},['Комментарий',comment]),
+  ]);
+  const rightColumn=el('div',{class:'service-access-form-column'},[
+    el('label',{},['Автомобиль',plate]),el('label',{},['Марка',brand]),
+    el('label',{},['Действует до (необязательно)',validUntil]),
+  ]);
   form.replaceChildren(
-    el('h2',{},'Новый служебный доступ'),
-    el('label',{},['Категория',category]),el('label',{},['Кому / описание',name]),el('label',{},['Телефон',phone]),
-    el('label',{},['Автомобиль',plate]),el('label',{},['Марка',brand]),el('label',{},['Действует до (необязательно)',validUntil]),
-    el('label',{},['Комментарий',comment]),el('fieldset',{},[el('legend',{},'Зоны доступа'),el('label',{},[courtyard,' Двор']),el('label',{},[parking,' Паркинг'])]),save,
+    el('h2',{},'Новый служебный доступ'),leftColumn,rightColumn,
+    el('fieldset',{},[el('legend',{},'Зоны доступа'),el('label',{},[courtyard,' Двор']),el('label',{},[parking,' Паркинг'])]),save,
   );
   const list=el('div',{class:'crud-table'},el('p',{class:'muted'},'Загрузка…'));
   container.replaceChildren(el('div',{class:'page'},[el('h1',{},'Служебные доступы'),el('p',{class:'muted'},'Доступы сотрудников ТСН, подрядчиков и спецтехники без привязки к квартире или машиноместу. При выборе обеих зон они закрываются независимо.'),form,el('h2',{},'Текущие и закрытые доступы'),list]),progress);
