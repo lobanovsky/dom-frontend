@@ -44,7 +44,7 @@ export async function gateServiceAccessPage(container) {
     try{
       const {items=[]}=await gateServiceAccessApi.list();
       if(!items.length){list.replaceChildren(el('p',{class:'muted'},'Записей пока нет'));return}
-      list.replaceChildren(el('table',{class:'table'},[
+      list.replaceChildren(el('div',{class:'data-table-wrap'},el('table',{class:'data-table service-access-table'},[
         el('thead',{},el('tr',{},['Категория / описание','Телефон','Автомобиль','Зона','Статус','Действует до','Действие'].map(x=>el('th',{},x)))),
         el('tbody',{},items.flatMap(item=>item.zones.map(zone=>el('tr',{},[
           el('td',{},[el('strong',{},categoryNames[item.category]||item.category),el('div',{},item.name),item.comment?el('small',{class:'muted'},item.comment):null].filter(Boolean)),
@@ -59,7 +59,7 @@ export async function gateServiceAccessPage(container) {
             catch(err){toast.error(describeApiError(err).message);await load()}
           }},'Отозвать'):'—'),
         ])))),
-      ]));
+      ])));
     }catch(err){list.replaceChildren(el('p',{class:'form-error'},describeApiError(err).message))}
   }
 }
