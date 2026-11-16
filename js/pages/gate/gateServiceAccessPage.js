@@ -36,7 +36,7 @@ export async function gateServiceAccessPage(container) {
     try {
       const digits=phone.value.replace(/\D/g,'');
       await gateServiceAccessApi.create({category:category.value,name:name.value,phone:digits,vehicle_plate:plate.value,vehicle_brand:brand.value,valid_until:validUntil.value||null,comment:comment.value,zones:[...(courtyard.checked?['courtyard']:[]),...(parking.checked?['parking']:[])]});
-      toast.success('Служебный доступ добавлен');form.reset();courtyard.checked=true;await load();
+      toast.success('Служебный доступ сохранён; действующие зоны не дублируются');form.reset();courtyard.checked=true;await load();
     } catch(err){toast.error(describeApiError(err).message)} finally{save.disabled=false}
   });
   await load();
