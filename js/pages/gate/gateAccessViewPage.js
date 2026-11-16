@@ -40,12 +40,15 @@ export async function gateAccessViewPage(container) {
     lookupResults,
   ]);
   const note = el('p',{class:'field-help'},'Зелёная ячейка означает, что у объекта есть действующий доступ. Коммерческие помещения дают доступ во двор.');
+  const syncProgress=el('div',{class:'service-access-progress',hidden:true,role:'status','aria-live':'polite'},el('div',{class:'service-access-progress-card'},[
+    el('span',{class:'service-access-spinner','aria-hidden':'true'}),el('span',{},'Обновляем доступ на устройствах…'),
+  ]));
   container.replaceChildren(el('div',{class:'page'},[
     el('h1',{},'Доступы'), note,
     lookupForm,
     el('div',{class:'gate-filters gate-access-filters'},[type,building,download]),
     el('div',{class:'gate-access-layout'},[grid,detail]),
-  ]));
+  ]),syncProgress);
   type.addEventListener('change',loadPremises);
   building.addEventListener('change',loadPremises);
 
@@ -278,11 +281,11 @@ export async function gateAccessViewPage(container) {
     const save=el('button',{type:'submit',class:'btn btn-primary'},'Добавить доступ');
     let modal;
     const form=el('form',{class:'form',onsubmit:async(event)=>{
-      event.preventDefault();if(!form.reportValidity())return;save.disabled=true;
+      event.preventDefault();if(!form.reportValidity())return;save.disabled=true;syncProgress.hidden=false;
       try{
         await gateApi.create({premises_id:premise.id,zone:premise.kind==='parking_space'?'parking':'courtyard',phone:phone.value.trim(),recipient_name:name.value.trim(),relation:relation.value,valid_until:validUntil.value||null,no_personal_vehicle:noCar.checked,vehicles:noCar.checked?[]:rows.map(({plate,brand})=>({plate_number:plate.value.trim(),brand:brand.value.trim()})).filter((car)=>car.plate_number||car.brand)});
         modal.close();await loadActiveAccesses();selectPremises(premise);
-      }catch(error){message.textContent=describeApiError(error).message;}finally{save.disabled=false;}
+      }catch(error){message.textContent=describeApiError(error).message;}finally{save.disabled=false;syncProgress.hidden=true;}
     }},[
       el('p',{class:'muted'},`${objectType(premise.kind)} ${premise.number}. Доступ будет активен сразу.`),
       el('label',{class:'field'},['Имя',name]),el('label',{class:'field'},['Телефон',phone]),
