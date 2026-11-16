@@ -45,13 +45,20 @@ export async function gateServiceAccessPage(container) {
       const {items=[]}=await gateServiceAccessApi.list();
       if(!items.length){list.replaceChildren(el('p',{class:'muted'},'Записей пока нет'));return}
       list.replaceChildren(el('table',{class:'table'},[
-        el('thead',{},el('tr',{},['Категория / описание','Телефон','Автомобиль','Зоны','Срок'].map(x=>el('th',{},x)))),
-        el('tbody',{},items.map(item=>el('tr',{},[
+        el('thead',{},el('tr',{},['Категория / описание','Телефон','Автомобиль','Зона','Статус','Действует до','Действие'].map(x=>el('th',{},x)))),
+        el('tbody',{},items.flatMap(item=>item.zones.map(zone=>el('tr',{},[
           el('td',{},[el('strong',{},categoryNames[item.category]||item.category),el('div',{},item.name),item.comment?el('small',{class:'muted'},item.comment):null].filter(Boolean)),
-          el('td',{},formatPhone(item.phone)),el('td',{},[item.vehicle_plate,item.vehicle_brand].filter(Boolean).join(' · ')||'—'),
-          el('td',{},item.zones.map(z=>{const canClose=z.status==='active';const btn=el('button',{class:'btn btn-small',type:'button',disabled:!canClose,onclick:async()=>{if(!await confirmDialog({title:'Отозвать служебный доступ',message:`Закрыть доступ во зону «${zoneNames[z.zone]}» для ${item.name}?`,confirmLabel:'Отозвать',danger:true}))return;try{await gateServiceAccessApi.revoke(item.id,z.zone);toast.success('Доступ закрыт');await load()}catch(err){toast.error(describeApiError(err).message);await load()}}},'Отозвать');return el('div',{class:'service-access-zone'},[`${zoneNames[z.zone]} — ${statusNames[z.status]||z.status}`,z.sync_error?el('div',{class:'form-error'},z.sync_error):null,canClose?btn:null].filter(Boolean))})),
+          el('td',{},formatPhone(item.phone)),
+          el('td',{},[item.vehicle_plate,item.vehicle_brand].filter(Boolean).join(' · ')||'—'),
+          el('td',{},zoneNames[zone.zone]||zone.zone),
+          el('td',{},[statusNames[zone.status]||zone.status,zone.sync_error?el('div',{class:'form-error'},zone.sync_error):null].filter(Boolean)),
           el('td',{},item.valid_until?formatDate(item.valid_until):'Без срока'),
-        ]))),
+          el('td',{},zone.status==='active'?el('button',{class:'btn btn-small',type:'button',onclick:async()=>{
+            if(!await confirmDialog({title:'Отозвать служебный доступ',message:`Закрыть доступ во зону «${zoneNames[zone.zone]}» для ${item.name}?`,confirmLabel:'Отозвать',danger:true}))return;
+            try{await gateServiceAccessApi.revoke(item.id,zone.zone);toast.success('Доступ закрыт');await load()}
+            catch(err){toast.error(describeApiError(err).message);await load()}
+          }},'Отозвать'):'—'),
+        ])))),
       ]));
     }catch(err){list.replaceChildren(el('p',{class:'form-error'},describeApiError(err).message))}
   }
