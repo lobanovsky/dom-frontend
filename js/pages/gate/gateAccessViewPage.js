@@ -235,12 +235,12 @@ export async function gateAccessViewPage(container) {
   }
 
   function closeAccess(row,premise) {
-    const reason=el('textarea',{required:true,maxlength:500,rows:3,'aria-label':'Причина закрытия доступа'});
+    const reason=el('textarea',{maxlength:500,rows:3,'aria-label':'Причина закрытия доступа'});
     const message=el('p',{role:'alert',class:'form-error'});
     const submit=el('button',{type:'submit',class:'btn btn-danger'},'Закрыть доступ');
     let modal;
     const form=el('form',{class:'form',onsubmit:async(event)=>{
-      event.preventDefault();if(!form.reportValidity())return;submit.disabled=true;
+      event.preventDefault();submit.disabled=true;
       try{
         await gateApi.decision(row.id,{action:'revoke',note:reason.value.trim()});
         modal.close();await loadActiveAccesses();selectPremises(premise);
