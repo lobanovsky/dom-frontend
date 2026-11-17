@@ -11,7 +11,7 @@ import { canWrite } from '../lib/permissions.js';
 // редактирование и удаление через модальную форму. Удаление мягкое: переключатель
 // «Удалённые» показывает корзину, где записи можно восстановить.
 //
-// filters: [{name, label, type: 'search'|'select'|'date', options?, allLabel?, defaultValue?}] — значения уходят в query;
+// filters: [{name, label, type: 'search'|'select'|'date'|'month', options?, allLabel?, defaultValue?}] — значения уходят в query;
 // у select allLabel — подпись пустого значения (по умолчанию «Все»), defaultValue — выбранное значение при открытии.
 // fixedQuery — всегда добавляется к запросу списка (например building_id).
 // fixed — всегда добавляется к телу при создании/сохранении.
@@ -75,6 +75,13 @@ export function createCrudList({
     } else if (f.type === 'date') {
       input = el('input', { type: 'date', id });
       input.addEventListener('change', () => { filterValues[f.name] = input.value; offset = 0; filtersChanged(); load(); });
+    } else if (f.type === 'month') {
+      input = el('input', { type: 'month', id });
+      if (f.defaultValue !== undefined) {
+        input.value = f.defaultValue;
+        filterValues[f.name] = input.value ? `${input.value}-01` : '';
+      }
+      input.addEventListener('change', () => { filterValues[f.name] = input.value ? `${input.value}-01` : ''; offset = 0; filtersChanged(); load(); });
     } else {
       input = el('input', { type: 'search', id, placeholder: f.placeholder || 'Поиск', autocomplete: 'off' });
       input.addEventListener('input', () => {
@@ -82,7 +89,7 @@ export function createCrudList({
         searchTimer = setTimeout(() => { filterValues[f.name] = input.value.trim(); offset = 0; filtersChanged(); load(); }, 300);
       });
     }
-    return el('div', { class: f.type === 'select' || f.type === 'date' ? 'field' : 'field field--search' }, [el('label', { for: id }, f.label), input]);
+    return el('div', { class: f.type === 'select' || f.type === 'date' || f.type === 'month' ? 'field' : 'field field--search' }, [el('label', { for: id }, f.label), input]);
   }
 
   function openForm(row) {

@@ -4,7 +4,7 @@ import { openEntityForm } from '../../ui/entityForm.js';
 import { metersApi, meterReadingsApi } from '../../api/resources.js';
 import { meterFields, meterReadingFields } from '../fields.js';
 import { meterResources, meterTariffs, premisesKinds, label, options } from '../../lib/labels.js';
-import { formatDate, todayIso } from '../../lib/format.js';
+import { formatDate, monthLabel, todayIso } from '../../lib/format.js';
 import { coefficientNote, lastReadingText, meterGroup, meterStatus, meterTitle, premisesGroup, resourceUnit, serialParts, verificationState } from '../../lib/meters.js';
 import { buildingLabel, buildingLabelOf } from '../../lib/buildings.js';
 import { meterIcon } from '../../ui/meterIcon.js';
@@ -37,6 +37,8 @@ export function createMetersList({ fixedQuery = {}, fixed = {}, target = 'fixed'
     { name: 'building_id', label: 'Дом', type: 'select', options: buildings.map((b) => ({ value: String(b.id), label: buildingLabel(b) })) },
     ...(byPremises ? [{ name: 'premises_number', label: 'Помещение №', type: 'search', placeholder: 'Номер квартиры' }] : []),
     { name: 'resource', label: 'Ресурс', type: 'select', options: options(meterResources) },
+    { name: 'reading_period', label: 'Месяц показаний', type: 'month', defaultValue: today.slice(0, 7) },
+    { name: 'has_reading', label: 'Передача за месяц', type: 'select', allLabel: 'Все', options: [{ value: 'true', label: 'Передали' }, { value: 'false', label: 'Не передали' }] },
     { name: 'active', label: 'Состояние', type: 'select', allLabel: 'Все', options: [{ value: 'true', label: 'Работают' }, { value: 'false', label: 'Не работают' }], defaultValue: 'true' },
     { name: 'q', label: 'Поиск', type: 'search', placeholder: 'Номер или название счётчика' },
   ] : [];
@@ -95,7 +97,14 @@ function locationCell(m) {
 function lastCell(m) {
   const text = lastReadingText(m);
   if (!text) return el('span', { class: 'text-muted' }, 'Показаний нет');
-  return el('div', {}, [el('span', { class: 'nowrap' }, `${text} ${resourceUnit(m.resource)}`), el('div', { class: 'text-muted' }, formatDate(m.last_reading_date))]);
+  const period = m.last_reading_period || m.last_reading_date;
+  return el('div', {}, [
+    el('div', { class: 'meter-last-reading-value' }, [
+      el('span', { class: 'nowrap' }, `${text} ${resourceUnit(m.resource)}`),
+      monthLabel(period) ? el('span', { class: 'badge badge-success' }, monthLabel(period)) : null,
+    ]),
+    el('div', { class: 'text-muted' }, formatDate(m.last_reading_date)),
+  ]);
 }
 
 function verificationCell(m, today) {
