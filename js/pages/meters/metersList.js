@@ -60,7 +60,7 @@ export function createMetersList({ fixedQuery = {}, fixed = {}, target = 'fixed'
       { key: 'serial_number', label: 'Счётчик', primary: true, render: (m) => el('span', { class: 'meter-cell' }, [meterIcon(m.resource), el('a', { href: `/meters/${m.id}` }, meterCellTitle(m))]) },
       showLocation && !byPremises && !common ? { key: 'location', label: 'Где', render: locationCell } : null,
       { key: 'tariffs', label: 'Тарифность', render: (m) => (m.resource === 'electricity' ? label(meterTariffs, m.tariffs) : '') },
-      { key: 'last', label: 'Последнее показание', render: (m) => lastCell(m) },
+      { key: 'last', label: 'Последнее показание', render: (m) => lastCell(m, today) },
       common ? { key: 'installed_at', label: 'Введён в эксплуатацию', render: (m) => formatDate(m.installed_at) } : null,
       { key: 'verification', label: 'Поверка', render: (m) => verificationCell(m, today) },
       { key: 'status', label: 'Состояние', render: (m) => { const s = meterStatus(m); return el('span', { class: `badge badge-${s.kind}` }, s.text); } },
@@ -94,14 +94,15 @@ function locationCell(m) {
   return el('div', {}, [el('span', { class: 'badge badge-neutral' }, 'Общедомовой'), el('div', { class: 'text-muted' }, buildingLabelOf(m))]);
 }
 
-function lastCell(m) {
+function lastCell(m, today) {
   const text = lastReadingText(m);
   if (!text) return el('span', { class: 'text-muted' }, 'Показаний нет');
   const period = m.last_reading_period || m.last_reading_date;
+  const monthBadge = String(period || '').slice(0, 7) === today.slice(0, 7) ? 'badge-success' : 'badge-neutral';
   return el('div', {}, [
     el('div', { class: 'meter-last-reading-value' }, [
       el('span', { class: 'nowrap' }, `${text} ${resourceUnit(m.resource)}`),
-      monthLabel(period) ? el('span', { class: 'badge badge-success' }, monthLabel(period)) : null,
+      monthLabel(period) ? el('span', { class: `badge ${monthBadge}` }, monthLabel(period)) : null,
     ]),
     el('div', { class: 'text-muted' }, formatDate(m.last_reading_date)),
   ]);
