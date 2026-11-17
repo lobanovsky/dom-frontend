@@ -9,7 +9,6 @@ import { bindGatePhoneInput, gateVehicles, gateVehicleLabel, gateZoneLabel, grou
 import { openModal } from '../../ui/modal.js';
 import { confirmDialog } from '../../ui/confirmDialog.js';
 import { toast } from '../../ui/toast.js';
-import { editGateVehicle } from './editGateVehicle.js';
 
 const kinds = [['apartment','Квартиры'],['parking_space','Машиноместа'],['commercial','Коммерческие помещения']];
 const csvCell = (v) => `"${String(v ?? '').replaceAll('"','""')}"`;
@@ -195,7 +194,10 @@ export async function gateAccessViewPage(container) {
         {key:'recipient_name',label:'Кому',primary:true},
         {key:'relation',label:'Тип',render:(r)=>GATE_RELATIONS[r.relation]||'—'},
         {key:'phone',label:'Телефон',render:(r)=>copyPhoneCell(r.phone,formatPhone)},
-        {key:'vehicle',label:'Автомобиль',render:(r)=>el('div',{},gateVehicles(r).flatMap((car)=>[el('span',{},gateVehicleLabel(car)),car.id?el('button',{type:'button',class:'btn btn-sm',onclick:()=>editGateVehicle(car,async()=>{await loadActiveAccesses();selectPremises(p);})},'Изменить авто'):null].filter(Boolean)))},
+        {key:'vehicle',label:'Автомобиль',render:(r)=>{
+          const vehicles=gateVehicles(r);
+          return vehicles.length?el('div',{class:'gate-access-vehicles'},vehicles.map((car)=>el('div',{},gateVehicleLabel(car)))):'—';
+        }},
         {key:'zone',label:'Зона',render:gateZoneLabel},
         {key:'valid_until',label:'Действует до',render:(r)=>r.valid_until||'Без срока'},
       ],rows:entries,rowActions:(r)=>[
