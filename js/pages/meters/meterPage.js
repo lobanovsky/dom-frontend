@@ -123,10 +123,11 @@ export async function meterPage(container, { id }) {
     entityTitle: 'Показание',
     addLabel: 'Добавить показание',
     api: readingsApi,
-    fields: () => meterReadingFields(meter),
+    fields: (values) => meterReadingFields(meter, values),
+    watch: ['no_consumption'],
     fixedQuery: { meter_id: meter.id },
     fixed: { meter_id: meter.id },
-    newDefaults: { reading_date: today },
+    newDefaults: { reading_date: today, new_reading: true },
     filters: [
       { name: 'date_from', label: 'С', type: 'date' },
       { name: 'date_to', label: 'По', type: 'date' },

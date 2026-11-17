@@ -1,6 +1,7 @@
 // Перевод между значениями формы (строки из input) и телом запроса к API.
 // Бэкенд принимает PUT целиком, поэтому в тело попадают все поля формы:
 // пустые — как null (списки — как []), скрытые (visible() === false) — тоже.
+import { normalizeDecimal } from './decimal.js';
 
 function convert(def, value) {
   if (def.type === 'checkbox') return !!value;
@@ -14,7 +15,9 @@ function convert(def, value) {
   if (value === undefined || value === null) return null;
   if (typeof value === 'string' && value.trim() === '') return null;
   if (def.type === 'number' || def.numeric) {
-    const n = Number(value);
+    const normalized = def.decimalInput ? normalizeDecimal(value) : value;
+    if (normalized === null) return null;
+    const n = Number(normalized);
     return Number.isFinite(n) ? n : null;
   }
   if (def.type === 'picker') return value;

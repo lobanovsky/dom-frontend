@@ -156,17 +156,27 @@ const readingMonths = async (meter) => {
 };
 
 // Показание счётчика: по одному полю на тариф. meter — счётчик из ответа API (число тарифов, прошлое показание для подсказки).
-export const meterReadingFields = (meter) => {
+export const meterReadingFields = (meter, values = {}) => {
   const unit = resourceUnit(meter.resource);
+  const columns = tariffColumns(meter.tariffs);
+  const previousValues = Object.fromEntries(columns.map((column) => [
+    column.key,
+    meter[`last_${column.key}`] ?? meter[`initial_${column.key}`] ?? 0,
+  ]));
   return [
+    { type: 'checkbox', name: 'new_reading', virtual: true, visible: () => false },
     dateField('reading_date', 'Дата показаний', { required: true }),
     { type: 'picker', name: 'period', label: 'За какой месяц', full: true, component: monthField({ followDate: 'reading_date', marked: () => readingMonths(meter) }), required: true,
       help: 'В расчёт за этот месяц войдёт показание. По умолчанию — месяц даты показаний; можно выбрать другой, например показание от 28 сентября отнести к октябрю. В месяце одно показание счётчика' },
     // Подсказка над полями показаний: что было последним. Не поле формы (virtual), в запрос не уходит.
     { type: 'picker', name: 'previous_hint', label: '', virtual: true, full: true,
       component: () => el('div', { class: 'field-help' }, previousReadingText(meter)) },
+    { type: 'checkbox', name: 'no_consumption', label: 'Расхода не было — подставить предыдущее показание', virtual: true,
+      visible: (current) => !!current.new_reading,
+      onChange: (checked) => checked ? previousValues : null },
     ...tariffColumns(meter.tariffs).map((c) => numberField(c.key, `${c.label}, ${unit}`, {
-      required: true, full: true, min: 0, step: 0.001, inputmode: 'decimal',
+      required: true, full: true, min: 0, step: 0.001, inputmode: 'decimal', decimalInput: true, maxDecimals: 3,
+      disabled: !!values.no_consumption,
     })),
     textField('comment', 'Комментарий', { full: true }),
   ];

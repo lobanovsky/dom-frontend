@@ -24,8 +24,9 @@ export function createMetersList({ fixedQuery = {}, fixed = {}, target = 'fixed'
   function addReading(meter) {
     openEntityForm({
       title: `Новое показание: ${meterTitle(meter)}`,
-      fields: meterReadingFields(meter),
-      initialValues: { reading_date: today },
+      fields: (values) => meterReadingFields(meter, values),
+      watch: ['no_consumption'],
+      initialValues: { reading_date: today, new_reading: true },
       fixed: { meter_id: meter.id },
       save: (body) => meterReadingsApi.create(body),
       onSaved: () => list.reload(),

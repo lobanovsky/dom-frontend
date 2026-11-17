@@ -83,7 +83,7 @@ export function createForm({ fields, initialValues = {}, submitLabel = 'Сохр
       input.addEventListener('input', () => setValue(def.name, input.value));
     } else {
       input = el('input', {
-        type: def.type || 'text',
+        type: def.decimalInput ? 'text' : (def.type || 'text'),
         id: inputId,
         name: def.name,
         required: !!def.required,
@@ -91,15 +91,22 @@ export function createForm({ fields, initialValues = {}, submitLabel = 'Сохр
         disabled: !!def.disabled,
         min: def.min,
         step: def.step,
-        inputmode: def.inputmode,
+        inputmode: def.decimalInput ? 'decimal' : def.inputmode,
         maxlength: def.maxLength,
         minlength: def.minLength,
         autocomplete: def.autocomplete,
       });
       input.value = values[def.name] ?? '';
-      input.addEventListener('input', () => setValue(def.name, input.value));
-      // Число с запятой из буфера («101,71») браузер вставляет в поле числа как 10171: подставляем с точкой сами.
-      if (def.type === 'number') {
+      input.addEventListener('input', () => {
+        if (def.decimalInput && input.value.includes(',')) {
+          const cursor = input.selectionStart;
+          input.value = input.value.replaceAll(',', '.');
+          if (cursor !== null) input.setSelectionRange(cursor, cursor);
+        }
+        setValue(def.name, input.value);
+      });
+      // Нормализуем десятичное число из буфера, в том числе с запятой и пробелами-разделителями тысяч.
+      if (def.type === 'number' && (def.decimalInput || input.type === 'number')) {
         input.addEventListener('paste', (e) => {
           const text = normalizeDecimal(e.clipboardData?.getData('text'));
           if (text === null) return;
@@ -123,7 +130,9 @@ export function createForm({ fields, initialValues = {}, submitLabel = 'Сохр
   }
 
   function setValue(name, value) {
-    values = { ...values, [name]: value };
+    const def = fieldDefs.find((item) => item.name === name);
+    const changed = def?.onChange?.(value, { ...values });
+    values = { ...values, ...(changed && typeof changed === 'object' ? changed : {}), [name]: value };
     if (watch.includes(name) && typeof fields === 'function') {
       fieldDefs = resolveFields(fields, values);
       renderFields();
