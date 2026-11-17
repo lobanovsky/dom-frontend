@@ -8,6 +8,8 @@ import { personsApi, residentAccessApi } from '../../api/resources.js';
 import { personFields } from '../fields.js';
 import { el } from '../../lib/dom.js';
 import { saveFile } from '../../ui/saveFile.js';
+import { confirmDialog } from '../../ui/confirmDialog.js';
+import { openModal } from '../../ui/modal.js';
 import { toast } from '../../ui/toast.js';
 import { describeApiError } from '../../lib/apiErrors.js';
 import { formatDate, formatPhone, personName } from '../../lib/format.js';
@@ -29,6 +31,8 @@ async function downloadReport() {
 
 export function personsPage(container) {
   const admin = isAdmin();
+  let invitingOwners = false;
+  let inviteOwnersButton;
   const list = createCrudList({
     entityTitle: 'Физлицо',
     api: { ...personsApi, list: async (query) => {
@@ -52,8 +56,54 @@ export function personsPage(container) {
     emptyMessage: 'Физлиц не найдено',
     deleteMessage: (r) => `Удалить «${personName(r)}»?`,
   });
+
+  async function inviteAllOwners() {
+    if (invitingOwners) return;
+    const confirmed = await confirmDialog({
+      title: 'Пригласить собственников',
+      message: 'Будут приглашены действующие собственники-физлица со статусом «Не выдан». Им включится разрешение на личный кабинет, а письмо придёт на основной email из профиля. Собственники без email и ранее отключённые кабинеты не затрагиваются.',
+      confirmLabel: 'Пригласить',
+    });
+    if (!confirmed) return;
+    invitingOwners = true;
+    inviteOwnersButton.disabled = true;
+    inviteOwnersButton.textContent = 'Ставим приглашения в очередь…';
+    try {
+      const result = await residentAccessApi.inviteOwners();
+      const skipped = result.skipped || [];
+      if (!result.invited && !skipped.length) toast.info('Действующих собственников без выданного доступа не найдено.');
+      else toast.success(`Приглашений поставлено в очередь: ${result.invited}. Пропущено: ${skipped.length}.`);
+      if (skipped.length) showInviteSkips(result.invited, skipped);
+      await list.reload();
+    } catch (err) {
+      toast.error(describeApiError(err).message);
+    } finally {
+      invitingOwners = false;
+      inviteOwnersButton.disabled = false;
+      inviteOwnersButton.textContent = 'Пригласить собственников без доступа';
+    }
+  }
+
+  function showInviteSkips(invited, skipped) {
+    const reasons = {
+      already_registered: 'аккаунт уже зарегистрирован',
+      missing_email: 'в профиле не указан основной email',
+      invalid_email: 'основной email указан некорректно',
+      email_in_use: 'email уже используется другим кабинетом',
+      no_longer_eligible: 'нет действующего права собственности',
+    };
+    openModal({
+      title: 'Не приглашены',
+      content: el('div', {}, [
+        el('p', {}, `В очередь поставлено приглашений: ${invited}. Пропущено: ${skipped.length}.`),
+        el('ul', {}, skipped.map((item) => el('li', {}, [el('strong', {}, item.name || `Физлицо № ${item.person_id}`), ` — ${reasons[item.reason] || 'не удалось пригласить'}`]))),
+      ]),
+    });
+  }
+
+  inviteOwnersButton = admin ? el('button', { type: 'button', class: 'btn', onclick: inviteAllOwners }, 'Пригласить собственников без доступа') : null;
   container.replaceChildren(el('div', { class: 'page' }, [
-    el('div', { class: 'section-header' }, [el('h1', {}, 'Физлица'), el('div', { class: 'header-actions' }, [el('button', { type: 'button', class: 'btn', onclick: downloadReport }, 'Отчёт: физлица и недвижимость (PDF)')])]),
+    el('div', { class: 'section-header' }, [el('h1', {}, 'Физлица'), el('div', { class: 'header-actions' }, [...(admin ? [inviteOwnersButton] : []), el('button', { type: 'button', class: 'btn', onclick: downloadReport }, 'Отчёт: физлица и недвижимость (PDF)')])]),
     list.element,
   ]));
 }
