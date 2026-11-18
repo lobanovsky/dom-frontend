@@ -4,6 +4,7 @@ import { describeApiError } from '../../lib/apiErrors.js';
 import { formatPhone, formatDate } from '../../lib/format.js';
 import { toast } from '../../ui/toast.js';
 import { confirmDialog } from '../../ui/confirmDialog.js';
+import { copyPhoneCell } from '../../ui/copyPhone.js';
 import { bindGatePhoneInput } from '../../lib/gate.js';
 
 const zoneNames = {courtyard:'Двор',parking:'Паркинг'};
@@ -58,7 +59,7 @@ export async function gateServiceAccessPage(container) {
         el('thead',{},el('tr',{},['Категория / описание','Телефон','Автомобиль','Зона','Статус','Действует до','Действие'].map(x=>el('th',{},x)))),
         el('tbody',{},items.flatMap(item=>item.zones.map(zone=>el('tr',{},[
           el('td',{},[el('strong',{},item.name),el('div',{class:'service-access-category'},categoryNames[item.category]||item.category),item.comment?el('small',{class:'muted'},item.comment):null].filter(Boolean)),
-          el('td',{},formatPhone(item.phone)),
+          el('td',{},copyPhoneCell(item.phone,formatPhone)),
           el('td',{},[item.vehicle_plate,item.vehicle_brand].filter(Boolean).join(' · ')||'—'),
           el('td',{},el('span',{class:'service-access-zone-badge'},[el('span',{'aria-hidden':'true'},zoneIcons[zone.zone]||''),zoneNames[zone.zone]||zone.zone])),
           el('td',{},[statusNames[zone.status]||zone.status,zone.sync_error?el('div',{class:'form-error'},zone.sync_error):null].filter(Boolean)),
