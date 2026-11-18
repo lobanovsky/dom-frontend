@@ -143,8 +143,8 @@ export async function gateAccessViewPage(container) {
     let offset=0;
     while(true) {
       const {items=[]}=await gateApi.list({premises_id:premise.id,display_status:'rejected',limit:200,offset});
-      const activePhones=new Set((activeByPremises.get(premise.id)||[]).map((row)=>row.phone));
-      rows.push(...items.filter((row)=>row.premises_id===premise.id&&!activePhones.has(row.phone)));
+      const activeAccesses=new Set((activeByPremises.get(premise.id)||[]).map((row)=>`${row.phone}:${row.person_id}`));
+      rows.push(...items.filter((row)=>row.premises_id===premise.id&&!activeAccesses.has(`${row.phone}:${row.person_id}`)));
       if(groupGateRequests(items).length<200) break;
       offset+=200;
     }
