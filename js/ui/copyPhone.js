@@ -28,6 +28,7 @@ export function copyPhoneCell(phone, formatPhone) {
     class: 'gate-copy-phone',
     title: 'Копировать телефон',
     'aria-label': `Копировать телефон ${formatPhone(phone)}`,
+    html: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" focusable="false"><rect x="8" y="8" width="12" height="13" rx="2"></rect><path d="M16 8V5a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h2"></path></svg>',
     onclick: async () => {
       try {
         await writeClipboard(digits);
@@ -36,10 +37,7 @@ export function copyPhoneCell(phone, formatPhone) {
         toast.error('Не удалось скопировать номер');
       }
     },
-  }, el('svg', { viewBox: '0 0 24 24', width: '16', height: '16', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.8', 'aria-hidden': 'true' }, [
-    el('rect', { x: '8', y: '8', width: '12', height: '13', rx: '2' }),
-    el('path', { d: 'M16 8V5a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h2' }),
-  ]));
+  });
 
   return el('span', { class: 'gate-phone-cell' }, [formatPhone(phone), button]);
 }
