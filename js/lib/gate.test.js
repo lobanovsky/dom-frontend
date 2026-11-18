@@ -78,7 +78,7 @@ test('ожидающая заявка сохраняет проверку даж
   );
 });
 
-import { gateVehicles, gateVehicleLabel } from './gate.js';
+import { gateVehicles, gateVehicleLabel, copyGateAccessToParking } from './gate.js';
 test('заявки показывают автомобили из реестра без архивного статуса', () => {
   const row = {
     vehicles: [
@@ -93,4 +93,38 @@ test('заявки показывают автомобили из реестра
     gateVehicles({ vehicles: [{ plate_number: 'С789СС77' }] }),
     [{ plate_number: 'С789СС77' }],
   );
+});
+
+test('копирование доступа на машиноместо сохраняет данные человека, автомобиля и срока', () => {
+  const row = {
+    phone: '79990000001',
+    recipient_name: 'Голдобин Владимир Анатольевич',
+    relation: 'relative',
+    valid_until: '2027-05-30',
+    no_personal_vehicle: false,
+    occasional_vehicle: true,
+    vehicles: [{ id: 18, plate_number: 'А123АА77', brand: 'Toyota' }],
+    comment: 'Примечание',
+  };
+  assert.deepEqual(copyGateAccessToParking(row, 46), {
+    premises_id: 46,
+    zone: 'parking',
+    phone: '79990000001',
+    recipient_name: 'Голдобин Владимир Анатольевич',
+    relation: 'relative',
+    valid_until: '2027-05-30',
+    no_personal_vehicle: false,
+    occasional_vehicle: true,
+    vehicles: [{ plate_number: 'А123АА77', brand: 'Toyota' }],
+    comment: 'Примечание',
+  });
+});
+
+test('копирование доступа без личного автомобиля не прикладывает прежние автомобили', () => {
+  const body = copyGateAccessToParking({
+    phone: '79990000001', recipient_name: 'Иван', relation: 'owner',
+    no_personal_vehicle: true, vehicles: [{ plate_number: 'А123АА77', brand: 'Toyota' }],
+  }, 46);
+  assert.equal(body.no_personal_vehicle, true);
+  assert.deepEqual(body.vehicles, []);
 });

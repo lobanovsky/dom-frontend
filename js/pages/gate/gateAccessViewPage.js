@@ -5,7 +5,7 @@ import { formatPhone, isActiveOn, todayIso } from '../../lib/format.js';
 import { describeApiError } from '../../lib/apiErrors.js';
 import { renderTable } from '../../ui/table.js';
 import { saveFile } from '../../ui/saveFile.js';
-import { bindGatePhoneInput, gateVehicles, gateVehicleLabel, gateZoneLabel, groupGateRequests, GATE_RELATIONS, gatePremisesTone, gateOwnersFirst } from '../../lib/gate.js';
+import { bindGatePhoneInput, gateVehicles, gateVehicleLabel, gateZoneLabel, groupGateRequests, GATE_RELATIONS, gatePremisesTone, gateOwnersFirst, copyGateAccessToParking } from '../../lib/gate.js';
 import { openModal } from '../../ui/modal.js';
 import { confirmDialog } from '../../ui/confirmDialog.js';
 import { toast } from '../../ui/toast.js';
@@ -220,9 +220,10 @@ export async function gateAccessViewPage(container) {
         {key:'zone',label:'Зона',render:gateZoneLabel},
         {key:'valid_until',label:'Действует до',render:(r)=>r.valid_until||'Без срока'},
       ],rows:entries,rowActions:(r)=>[
+        p.kind!=='parking_space'?el('button',{type:'button',class:'btn btn-sm',onclick:()=>createAccess(p,r)},'Выдать на машиноместо'):null,
         el('button',{type:'button',class:'btn btn-sm',onclick:()=>editAccess(r,p)},'Изменить'),
         el('button',{type:'button',class:'btn btn-sm btn-danger',onclick:()=>closeAccess(r,p)},'Закрыть'),
-      ],emptyMessage:'У этого объекта нет действующих доступов'}),
+      ].filter(Boolean),emptyMessage:'У этого объекта нет действующих доступов'}),
       el('label',{class:'gate-rejected-toggle'},[rejectedToggle,' Показать отклонённые доступы']),
       rejectedHost,
     );
@@ -303,13 +304,16 @@ export async function gateAccessViewPage(container) {
     }
   }
 
-  function createAccess(premise) {
-    const name=el('input',{required:true,maxlength:120});
-    const phone=el('input',{required:true,type:'tel',inputmode:'numeric',autocomplete:'tel',maxlength:16,pattern:'\\+7 [0-9]{3} [0-9]{3} [0-9]{2} [0-9]{2}',placeholder:'+7 900 000 00 00'});
+  function createAccess(premise, sourceAccess=null) {
+    const copying=Boolean(sourceAccess);
+    const name=el('input',{required:true,maxlength:120,value:sourceAccess?.recipient_name||''});
+    const phone=el('input',{required:true,type:'tel',inputmode:'numeric',autocomplete:'tel',maxlength:16,pattern:'\\+7 [0-9]{3} [0-9]{3} [0-9]{2} [0-9]{2}',placeholder:'+7 900 000 00 00',value:sourceAccess?.phone||''});
     bindGatePhoneInput(phone);
-    const relation=el('select',{},Object.entries(GATE_RELATIONS).filter(([value])=>value!=='service').map(([value,label])=>el('option',{value,selected:value==='guest'},label)));
-    const validUntil=el('input',{type:'date'});
-    const noCar=el('input',{type:'checkbox'});
+    const relationValue=sourceAccess?.relation==='service'?'guest':sourceAccess?.relation;
+    const relation=el('select',{},Object.entries(GATE_RELATIONS).filter(([value])=>value!=='service').map(([value,label])=>el('option',{value,selected:copying?value===relationValue:value==='guest'},label)));
+    const validUntil=el('input',{type:'date',value:sourceAccess?.valid_until||''});
+    const noCar=el('input',{type:'checkbox',checked:!!sourceAccess?.no_personal_vehicle});
+    const occasionalVehicle=el('input',{type:'checkbox',checked:!!sourceAccess?.occasional_vehicle});
     const cars=el('div',{class:'gate-edit-cars'});
     const rows=[];
     const sync=()=>rows.forEach((car)=>{car.plate.disabled=noCar.checked;car.brand.disabled=noCar.checked;car.remove.disabled=noCar.checked;});
@@ -320,23 +324,67 @@ export async function gateAccessViewPage(container) {
       const remove=el('button',{type:'button',class:'btn btn-sm',onclick:()=>{rows.splice(rows.indexOf(car),1);line.remove();sync();}},'Удалить');
       const car={plate,brand,remove};line=el('div',{class:'gate-edit-car'},[plate,brand,remove]);rows.push(car);cars.append(line);sync();
     };
-    addCar();noCar.addEventListener('change',sync);
+    if(copying) {
+      for(const car of gateVehicles(sourceAccess))addCar(car);
+      if(!noCar.checked&&!rows.length)addCar();
+    } else addCar();
+    noCar.addEventListener('change',sync);
+    const targetBuilding=copying?el('select',{},buildings.map((b)=>el('option',{value:String(b.id),selected:String(b.id)===String(premise.building_id)},b.name?`${b.name} · ${b.address||''}`:b.address||`Дом ${b.id}`))):null;
+    const targetParking=copying?el('select',{required:true},el('option',{value:''},'Загрузка машиномест…')):null;
+    let parkingPremises=[];
     const message=el('p',{role:'alert',class:'form-error'});
-    const save=el('button',{type:'submit',class:'btn btn-primary'},'Добавить доступ');
+    const save=el('button',{type:'submit',class:'btn btn-primary'},copying?'Выдать доступ':'Добавить доступ');
+    async function loadParkingSpaces() {
+      save.disabled=true;
+      targetParking.disabled=true;
+      targetParking.replaceChildren(el('option',{value:''},'Загрузка машиномест…'));
+      try {
+        parkingPremises=[];
+        let offset=0;
+        while(true) {
+          const {items=[]}=await premisesApi.list({kind:'parking_space',building_id:targetBuilding.value,limit:200,offset});
+          parkingPremises.push(...items.filter((item)=>!item.deleted_at));
+          if(items.length<200)break;
+          offset+=200;
+        }
+        parkingPremises.sort(numberCompare);
+        targetParking.replaceChildren(el('option',{value:''},parkingPremises.length?'Выберите машиноместо':'Машиноместа не найдены'),...parkingPremises.map((item)=>el('option',{value:String(item.id)},`${item.number}${item.floor==null?'':`, этаж ${item.floor}`}`)));
+        targetParking.disabled=!parkingPremises.length;
+        save.disabled=!parkingPremises.length;
+      } catch(error) {
+        targetParking.replaceChildren(el('option',{value:''},'Не удалось загрузить машиноместа'));
+        message.textContent=describeApiError(error).message;
+        save.disabled=true;
+      }
+    }
+    if(copying)targetBuilding.addEventListener('change',loadParkingSpaces);
     let modal;
     const form=el('form',{class:'form',onsubmit:async(event)=>{
       event.preventDefault();if(!form.reportValidity())return;save.disabled=true;syncProgress.hidden=false;
       try{
-        await gateApi.create({premises_id:premise.id,zone:premise.kind==='parking_space'?'parking':'courtyard',phone:phone.value.trim(),recipient_name:name.value.trim(),relation:relation.value,valid_until:validUntil.value||null,no_personal_vehicle:noCar.checked,vehicles:noCar.checked?[]:rows.map(({plate,brand})=>({plate_number:plate.value.trim(),brand:brand.value.trim()})).filter((car)=>car.plate_number||car.brand)});
-        modal.close();await loadActiveAccesses();selectPremises(premise);
+        const vehicles=noCar.checked?[]:rows.map(({plate,brand})=>({plate_number:plate.value.trim(),brand:brand.value.trim()})).filter((car)=>car.plate_number||car.brand);
+        const target=copying?parkingPremises.find((item)=>String(item.id)===targetParking.value):premise;
+        if(!target)throw new Error('Выберите машиноместо');
+        const body=copying?{
+          ...copyGateAccessToParking(sourceAccess,target.id),
+          phone:phone.value.trim(),recipient_name:name.value.trim(),relation:relation.value,
+          valid_until:validUntil.value||null,no_personal_vehicle:noCar.checked,
+          occasional_vehicle:occasionalVehicle.checked,vehicles,comment:sourceAccess.comment||'',
+        }:{premises_id:premise.id,zone:premise.kind==='parking_space'?'parking':'courtyard',phone:phone.value.trim(),recipient_name:name.value.trim(),relation:relation.value,valid_until:validUntil.value||null,no_personal_vehicle:noCar.checked,occasional_vehicle:occasionalVehicle.checked,vehicles};
+        await gateApi.create(body);
+        modal.close();toast.success(copying?'Доступ на машиноместо выдан.':'Доступ выдан.');await loadActiveAccesses();selectPremises(premise);
       }catch(error){message.textContent=describeApiError(error).message;}finally{save.disabled=false;syncProgress.hidden=true;}
     }},[
-      el('p',{class:'muted'},`${objectType(premise.kind)} ${premise.number}. Доступ будет активен сразу.`),
+      el('p',{class:'muted'},copying?`Данные скопированы из доступа для ${sourceAccess.recipient_name}. Выберите машиноместо; доступ будет выдан сразу.`:`${objectType(premise.kind)} ${premise.number}. Доступ будет активен сразу.`),
+      copying?el('label',{class:'field'},['Дом',targetBuilding]):null,
+      copying?el('label',{class:'field'},['Машиноместо',targetParking]):null,
       el('label',{class:'field'},['Имя',name]),el('label',{class:'field'},['Телефон',phone]),
       el('label',{class:'field'},['Кто будет пользоваться',relation]),el('label',{class:'field'},['Действует до (необязательно)',validUntil]),
+      el('label',{class:'field'},[occasionalVehicle,' Разовый автомобиль']),
       el('fieldset',{class:'field'},[el('legend',{},'Автомобили'),cars,el('button',{type:'button',class:'btn btn-sm',onclick:()=>addCar()},'Добавить автомобиль'),el('label',{},[noCar,' Нет личного автомобиля'])]),message,save,
-    ]);
-    modal=openModal({title:'Добавить доступ без заявки',content:form,wide:true});
+    ].filter(Boolean));
+    modal=openModal({title:copying?'Выдать доступ на машиноместо':'Добавить доступ без заявки',content:form,wide:true});
+    if(copying)loadParkingSpaces();
   }
 
   function closeAccess(row,premise) {

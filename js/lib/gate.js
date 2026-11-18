@@ -98,3 +98,22 @@ export function gateVehicles(row) {
     : [];
 }
 export const gateVehicleLabel = (car) => [car.plate_number, car.brand].filter(Boolean).join(' · ');
+
+export function copyGateAccessToParking(row, premisesId) {
+  const noPersonalVehicle = Boolean(row.no_personal_vehicle);
+  return {
+    premises_id: premisesId,
+    zone: 'parking',
+    phone: row.phone,
+    recipient_name: row.recipient_name,
+    relation: row.relation === 'service' ? 'guest' : row.relation,
+    valid_until: row.valid_until || null,
+    no_personal_vehicle: noPersonalVehicle,
+    occasional_vehicle: Boolean(row.occasional_vehicle),
+    vehicles: noPersonalVehicle ? [] : gateVehicles(row).map(({ plate_number, brand }) => ({
+      plate_number: plate_number || '',
+      brand: brand || '',
+    })),
+    comment: row.comment || '',
+  };
+}
