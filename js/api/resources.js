@@ -265,6 +265,7 @@ export const gateApi = {
  list: (query) => client.get('/api/v1/gate-access', { query }),
  lookupPhone: (phone) => client.get('/api/v1/gate-access/lookup', { query: { phone } }),
  create: (body) => client.post('/api/v1/gate-access', body),
+ restore: (id) => client.post(`/api/v1/gate-access/${id}/restore`, {}),
  events: (id) => client.get(`/api/v1/gate-access/${id}/events`),
  decision: (id, body) => client.post(`/api/v1/gate-access/${id}/decision`, body),
  update: (id, body) => client.put(`/api/v1/gate-access/${id}`, body),

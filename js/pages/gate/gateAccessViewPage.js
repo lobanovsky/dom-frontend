@@ -143,7 +143,8 @@ export async function gateAccessViewPage(container) {
     let offset=0;
     while(true) {
       const {items=[]}=await gateApi.list({premises_id:premise.id,display_status:'rejected',limit:200,offset});
-      rows.push(...items.filter((row)=>row.premises_id===premise.id));
+      const activePhones=new Set((activeByPremises.get(premise.id)||[]).map((row)=>row.phone));
+      rows.push(...items.filter((row)=>row.premises_id===premise.id&&!activePhones.has(row.phone)));
       if(groupGateRequests(items).length<200) break;
       offset+=200;
     }
@@ -228,9 +229,9 @@ export async function gateAccessViewPage(container) {
           {key:'status',label:'Статус',render:(r)=>statusLabel[r.effective_status]||'Отклонена'},
           {key:'review_note',label:'Причина',render:(r)=>r.review_note||'—'},
         ],rows,rowActions:(r)=>[
-          el('button',{type:'button',class:'btn btn-sm btn-primary',onclick:()=>restoreRejected(r,premise)},'Предоставить заново'),
+          ['rejected','cancelled','revoked'].includes(r.status)?el('button',{type:'button',class:'btn btn-sm btn-primary',onclick:()=>restoreRejected(r,premise)},'Предоставить заново'):null,
           el('button',{type:'button',class:'btn btn-sm btn-danger',onclick:()=>deleteRejected(r,premise)},'Удалить'),
-        ],emptyMessage:'Отклонённых доступов нет'}):el('p',{class:'muted'},'Отклонённых доступов нет.'),
+        ].filter(Boolean),emptyMessage:'Отклонённых доступов нет'}):el('p',{class:'muted'},'Отклонённых доступов нет.'),
       );
     } catch(error) {
       if(selected?.id===premise.id&&showRejected&&host.isConnected) host.replaceChildren(el('p',{class:'form-error'},describeApiError(error).message));
@@ -246,17 +247,7 @@ export async function gateAccessViewPage(container) {
     if(!confirmed)return;
     syncProgress.hidden=false;
     try {
-      const cars=gateVehicles(row).map(({plate_number,brand})=>({plate_number,brand}));
-      await gateApi.create({
-        premises_id:premise.id,
-        zone:premise.kind==='parking_space'?'parking':'courtyard',
-        phone:row.phone,
-        recipient_name:row.recipient_name,
-        relation:row.relation,
-        valid_until:row.valid_until||null,
-        no_personal_vehicle:!!row.no_personal_vehicle,
-        vehicles:row.no_personal_vehicle?[]:cars,
-      });
+      await gateApi.restore(row.id);
       toast.success('Доступ предоставлен заново.');
       await loadActiveAccesses();
       selectPremises(premise);
