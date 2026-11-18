@@ -264,6 +264,7 @@ export const residentAccessApi = {
 export const gateApi = {
  list: (query) => client.get('/api/v1/gate-access', { query }),
  lookupPhone: (phone) => client.get('/api/v1/gate-access/lookup', { query: { phone } }),
+ lookupRecipient: (recipient) => client.get('/api/v1/gate-access/lookup', { query: { recipient } }),
  create: (body) => client.post('/api/v1/gate-access', body),
  restore: (id) => client.post(`/api/v1/gate-access/${id}/restore`, {}),
  events: (id) => client.get(`/api/v1/gate-access/${id}/events`),

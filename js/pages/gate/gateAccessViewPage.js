@@ -31,10 +31,19 @@ export async function gateAccessViewPage(container) {
   const download = el('button',{class:'btn',type:'button',onclick:exportAll},'Скачать список доступов (CSV)');
   const lookupPhone = el('input',{type:'tel',inputmode:'tel',autocomplete:'tel',placeholder:'+7 900 000-00-00','aria-label':'Телефон для поиска'});
   bindGatePhoneInput(lookupPhone);
+  const lookupRecipient = el('input',{type:'search',autocomplete:'name',placeholder:'ФИО получателя','aria-label':'ФИО для поиска',maxlength:120});
   const lookupResults = el('div',{class:'gate-phone-lookup-results','aria-live':'polite'});
-  const lookupForm = el('form',{class:'gate-phone-lookup',onsubmit:searchPhone},[
-    lookupPhone,
-    el('button',{type:'submit',class:'btn btn-primary'},'Найти доступы'),
+  const lookupForm = el('div',{class:'gate-phone-lookup'},[
+    el('div',{class:'gate-phone-lookup-fields'},[
+      el('form',{class:'gate-phone-lookup-field',onsubmit:searchPhone},[
+        lookupPhone,
+        el('button',{type:'submit',class:'btn btn-primary'},'Найти по телефону'),
+      ]),
+      el('form',{class:'gate-phone-lookup-field',onsubmit:searchRecipient},[
+        lookupRecipient,
+        el('button',{type:'submit',class:'btn btn-primary'},'Найти по ФИО'),
+      ]),
+    ]),
     el('span',{class:'field-help'},'Поиск по активным доступам и заявкам в данных Dom; устройства ELDES напрямую не опрашиваются.'),
     lookupResults,
   ]);
@@ -53,11 +62,20 @@ export async function gateAccessViewPage(container) {
 
   async function searchPhone(event) {
     event.preventDefault();
+    await runLookup(() => gateApi.lookupPhone(lookupPhone.value), `По номеру ${formatPhone(lookupPhone.value)} доступы не найдены.`);
+  }
+
+  async function searchRecipient(event) {
+    event.preventDefault();
+    await runLookup(() => gateApi.lookupRecipient(lookupRecipient.value.trim()), `По ФИО «${lookupRecipient.value.trim()}» доступы не найдены.`);
+  }
+
+  async function runLookup(request, emptyMessage) {
     lookupResults.replaceChildren(el('p',{class:'muted'},'Ищем…'));
     try {
-      const {items=[]}=await gateApi.lookupPhone(lookupPhone.value);
+      const {items=[]}=await request();
       if(!items.length) {
-        lookupResults.replaceChildren(el('p',{class:'muted'},'По этому номеру не найдено активных доступов или заявок на согласовании.'));
+        lookupResults.replaceChildren(el('p',{class:'muted'},emptyMessage));
         return;
       }
       const statusLabel=(item)=>({
@@ -67,7 +85,7 @@ export async function gateAccessViewPage(container) {
       }[item.status]||item.status);
       const deviceLabel=(item)=>item.status==='revoke_requested'||item.status==='revoke_pending'?'Возможно, ещё есть на устройстве':item.on_device?'Есть':'Ещё не выдан';
       lookupResults.replaceChildren(el('p',{class:'field-help'},`Найдено оснований: ${items.length}`),el('div',{class:'data-table-wrap'},el('table',{class:'data-table'},[
-        el('thead',{},el('tr',{},['Зона','Основание','Кому','Статус в Dom','Устройство'].map((label)=>el('th',{},label)))),
+        el('thead',{},el('tr',{},['Зона','Основание','ФИО / имя','Статус в Dom','Устройство'].map((label)=>el('th',{},label)))),
         el('tbody',{},items.map((item)=>el('tr',{},[
           el('td',{},item.zone==='parking'?'Паркинг':'Двор'),
           el('td',{},item.source==='service'?'Служебный доступ':el('button',{type:'button',class:'gate-phone-lookup-link',onclick:()=>openLookupPremise(item)},item.location)),
