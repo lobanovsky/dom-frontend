@@ -40,9 +40,16 @@ export async function gatePage(container) {
   const phone = el('input', { type:'search', placeholder:'Телефон', 'aria-label':'Телефон', maxlength:32 });
   const vehicle = el('input', { type:'search', placeholder:'Авто', 'aria-label':'Авто', maxlength:80 });
   const premises = el('input', { type:'search', placeholder:'Номер помещения', 'aria-label':'Номер помещения', maxlength:80 });
-  const status = el('select', { 'aria-label': 'Статус заявки' }, [
-    el('option', { value: '', selected: true }, 'Все статусы'),
-    ...Object.entries(GATE_STATUSES).map(([value, label]) => el('option', { value }, label)),
+  const allStatuses = el('input', { type: 'checkbox', checked: false });
+  const statusCheckboxes = Object.entries(GATE_STATUSES).map(([value, label]) => ({
+    value,
+    input: el('input', { type: 'checkbox', checked: ['pending', 'revoke_requested'].includes(value) }),
+    label,
+  }));
+  const statusFilter = el('fieldset', { class: 'gate-status-filters' }, [
+    el('legend', {}, 'Статусы'),
+    el('label', { class: 'gate-status-option' }, [allStatuses, 'Все статусы']),
+    ...statusCheckboxes.map(({ input, label }) => el('label', { class: 'gate-status-option' }, [input, label])),
   ]);
   const zone = el('select', { 'aria-label': 'Куда доступ' }, [
     el('option', { value: '' }, 'Двор и паркинг'),
@@ -93,13 +100,23 @@ export async function gatePage(container) {
         load();
       },
     },
-    [recipient, phone, vehicle, premises, status, zone, el('button', { type: 'submit', class: 'btn' }, 'Найти / обновить')],
+    [recipient, phone, vehicle, premises, statusFilter, zone, el('button', { type: 'submit', class: 'btn' }, 'Найти / обновить')],
   );
-  for (const select of [status, zone])
-    select.addEventListener('change', () => {
-      offset = 0;
-      load();
-    });
+  allStatuses.addEventListener('change', () => {
+    if (allStatuses.checked) statusCheckboxes.forEach(({ input }) => { input.checked = false; });
+    offset = 0;
+    load();
+  });
+  for (const { input } of statusCheckboxes) input.addEventListener('change', () => {
+    if (input.checked) allStatuses.checked = false;
+    if (!statusCheckboxes.some(({ input: checkbox }) => checkbox.checked)) allStatuses.checked = true;
+    offset = 0;
+    load();
+  });
+  zone.addEventListener('change', () => {
+    offset = 0;
+    load();
+  });
   container.replaceChildren(
     el('div', { class: 'page' }, [
       el('h1', {}, 'Доступ во двор и паркинг'),
@@ -120,7 +137,7 @@ export async function gatePage(container) {
     host.replaceChildren(el('p', { role: 'status' }, 'Загрузка…'));
     try {
       const result = await gateApi.list({
-        display_status: status.value,
+        display_status: allStatuses.checked ? '' : statusCheckboxes.filter(({ input }) => input.checked).map(({ value }) => value).join(','),
         zone: zone.value,
         recipient: recipient.value.trim(), phone: phone.value.trim(), vehicle: vehicle.value.trim(), premises: premises.value.trim(),
         limit: pageSize,

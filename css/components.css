@@ -1489,8 +1489,12 @@ a.account-link:hover { text-decoration: underline; }
 
 /* Рабочее место охраны. */
 .gate-filters { display: flex; flex-wrap: wrap; gap: 10px; margin: 16px 0; }
-.gate-filters input { flex: 1 1 240px; min-width: 0; }
-.gate-filters input, .gate-filters select { min-height: 40px; padding: 8px; border: 1px solid var(--color-border); border-radius: 8px; font: inherit; }
+.gate-filters input:not([type="checkbox"]) { flex: 1 1 200px; min-width: 0; }
+.gate-filters input:not([type="checkbox"]), .gate-filters select { min-height: 40px; padding: 8px; border: 1px solid var(--color-border); border-radius: 8px; font: inherit; }
+.gate-status-filters { display: flex; flex: 1 1 100%; flex-wrap: wrap; align-items: center; gap: 6px 14px; min-width: 0; margin: 0; padding: 8px 10px; border: 1px solid var(--color-border); border-radius: 8px; }
+.gate-status-filters legend { padding: 0 4px; color: var(--color-text-muted); font-size: .85rem; }
+.gate-status-option { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.gate-status-option input[type="checkbox"] { flex: none; width: 16px; height: 16px; min-height: 0; margin: 0; padding: 0; }
 .gate-pagination { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 16px; }
 .gate-detail { display: grid; gap: 12px; overflow-wrap: anywhere; }
 .gate-detail p, .gate-detail h3 { margin: 0; white-space: pre-wrap; }
