@@ -227,10 +227,43 @@ export async function gateAccessViewPage(container) {
           {key:'vehicle',label:'Автомобиль',render:(r)=>gateVehicles(r).map(gateVehicleLabel).join(', ')||'—'},
           {key:'status',label:'Статус',render:(r)=>statusLabel[r.effective_status]||'Отклонена'},
           {key:'review_note',label:'Причина',render:(r)=>r.review_note||'—'},
-        ],rows,rowActions:(r)=>[el('button',{type:'button',class:'btn btn-sm btn-danger',onclick:()=>deleteRejected(r,premise)},'Удалить')],emptyMessage:'Отклонённых доступов нет'}):el('p',{class:'muted'},'Отклонённых доступов нет.'),
+        ],rows,rowActions:(r)=>[
+          el('button',{type:'button',class:'btn btn-sm btn-primary',onclick:()=>restoreRejected(r,premise)},'Предоставить заново'),
+          el('button',{type:'button',class:'btn btn-sm btn-danger',onclick:()=>deleteRejected(r,premise)},'Удалить'),
+        ],emptyMessage:'Отклонённых доступов нет'}):el('p',{class:'muted'},'Отклонённых доступов нет.'),
       );
     } catch(error) {
       if(selected?.id===premise.id&&showRejected&&host.isConnected) host.replaceChildren(el('p',{class:'form-error'},describeApiError(error).message));
+    }
+  }
+
+  async function restoreRejected(row,premise) {
+    const confirmed=await confirmDialog({
+      title:'Предоставить доступ заново',
+      message:`Сразу открыть доступ для ${row.recipient_name}, ${formatPhone(row.phone)}, объект: ${objectType(premise.kind)} ${premise.number}? Данные и автомобили будут взяты из этой записи.`,
+      confirmLabel:'Предоставить доступ',
+    });
+    if(!confirmed)return;
+    syncProgress.hidden=false;
+    try {
+      const cars=gateVehicles(row).map(({plate_number,brand})=>({plate_number,brand}));
+      await gateApi.create({
+        premises_id:premise.id,
+        zone:premise.kind==='parking_space'?'parking':'courtyard',
+        phone:row.phone,
+        recipient_name:row.recipient_name,
+        relation:row.relation,
+        valid_until:row.valid_until||null,
+        no_personal_vehicle:!!row.no_personal_vehicle,
+        vehicles:row.no_personal_vehicle?[]:cars,
+      });
+      toast.success('Доступ предоставлен заново.');
+      await loadActiveAccesses();
+      selectPremises(premise);
+    } catch(error) {
+      toast.error(describeApiError(error).message);
+    } finally {
+      syncProgress.hidden=true;
     }
   }
 
