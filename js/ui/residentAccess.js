@@ -17,12 +17,10 @@ export async function openResidentAccess(person, { onSaved } = {}) {
   const invite = el('button', { type: 'button', class: 'btn', disabled: true }, 'Сохранить и отправить приглашение');
   const password = el('input', { type: 'password', autocomplete: 'new-password', maxlength: 72 });
   const passwordRepeat = el('input', { type: 'password', autocomplete: 'new-password', maxlength: 72 });
-  const setPassword = el('button', { type: 'button', class: 'btn', disabled: true }, 'Задать пароль');
   const passwordSection = el('section', { class: 'resident-password-section', hidden: true }, [
-    el('p', { class: 'field-help' }, 'Это создаст кабинет или задаст новый пароль и включит доступ. Передайте пароль жителю лично; он сможет сменить его в любое время в профиле кабинета.'),
+    el('p', { class: 'field-help' }, 'Чтобы задать пароль, заполните оба поля и нажмите «Сохранить». Если оставить их пустыми, сохранятся только настройки доступа. Передайте пароль жителю лично; он сможет сменить его в любое время в профиле кабинета.'),
     el('label', { class: 'field' }, [el('span', {}, 'Пароль (не короче 8 символов)'), password]),
     el('label', { class: 'field' }, [el('span', {}, 'Повторите пароль'), passwordRepeat]),
-    setPassword,
   ]);
   let registered = false;
   let eligible = false;
@@ -36,7 +34,6 @@ export async function openResidentAccess(person, { onSaved } = {}) {
     invite.disabled = !loaded || busy || !enabled.checked || !eligible;
     password.disabled = !loaded || busy || !eligible;
     passwordRepeat.disabled = !loaded || busy || !eligible;
-    setPassword.disabled = !loaded || busy || !eligible || !email.value.trim();
   }
   const form = el('form', { class: 'form' }, [
     el('p', {}, 'Подтверждайте доступ после проверки личности и принадлежности почты. Один адрес может использоваться только для одного кабинета.'),
@@ -63,7 +60,6 @@ export async function openResidentAccess(person, { onSaved } = {}) {
     email.disabled = false;
     summary.replaceChildren(residentAccessStatusView(state));
     if (registered) summary.append(el('p', { class: 'field-help' }, 'Аккаунт уже зарегистрирован. Если пароль забыт, собственник может восстановить его на странице входа.'));
-    setPassword.textContent = registered ? 'Задать новый пароль и включить доступ' : 'Создать кабинет и включить доступ';
     loaded = true;
     syncButtons();
   } catch { status.textContent = 'Не удалось загрузить настройки. Закройте окно и повторите попытку.'; }
@@ -88,11 +84,10 @@ export async function openResidentAccess(person, { onSaved } = {}) {
         : e.status === 503 ? 'Исходящая почта пока не настроена. Можно сохранить доступ без приглашения.' : 'Не удалось сохранить настройки. Проверьте данные и повторите попытку.';
     } finally { busy = false; syncButtons(); }
   }
-  form.addEventListener('submit', (event) => { event.preventDefault(); send(false); });
-  invite.addEventListener('click', () => send(true));
-  setPassword.addEventListener('click', async () => {
+  async function savePassword() {
     if (!loaded || busy || !eligible) return;
     status.textContent = '';
+    if (!password.value || !passwordRepeat.value) { status.textContent = 'Чтобы задать пароль, заполните оба поля.'; (!password.value ? password : passwordRepeat).focus(); return; }
     if (Array.from(password.value).length < 8) { status.textContent = 'Пароль должен содержать не менее 8 символов.'; password.focus(); return; }
     if (password.value !== passwordRepeat.value) { status.textContent = 'Пароли не совпадают.'; passwordRepeat.focus(); return; }
     busy = true; syncButtons();
@@ -111,5 +106,11 @@ export async function openResidentAccess(person, { onSaved } = {}) {
         : e.message.includes('resident_accounts_email_key') ? 'Эта почта уже используется другим кабинетом.'
         : 'Не удалось задать пароль. Проверьте данные и повторите попытку.';
     } finally { busy = false; syncButtons(); }
+  }
+  form.addEventListener('submit', (event) => {
+    event.preventDefault();
+    if (password.value || passwordRepeat.value) savePassword();
+    else send(false);
   });
+  invite.addEventListener('click', () => send(true));
 }
