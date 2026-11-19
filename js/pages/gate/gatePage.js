@@ -81,6 +81,10 @@ export async function gatePage(container) {
     'Вперёд →',
   );
   const page = el('span', { class: 'pager-info', 'aria-live': 'polite' });
+  const syncProgress = el('div', { class: 'service-access-progress', hidden: true, role: 'status', 'aria-live': 'polite' }, el('div', { class: 'service-access-progress-card' }, [
+    el('span', { class: 'service-access-spinner', 'aria-hidden': 'true' }),
+    el('span', {}, 'Обновляем доступ на устройствах…'),
+  ]));
   const sizeSelect = el('select', { 'aria-label': 'Строк на странице' }, PAGE_SIZES.map((size) => el('option', { value: String(size) }, String(size))));
   sizeSelect.value = String(pageSize);
   sizeSelect.addEventListener('change', () => {
@@ -129,6 +133,7 @@ export async function gatePage(container) {
       host,
       pager,
     ]),
+    syncProgress,
   );
   async function load() {
     const request = ++version;
@@ -339,6 +344,7 @@ export async function gatePage(container) {
   }
   async function approve(r, modal, button) {
     button.disabled = true;
+    syncProgress.hidden = false;
     try {
       await gateApi.decision(r.id, { action: 'approve', note: '' });
       modal.close();
@@ -347,6 +353,7 @@ export async function gatePage(container) {
       toast.error(describeApiError(err).message);
     } finally {
       button.disabled = false;
+      syncProgress.hidden = true;
     }
   }
   function edit(r) {
