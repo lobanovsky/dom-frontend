@@ -313,7 +313,6 @@ export async function gateAccessViewPage(container) {
     const relation=el('select',{},Object.entries(GATE_RELATIONS).filter(([value])=>value!=='service').map(([value,label])=>el('option',{value,selected:copying?value===relationValue:value==='guest'},label)));
     const validUntil=el('input',{type:'date',value:sourceAccess?.valid_until||''});
     const noCar=el('input',{type:'checkbox',checked:!!sourceAccess?.no_personal_vehicle});
-    const occasionalVehicle=el('input',{type:'checkbox',checked:!!sourceAccess?.occasional_vehicle});
     const cars=el('div',{class:'gate-edit-cars'});
     const rows=[];
     const sync=()=>rows.forEach((car)=>{car.plate.disabled=noCar.checked;car.brand.disabled=noCar.checked;car.remove.disabled=noCar.checked;});
@@ -369,8 +368,8 @@ export async function gateAccessViewPage(container) {
           ...copyGateAccessToParking(sourceAccess,target.id),
           phone:phone.value.trim(),recipient_name:name.value.trim(),relation:relation.value,
           valid_until:validUntil.value||null,no_personal_vehicle:noCar.checked,
-          occasional_vehicle:occasionalVehicle.checked,vehicles,comment:sourceAccess.comment||'',
-        }:{premises_id:premise.id,zone:premise.kind==='parking_space'?'parking':'courtyard',phone:phone.value.trim(),recipient_name:name.value.trim(),relation:relation.value,valid_until:validUntil.value||null,no_personal_vehicle:noCar.checked,occasional_vehicle:occasionalVehicle.checked,vehicles};
+          vehicles,comment:sourceAccess.comment||'',
+        }:{premises_id:premise.id,zone:premise.kind==='parking_space'?'parking':'courtyard',phone:phone.value.trim(),recipient_name:name.value.trim(),relation:relation.value,valid_until:validUntil.value||null,no_personal_vehicle:noCar.checked,vehicles};
         await gateApi.create(body);
         modal.close();toast.success(copying?'Доступ на машиноместо выдан.':'Доступ выдан.');await loadActiveAccesses();selectPremises(premise);
       }catch(error){message.textContent=describeApiError(error).message;}finally{save.disabled=false;syncProgress.hidden=true;}
@@ -380,7 +379,6 @@ export async function gateAccessViewPage(container) {
       copying?el('label',{class:'field'},['Машиноместо',targetParking]):null,
       el('label',{class:'field'},['Имя',name]),el('label',{class:'field'},['Телефон',phone]),
       el('label',{class:'field'},['Кто будет пользоваться',relation]),el('label',{class:'field'},['Действует до (необязательно)',validUntil]),
-      el('label',{class:'field'},[occasionalVehicle,' Разовый автомобиль']),
       el('fieldset',{class:'field'},[el('legend',{},'Автомобили'),cars,el('button',{type:'button',class:'btn btn-sm',onclick:()=>addCar()},'Добавить автомобиль'),el('label',{},[noCar,' Нет личного автомобиля'])]),message,save,
     ].filter(Boolean));
     modal=openModal({title:copying?'Выдать доступ на машиноместо':'Добавить доступ без заявки',content:form,wide:true});
