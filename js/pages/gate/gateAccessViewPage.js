@@ -391,11 +391,11 @@ export async function gateAccessViewPage(container) {
     const submit=el('button',{type:'submit',class:'btn btn-danger'},'Закрыть доступ');
     let modal;
     const form=el('form',{class:'form',onsubmit:async(event)=>{
-      event.preventDefault();submit.disabled=true;
+      event.preventDefault();submit.disabled=true;syncProgress.hidden=false;
       try{
         await gateApi.decision(row.id,{action:'revoke',note:reason.value.trim()});
         modal.close();await loadActiveAccesses();selectPremises(premise);
-      }catch(error){message.textContent=describeApiError(error).message;}finally{submit.disabled=false;}
+      }catch(error){message.textContent=describeApiError(error).message;}finally{submit.disabled=false;syncProgress.hidden=true;}
     }},[
       el('p',{},`Закрыть доступ для ${row.recipient_name} (${formatPhone(row.phone)})?`),
       el('label',{class:'field'},['Причина',reason]),message,submit,
