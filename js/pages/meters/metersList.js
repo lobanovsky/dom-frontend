@@ -39,6 +39,7 @@ export function createMetersList({ fixedQuery = {}, fixed = {}, target = 'fixed'
     { name: 'resource', label: 'Ресурс', type: 'select', options: options(meterResources) },
     { name: 'reading_period', label: 'Месяц показаний', type: 'month', defaultValue: today.slice(0, 7) },
     { name: 'has_reading', label: 'Передача за месяц', type: 'select', allLabel: 'Все', options: [{ value: 'true', label: 'Передали' }, { value: 'false', label: 'Не передали' }] },
+    { name: 'manual_reading_required', label: 'Ручная передача', type: 'select', allLabel: 'Все', options: [{ value: 'true', label: 'Требуется' }, { value: 'false', label: 'Не требуется' }] },
     { name: 'active', label: 'Состояние', type: 'select', allLabel: 'Все', options: [{ value: 'true', label: 'Работают' }, { value: 'false', label: 'Не работают' }], defaultValue: 'true' },
     { name: 'q', label: 'Поиск', type: 'search', placeholder: 'Номер или название счётчика' },
   ] : [];
@@ -57,7 +58,7 @@ export function createMetersList({ fixedQuery = {}, fixed = {}, target = 'fixed'
     groupBy: (m) => (m.premises_id ? (byPremises ? premisesGroup(m, buildings.length > 1) : null) : meterGroup(m, showLocation)),
     rowClass: (m) => (m.active ? null : 'row-muted'),
     columns: [
-      { key: 'serial_number', label: 'Счётчик', primary: true, render: (m) => el('span', { class: 'meter-cell' }, [meterIcon(m.resource), el('a', { href: `/meters/${m.id}` }, meterCellTitle(m))]) },
+      { key: 'serial_number', label: 'Счётчик', primary: true, render: (m) => el('span', { class: 'meter-cell' }, [meterIcon(m.resource), el('a', { href: `/meters/${m.id}` }, meterCellTitle(m)), m.manual_reading_required ? manualReadingIcon() : null]) },
       showLocation && !byPremises && !common ? { key: 'location', label: 'Где', render: locationCell } : null,
       { key: 'tariffs', label: 'Тарифность', render: (m) => (m.resource === 'electricity' ? label(meterTariffs, m.tariffs) : '') },
       { key: 'last', label: 'Последнее показание', render: (m) => lastCell(m, today) },
@@ -70,6 +71,13 @@ export function createMetersList({ fixedQuery = {}, fixed = {}, target = 'fixed'
     deleteMessage: (m) => `Удалить счётчик ${meterTitle(m)}? Удалить можно только счётчик без показаний; обычно его выводят из работы датой окончания.`,
   });
   return list;
+}
+
+function manualReadingIcon() {
+  return el('span', {
+    class: 'manual-reading-icon', role: 'img', title: 'Показания передавать вручную', 'aria-label': 'Показания передавать вручную',
+    html: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M8 11V5.5a1.5 1.5 0 0 1 3 0V10 4.5a1.5 1.5 0 0 1 3 0V10 6a1.5 1.5 0 0 1 3 0v5 2l1-1a1.7 1.7 0 0 1 2.6 2.1l-3.4 5A4 4 0 0 1 14.9 22h-2.2a5 5 0 0 1-3.5-1.4L5.5 17a2 2 0 0 1 2.8-2.8L10 16V11a1 1 0 0 0-2 0Z"/></svg>',
+  });
 }
 
 // Название в списке: у общедомовых вид ресурса уже указан в заголовке группы, поэтому «ИТП · № …»; у индивидуальных

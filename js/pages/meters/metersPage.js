@@ -5,6 +5,9 @@ import { describeApiError } from '../../lib/apiErrors.js';
 import { openMeterImportDialog } from '../../ui/meterImportDialog.js';
 import { canWrite } from '../../lib/permissions.js';
 import { createMetersList } from './metersList.js';
+import { metersApi } from '../../api/resources.js';
+import { saveFile } from '../../ui/saveFile.js';
+import { toast } from '../../ui/toast.js';
 
 const MODES = [
   { id: 'common', title: 'Общедомовые', target: 'building' },
@@ -23,6 +26,7 @@ export async function metersPage(container) {
   }
 
   let mode = MODES[0];
+  let currentList;
   const switcher = el('div', { class: 'segmented', role: 'tablist' });
   const host = el('div', {});
 
@@ -38,7 +42,16 @@ export async function metersPage(container) {
       showFilters: true,
       emptyMessage: mode.id === 'common' ? 'Общедомовых счётчиков пока нет' : 'Счётчиков в помещениях пока нет',
     });
+    currentList = list;
     host.replaceChildren(list.element);
+  }
+
+  async function exportMeters() {
+    try {
+      saveFile(await metersApi.exportExcel(currentList?.getQuery() || { scope: mode.id }));
+    } catch (err) {
+      toast.error(describeApiError(err).message);
+    }
   }
 
   show();
@@ -46,6 +59,7 @@ export async function metersPage(container) {
     el('div', { class: 'section-header' }, [
       el('h1', {}, 'Счётчики'),
       el('div', { class: 'header-actions' }, [
+        el('button', { type: 'button', class: 'btn', onclick: exportMeters }, 'Экспорт счётчиков'),
         el('button', { type: 'button', class: 'btn', onclick: openMeterExportDialog }, 'Экспорт показаний'),
         canWrite() ? el('button', { type: 'button', class: 'btn', onclick: () => openMeterImportDialog({ buildings, onImported: show }) }, 'Загрузить показания') : null,
       ]),

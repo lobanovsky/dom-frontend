@@ -1406,6 +1406,7 @@ a.account-link:hover { text-decoration: underline; }
 .meter-icon--cold_water { color: var(--color-meter-cold); }
 .meter-icon--hot_water { color: var(--color-meter-hot); }
 .meter-icon--electricity { color: var(--color-meter-electricity); }
+.manual-reading-icon { display: inline-flex; flex: none; color: var(--color-warning, #93642c); line-height: 0; margin: 1px 0 0 2px; }
 .section-header h1 .meter-icon { margin-right: var(--space-2); vertical-align: middle; }
 .section-header h1 .meter-icon svg { width: 26px; height: 26px; }
 
