@@ -4,10 +4,10 @@ import {
   options, bankLabel, organizationKinds, buildingKinds, premisesKinds, premisesKindOptions, relationOptions, accountPurposes, accountStatuses, ownerKinds,
   meterResources, meterTariffs, serviceKinds, serviceUnits, serviceCalcMethods,
 } from '../lib/labels.js';
-import { tariffColumns, resourceUnit, previousReadingText, meterNumberText, selectableCommonMeters, retiredNote } from '../lib/meters.js';
+import { tariffColumns, resourceUnit, formatReading, meterNumberText, selectableCommonMeters, retiredNote } from '../lib/meters.js';
 import { entityPicker } from '../ui/picker.js';
 import { listInput } from '../ui/listInput.js';
-import { formatPhone } from '../lib/format.js';
+import { formatDate, formatPhone } from '../lib/format.js';
 import { checkboxGroup } from '../ui/checkboxGroup.js';
 import { monthField } from '../ui/monthPicker.js';
 import { meterReadingsApi } from '../api/resources.js';
@@ -164,21 +164,23 @@ export const meterReadingFields = (meter, values = {}) => {
     column.key,
     meter[`last_${column.key}`] ?? meter[`initial_${column.key}`] ?? 0,
   ]));
+  const previousDate = meter.last_reading_date ? `Предыдущее на ${formatDate(meter.last_reading_date)}` : 'Начальное показание';
   return [
     { type: 'checkbox', name: 'new_reading', virtual: true, visible: () => false },
     dateField('reading_date', 'Дата показаний', { required: true }),
     { type: 'picker', name: 'period', label: 'За какой месяц', full: true, component: monthField({ followDate: 'reading_date', marked: () => readingMonths(meter) }), required: true,
       help: 'В расчёт за этот месяц войдёт показание. По умолчанию — месяц даты показаний; можно выбрать другой, например показание от 28 сентября отнести к октябрю. В месяце одно показание счётчика' },
-    // Подсказка над полями показаний: что было последним. Не поле формы (virtual), в запрос не уходит.
-    { type: 'picker', name: 'previous_hint', label: '', virtual: true, full: true,
-      component: () => el('div', { class: 'field-help' }, previousReadingText(meter)) },
-    { type: 'checkbox', name: 'no_consumption', label: 'Расхода не было — подставить предыдущее показание', virtual: true,
-      visible: (current) => !!current.new_reading,
-      onChange: (checked) => checked ? previousValues : null },
-    ...tariffColumns(meter.tariffs).map((c) => numberField(c.key, `${c.label}, ${unit}`, {
-      required: true, full: true, min: 0, step: 0.001, inputmode: 'decimal', decimalInput: true, maxDecimals: 3,
-      disabled: !!values.no_consumption,
-    })),
+    ...columns.flatMap((c) => [
+      checkboxField(`no_consumption_${c.key}`, 'Расхода не было — подставить предыдущее показание', {
+        virtual: true, full: true, visible: (current) => !!current.new_reading,
+        help: `${previousDate}: ${formatReading(previousValues[c.key])}`,
+        onChange: (checked) => checked ? { [c.key]: previousValues[c.key] } : null,
+      }),
+      numberField(c.key, `${c.label}, ${unit}`, {
+        required: true, full: true, min: 0, step: 0.001, inputmode: 'decimal', decimalInput: true, maxDecimals: 3,
+        disabled: !!values[`no_consumption_${c.key}`],
+      }),
+    ]),
     textField('comment', 'Комментарий', { full: true }),
   ];
 };
