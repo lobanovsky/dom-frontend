@@ -260,6 +260,7 @@ export const residentAccessApi = {
  get: (id) => client.get(`/api/v1/resident-access/${id}`),
  update: (id, body) => client.put(`/api/v1/resident-access/${id}`, body),
  invite: (id, body) => client.post(`/api/v1/resident-access/${id}/invite`, body),
+ setPassword: (id, body) => client.put(`/api/v1/resident-access/${id}/password`, body),
  inviteOwners: () => client.post('/api/v1/resident-access/invite-owners', {}),
 };
 
