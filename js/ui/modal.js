@@ -4,7 +4,7 @@ let activeModal = null;
 
 const FOCUSABLE_SELECTOR = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
-export function openModal({ title, content, onClose, wide = false } = {}) {
+export function openModal({ title, content, onClose, wide = false, initialFocus } = {}) {
   if (activeModal) activeModal.close();
 
   const previouslyFocused = document.activeElement;
@@ -55,7 +55,8 @@ export function openModal({ title, content, onClose, wide = false } = {}) {
 
   // Фокус — на первое поле содержимого, а не на крестик в заголовке.
   const firstFocusable = body.querySelector(FOCUSABLE_SELECTOR);
-  (firstFocusable || closeButton).focus();
+  const requestedFocus = typeof initialFocus === 'string' ? body.querySelector(initialFocus) : initialFocus;
+  (requestedFocus || firstFocusable || closeButton).focus();
 
   activeModal = { close };
   return { close, dialog };

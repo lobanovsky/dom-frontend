@@ -125,6 +125,7 @@ export async function meterPage(container, { id }) {
     api: readingsApi,
     fields: (values) => meterReadingFields(meter, values),
     watch: ['no_consumption_t1', 'no_consumption_t2', 'no_consumption_t3'],
+    formInitialFocus: '[name="t1"]',
     fixedQuery: { meter_id: meter.id },
     fixed: { meter_id: meter.id },
     newDefaults: { reading_date: today, new_reading: true },

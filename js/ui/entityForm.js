@@ -9,7 +9,7 @@ import { applyFormApiError } from '../lib/apiErrors.js';
 // fields — массив или функция от значений (тогда watch — имена полей-триггеров).
 // fixed — значения, которые не редактируются, но уходят в тело (например premises_id).
 // save(body) — вызов API; после успеха форма закрывается и вызывается onSaved(result).
-export function openEntityForm({ title, fields, watch = [], entity, initialValues = {}, fixed = {}, save, onSaved, successMessage = 'Сохранено', submitLabel }) {
+export function openEntityForm({ title, fields, watch = [], entity, initialValues = {}, fixed = {}, save, onSaved, successMessage = 'Сохранено', submitLabel, initialFocus }) {
   const resolve = (values) => (typeof fields === 'function' ? fields(values) : fields);
   const initial = { ...toFormValues(resolve({ ...initialValues, ...(entity || {}) }), entity || {}), ...initialValues };
 
@@ -32,6 +32,6 @@ export function openEntityForm({ title, fields, watch = [], entity, initialValue
     },
   });
 
-  modal = openModal({ title, content: el('div', { class: 'entity-form-wrap' }, form.element), wide: true });
+  modal = openModal({ title, content: el('div', { class: 'entity-form-wrap' }, form.element), wide: true, initialFocus });
   return modal;
 }

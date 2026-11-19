@@ -27,7 +27,7 @@ import { canWrite } from '../lib/permissions.js';
 export function createCrudList({
   api, columns, fields, watch, filters = [], fixedQuery = {}, fixed = {},
   entityTitle, addLabel = 'Добавить', emptyMessage, deleteMessage = (row) => 'Удалить запись?',
-  canEdit = canWrite(), canAdd = true, extraActions, groupBy, rowClass, newDefaults = {}, onReorder, selection,
+  canEdit = canWrite(), canAdd = true, extraActions, groupBy, rowClass, newDefaults = {}, onReorder, selection, formInitialFocus,
 }) {
   let offset = 0;
   let pageSize = loadPageSize();
@@ -99,6 +99,7 @@ export function createCrudList({
       watch,
       entity: row,
       initialValues: row ? {} : newDefaults,
+      initialFocus: row ? undefined : formInitialFocus,
       fixed,
       save: (body) => (row ? api.update(row.id, body) : api.create(body)),
       onSaved: () => load(),

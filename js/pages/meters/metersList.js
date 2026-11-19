@@ -26,6 +26,7 @@ export function createMetersList({ fixedQuery = {}, fixed = {}, target = 'fixed'
       title: `Новое показание: ${meterTitle(meter)}`,
       fields: (values) => meterReadingFields(meter, values),
       watch: ['no_consumption_t1', 'no_consumption_t2', 'no_consumption_t3'],
+      initialFocus: '[name="t1"]',
       initialValues: { reading_date: today, new_reading: true },
       fixed: { meter_id: meter.id },
       save: (body) => meterReadingsApi.create(body),
