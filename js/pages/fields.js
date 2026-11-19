@@ -136,6 +136,7 @@ export const meterFields = ({ target = 'fixed', buildings = [] } = {}) => (value
     { ...selectField('tariffs', 'Тарифность', options(meterTariffs), { required: true, numeric: true }), visible: (v) => v.resource === 'electricity' },
     textField('serial_number', 'Номер счётчика', { required: true }),
     textField('name', 'Название', { help: 'Необязательно. Чтобы различать счётчики, например общедомовые: «ИТП», «Машиноместа». Названия могут повторяться' }),
+    checkboxField('manual_reading_required', 'Показания передавать вручную', { help: 'Отметьте, если система не получает показания этого счётчика автоматически. Житель увидит напоминание в личном кабинете.' }),
     textField('model', 'Модель'),
     dateField('installed_at', 'Введён в эксплуатацию', { required: true }),
     dateField('removed_at', 'Окончание работы', { help: 'Пусто — работает. После этой даты счётчик считается неактивным (замена, снятие). Сам счётчик остаётся в системе' }),
