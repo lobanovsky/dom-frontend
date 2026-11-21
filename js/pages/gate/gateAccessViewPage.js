@@ -1,11 +1,11 @@
-import { buildingsApi, gateApi, premisesApi } from '../../api/resources.js';
+import { buildingsApi, gateApi, personsApi, premisesApi } from '../../api/resources.js';
 import { el } from '../../lib/dom.js';
 import { copyPhoneCell } from '../../ui/copyPhone.js';
-import { formatPhone, isActiveOn, todayIso } from '../../lib/format.js';
+import { formatPhone, isActiveOn, personName, todayIso } from '../../lib/format.js';
 import { describeApiError } from '../../lib/apiErrors.js';
 import { renderTable } from '../../ui/table.js';
 import { saveFile } from '../../ui/saveFile.js';
-import { bindGatePhoneInput, gateVehicles, gateVehicleLabel, gateZoneLabel, groupGateRequests, GATE_RELATIONS, gatePremisesTone, gateOwnersFirst, copyGateAccessToParking } from '../../lib/gate.js';
+import { bindGatePhoneInput, formatGatePhoneInput, gateVehicles, gateVehicleLabel, gateZoneLabel, groupGateRequests, GATE_RELATIONS, gatePremisesTone, gateOwnersFirst, copyGateAccessToParking } from '../../lib/gate.js';
 import { openModal } from '../../ui/modal.js';
 import { confirmDialog } from '../../ui/confirmDialog.js';
 import { toast } from '../../ui/toast.js';
@@ -309,6 +309,34 @@ export async function gateAccessViewPage(container) {
     const name=el('input',{required:true,maxlength:120,value:sourceAccess?.recipient_name||''});
     const phone=el('input',{required:true,type:'tel',inputmode:'numeric',autocomplete:'tel',maxlength:16,pattern:'\\+7 [0-9]{3} [0-9]{3} [0-9]{2} [0-9]{2}',placeholder:'+7 900 000 00 00',value:sourceAccess?.phone||''});
     bindGatePhoneInput(phone);
+    const personSearch=el('input',{type:'search',autocomplete:'name',placeholder:'ФИО или телефон', 'aria-label':'Найти физлицо'});
+    const personResults=el('div',{class:'picker-results','aria-live':'polite'});
+    let personSearchTimer=null;
+    let personSearchSeq=0;
+    personSearch.addEventListener('keydown',(event)=>{if(event.key==='Enter')event.preventDefault();});
+    personSearch.addEventListener('input',()=>{
+      clearTimeout(personSearchTimer);
+      const query=personSearch.value.trim();
+      const seq=++personSearchSeq;
+      if(query.length<2){personResults.replaceChildren();return;}
+      personResults.replaceChildren(el('div',{class:'picker-empty'},'Ищем физлиц…'));
+      personSearchTimer=setTimeout(async()=>{
+        try{
+          const {items=[]}=await personsApi.list({q:query,limit:10});
+          if(seq!==personSearchSeq)return;
+          personResults.replaceChildren(...(items.length?items.map((person)=>{
+            const personPhone=person.phones?.[0]||'';
+            return el('button',{type:'button',class:'picker-option',onclick:()=>{
+              name.value=personName(person);
+              if(personPhone)phone.value=formatGatePhoneInput(personPhone);
+              personResults.replaceChildren(el('div',{class:'picker-empty'},`Выбрано: ${personName(person)}${personPhone?` · ${formatPhone(personPhone)}`:''}`));
+            }},[el('span',{},personName(person)),el('span',{class:'picker-hint'},personPhone?formatPhone(personPhone):'Телефон не указан')]);
+          }):[el('div',{class:'picker-empty'},'Физлица не найдены')]));
+        }catch{
+          if(seq===personSearchSeq)personResults.replaceChildren(el('div',{class:'picker-empty'},'Не удалось выполнить поиск'));
+        }
+      },250);
+    });
     const relationValue=sourceAccess?.relation==='service'?'guest':sourceAccess?.relation;
     const relation=el('select',{},Object.entries(GATE_RELATIONS).filter(([value])=>value!=='service').map(([value,label])=>el('option',{value,selected:copying?value===relationValue:value==='guest'},label)));
     const validUntil=el('input',{type:'date',value:sourceAccess?.valid_until||''});
@@ -375,6 +403,7 @@ export async function gateAccessViewPage(container) {
       }catch(error){message.textContent=describeApiError(error).message;}finally{save.disabled=false;syncProgress.hidden=true;}
     }},[
       el('p',{class:'muted'},copying?`Данные скопированы из доступа для ${sourceAccess.recipient_name}. Выберите машиноместо; доступ будет выдан сразу.`:`${objectType(premise.kind)} ${premise.number}. Доступ будет активен сразу.`),
+      el('label',{class:'field'},['Найти физлицо (необязательно)',personSearch,el('span',{class:'field-help'},'Выберите человека из базы, чтобы подставить ФИО и телефон.'),personResults]),
       copying?el('label',{class:'field'},['Дом',targetBuilding]):null,
       copying?el('label',{class:'field'},['Машиноместо',targetParking]):null,
       el('label',{class:'field'},['Имя',name]),el('label',{class:'field'},['Телефон',phone]),
