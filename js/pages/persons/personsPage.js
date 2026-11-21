@@ -48,11 +48,11 @@ export function personsPage(container) {
       { key: 'emails', label: 'Email', render: (r) => contactList(r.emails) },
       ...(admin ? [{ key: 'resident_access', label: 'Личный кабинет', render: (r) => residentAccessStatusView(r.resident_access) }] : []),
     ],
-    extraActions: (r) => [el('button', {
+    extraActions: (r) => r.resident_access?.eligible ? [el('button', {
       type: 'button',
       class: 'btn btn-ghost btn-sm',
       onclick: () => openPropertiesDialog({ title: `Недвижимость: ${personName(r)}`, load: () => personsApi.properties(r.id) }),
-    }, 'Недвижимость'), el('button', { type: 'button', class: 'btn btn-ghost btn-sm', onclick: () => openResidentAccess(r, { onSaved: () => list.reload() }) }, 'Личный кабинет')],
+    }, 'Недвижимость'), el('button', { type: 'button', class: 'btn btn-ghost btn-sm', onclick: () => openResidentAccess(r, { onSaved: () => list.reload() }) }, 'Личный кабинет')] : [],
     emptyMessage: 'Физлиц не найдено',
     deleteMessage: (r) => `Удалить «${personName(r)}»?`,
   });
