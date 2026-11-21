@@ -4,7 +4,7 @@ import { el } from '../lib/dom.js';
 // кнопка «+ Добавить» и крестик у каждой строки. Первое значение основное.
 // Возвращает компонент для form.js (type: 'list'): ({id, value, onChange}) -> Node.
 // format(значение) -> строка: как показывать сохранённое значение в поле (например, телефон из цифр с форматированием).
-export function listInput({ inputType = 'text', inputmode, placeholder, addLabel = '+ Добавить', autocomplete, format = (s) => s, primaryLabel = '' } = {}) {
+export function listInput({ inputType = 'text', inputmode, placeholder, addLabel = '+ Добавить', autocomplete, format = (s) => s, primaryLabel = '', bindInput = null } = {}) {
   return function createListInput({ id, value, onChange }) {
     // Пустой список — одна пустая строка ввода; пустые строки в API не уходят (lib/payload.js).
     let items = Array.isArray(value) && value.length ? value.map(format) : [''];
@@ -25,6 +25,7 @@ export function listInput({ inputType = 'text', inputmode, placeholder, addLabel
           'aria-label': `${placeholder || 'Значение'} ${index + 1}`,
         });
         input.value = item;
+        bindInput?.(input);
         input.addEventListener('input', () => {
           items[index] = input.value;
           const radio = rows.children[index]?.querySelector('input[type="radio"]');

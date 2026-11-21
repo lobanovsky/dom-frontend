@@ -1,12 +1,12 @@
 import { el } from '../lib/dom.js';
 import { listInput } from './listInput.js';
-import { formatPhone } from '../lib/format.js';
+import { bindGatePhoneInput, formatGatePhoneInput } from '../lib/gate.js';
 import { personsApi } from '../api/resources.js';
 import { describeApiError } from '../lib/apiErrors.js';
 
 let uid = 0;
 
-const phonesInput = listInput({ inputType: 'tel', inputmode: 'tel', placeholder: '+7 900 123-45-67', addLabel: '+ Добавить телефон', autocomplete: 'off', format: formatPhone });
+const phonesInput = listInput({ inputType: 'tel', inputmode: 'numeric', placeholder: '+7 900 000 00 00', addLabel: '+ Добавить телефон', autocomplete: 'off', format: formatGatePhoneInput, bindInput: bindGatePhoneInput });
 const emailsInput = listInput({ inputType: 'email', inputmode: 'email', placeholder: 'name@example.com', addLabel: '+ Добавить email', autocomplete: 'off' });
 
 // Мини-форма «новое физлицо» внутри другой формы (собственник, житель, плательщик).
