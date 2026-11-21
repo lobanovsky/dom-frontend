@@ -16,6 +16,37 @@ const objectType = (kind) => kind === 'parking_space' ? 'Машиноместо'
 const numberCompare = (a,b) => String(a.number).localeCompare(String(b.number), 'ru', {numeric:true,sensitivity:'base'});
 const parkingLevel = (floor) => Number(floor)<0 ? Number(floor) : -Number(floor);
 
+function personLookup(onSelect) {
+  const input=el('input',{type:'search',autocomplete:'name',placeholder:'ФИО или телефон','aria-label':'Найти физлицо'});
+  const results=el('div',{class:'picker-results','aria-live':'polite'});
+  let timer=null;
+  let requestSeq=0;
+  input.addEventListener('keydown',(event)=>{if(event.key==='Enter')event.preventDefault();});
+  input.addEventListener('input',()=>{
+    clearTimeout(timer);
+    const query=input.value.trim();
+    const seq=++requestSeq;
+    if(query.length<2){results.replaceChildren();return;}
+    results.replaceChildren(el('div',{class:'picker-empty'},'Ищем физлиц…'));
+    timer=setTimeout(async()=>{
+      try{
+        const {items=[]}=await personsApi.list({q:query,limit:10});
+        if(seq!==requestSeq)return;
+        results.replaceChildren(...(items.length?items.map((person)=>{
+          const phone=person.phones?.[0]||'';
+          return el('button',{type:'button',class:'picker-option',onclick:()=>{
+            onSelect(person);
+            results.replaceChildren(el('div',{class:'picker-empty'},`Выбрано: ${personName(person)}${phone?` · ${formatPhone(phone)}`:''}`));
+          }},[el('span',{},personName(person)),el('span',{class:'picker-hint'},phone?formatPhone(phone):'Телефон не указан')]);
+        }):[el('div',{class:'picker-empty'},'Физлица не найдены') ]));
+      }catch{
+        if(seq===requestSeq)results.replaceChildren(el('div',{class:'picker-empty'},'Не удалось выполнить поиск'));
+      }
+    },250);
+  });
+  return el('label',{class:'field'},['Найти физлицо (необязательно)',input,el('span',{class:'field-help'},'Выберите человека из базы, чтобы подставить ФИО.'),results]);
+}
+
 export async function gateAccessViewPage(container) {
   let buildings = [];
   let premises = [];
@@ -309,33 +340,9 @@ export async function gateAccessViewPage(container) {
     const name=el('input',{required:true,maxlength:120,value:sourceAccess?.recipient_name||''});
     const phone=el('input',{required:true,type:'tel',inputmode:'numeric',autocomplete:'tel',maxlength:16,pattern:'\\+7 [0-9]{3} [0-9]{3} [0-9]{2} [0-9]{2}',placeholder:'+7 900 000 00 00',value:sourceAccess?.phone||''});
     bindGatePhoneInput(phone);
-    const personSearch=el('input',{type:'search',autocomplete:'name',placeholder:'ФИО или телефон', 'aria-label':'Найти физлицо'});
-    const personResults=el('div',{class:'picker-results','aria-live':'polite'});
-    let personSearchTimer=null;
-    let personSearchSeq=0;
-    personSearch.addEventListener('keydown',(event)=>{if(event.key==='Enter')event.preventDefault();});
-    personSearch.addEventListener('input',()=>{
-      clearTimeout(personSearchTimer);
-      const query=personSearch.value.trim();
-      const seq=++personSearchSeq;
-      if(query.length<2){personResults.replaceChildren();return;}
-      personResults.replaceChildren(el('div',{class:'picker-empty'},'Ищем физлиц…'));
-      personSearchTimer=setTimeout(async()=>{
-        try{
-          const {items=[]}=await personsApi.list({q:query,limit:10});
-          if(seq!==personSearchSeq)return;
-          personResults.replaceChildren(...(items.length?items.map((person)=>{
-            const personPhone=person.phones?.[0]||'';
-            return el('button',{type:'button',class:'picker-option',onclick:()=>{
-              name.value=personName(person);
-              if(personPhone)phone.value=formatGatePhoneInput(personPhone);
-              personResults.replaceChildren(el('div',{class:'picker-empty'},`Выбрано: ${personName(person)}${personPhone?` · ${formatPhone(personPhone)}`:''}`));
-            }},[el('span',{},personName(person)),el('span',{class:'picker-hint'},personPhone?formatPhone(personPhone):'Телефон не указан')]);
-          }):[el('div',{class:'picker-empty'},'Физлица не найдены')]));
-        }catch{
-          if(seq===personSearchSeq)personResults.replaceChildren(el('div',{class:'picker-empty'},'Не удалось выполнить поиск'));
-        }
-      },250);
+    const personSearch=personLookup((person)=>{
+      name.value=personName(person);
+      if(person.phones?.[0])phone.value=formatGatePhoneInput(person.phones[0]);
     });
     const relationValue=sourceAccess?.relation==='service'?'guest':sourceAccess?.relation;
     const relation=el('select',{},Object.entries(GATE_RELATIONS).filter(([value])=>value!=='service').map(([value,label])=>el('option',{value,selected:copying?value===relationValue:value==='guest'},label)));
@@ -403,7 +410,7 @@ export async function gateAccessViewPage(container) {
       }catch(error){message.textContent=describeApiError(error).message;}finally{save.disabled=false;syncProgress.hidden=true;}
     }},[
       el('p',{class:'muted'},copying?`Данные скопированы из доступа для ${sourceAccess.recipient_name}. Выберите машиноместо; доступ будет выдан сразу.`:`${objectType(premise.kind)} ${premise.number}. Доступ будет активен сразу.`),
-      el('label',{class:'field'},['Найти физлицо (необязательно)',personSearch,el('span',{class:'field-help'},'Выберите человека из базы, чтобы подставить ФИО и телефон.'),personResults]),
+      personSearch,
       copying?el('label',{class:'field'},['Дом',targetBuilding]):null,
       copying?el('label',{class:'field'},['Машиноместо',targetParking]):null,
       el('label',{class:'field'},['Имя',name]),el('label',{class:'field'},['Телефон',phone]),
@@ -434,6 +441,7 @@ export async function gateAccessViewPage(container) {
 
   function editAccess(row, premise) {
     const name=el('input',{required:true,maxlength:120,value:row.recipient_name});
+    const personSearch=personLookup((person)=>{name.value=personName(person);});
     const relation=el('select',{},Object.entries(GATE_RELATIONS).filter(([value])=>value!=='service').map(([value,label])=>el('option',{value,selected:row.relation===value||(row.relation==='service'&&value==='guest')},label)));
     const noCar=el('input',{type:'checkbox',checked:!!row.no_personal_vehicle});
     const cars=el('div',{class:'gate-edit-cars'});
@@ -461,6 +469,7 @@ export async function gateAccessViewPage(container) {
         modal.close();await loadActiveAccesses();selectPremises(premise);
       }catch(error){message.textContent=describeApiError(error).message;}finally{save.disabled=false;}
     }},[
+      personSearch,
       el('label',{class:'field'},['Имя',name]),
       el('label',{class:'field'},['Кто будет пользоваться',relation]),
       el('fieldset',{class:'field'},[el('legend',{},'Автомобили'),cars,el('button',{type:'button',class:'btn btn-sm',onclick:()=>addCar()},'Добавить автомобиль'),el('label',{},[noCar,' Нет личного автомобиля'])]),
