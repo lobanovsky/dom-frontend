@@ -10,7 +10,7 @@ import { openModal } from '../../ui/modal.js';
 import { confirmDialog } from '../../ui/confirmDialog.js';
 import { toast } from '../../ui/toast.js';
 
-const kinds = [['apartment','Квартиры'],['parking_space','Машиноместа'],['commercial','Коммерческие помещения']];
+const kinds = [['apartment','Квартиры','🏠'],['parking_space','Машиноместа','🅿️'],['commercial','Коммерческие помещения','🏢']];
 const csvCell = (v) => `"${String(v ?? '').replaceAll('"','""')}"`;
 const objectType = (kind) => kind === 'parking_space' ? 'Машиноместо' : kind === 'commercial' ? 'Коммерческое помещение' : 'Квартира';
 const numberCompare = (a,b) => String(a.number).localeCompare(String(b.number), 'ru', {numeric:true,sensitivity:'base'});
@@ -55,7 +55,14 @@ export async function gateAccessViewPage(container) {
   const today = todayIso();
   let selected = null;
   let showRejected = false;
-  const type = el('select', { 'aria-label':'Тип объекта' }, kinds.map(([value,label]) => el('option',{value},label)));
+  const type = el('input',{type:'hidden',value:'apartment'});
+  const kindRadios=new Map();
+  const typeSelector=el('div',{class:'gate-kind-selector',role:'radiogroup','aria-label':'Тип объекта'},kinds.map(([value,label,icon])=>{
+    const radio=el('input',{type:'radio',name:'gate-premises-kind',value,checked:value===type.value,'aria-label':label,onchange:()=>{if(radio.checked){type.value=value;loadPremises();}}});
+    kindRadios.set(value,radio);
+    return el('label',{class:'gate-kind-option',title:label},[radio,el('span',{'aria-hidden':'true'},icon),el('span',{},label)]);
+  }));
+  function setType(value){type.value=value;for(const [kind,radio] of kindRadios)radio.checked=kind===value;}
   const building = el('select', { 'aria-label':'Дом' }, [el('option',{value:''},'Загрузка домов…')]);
   const grid = el('div',{class:'gate-access-grid',role:'list','aria-label':'Объекты по этажам'});
   const detail = el('section',{class:'gate-access-detail','aria-live':'polite'},el('p',{class:'muted'},'Выберите помещение на схеме'));
@@ -85,10 +92,9 @@ export async function gateAccessViewPage(container) {
   container.replaceChildren(el('div',{class:'page'},[
     el('h1',{},'Доступы'), note,
     lookupForm,
-    el('div',{class:'gate-filters gate-access-filters'},[type,building,download]),
+    el('div',{class:'gate-filters gate-access-filters'},[typeSelector,building,download]),
     el('div',{class:'gate-access-layout'},[grid,detail]),
   ]),syncProgress);
-  type.addEventListener('change',loadPremises);
   building.addEventListener('change',loadPremises);
 
   async function searchPhone(event) {
@@ -136,7 +142,7 @@ export async function gateAccessViewPage(container) {
       toast.error('Дом для этого помещения не найден в списке');
       return;
     }
-    type.value=item.premises_kind;
+    setType(item.premises_kind);
     building.value=String(item.building_id);
     await loadPremises();
     const premise=premises.find((p)=>p.id===item.premises_id);

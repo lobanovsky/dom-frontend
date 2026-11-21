@@ -1542,6 +1542,10 @@ a.account-link:hover { text-decoration: underline; }
 
 /* План-схема действующих доступов по дому. */
 .gate-access-filters select { min-width: 220px; flex: 1 1 220px; }
+.gate-kind-selector { display: flex; align-items: center; gap: 4px; margin: 0; padding: 3px; border: 1px solid var(--color-border); border-radius: 9px; background: var(--color-surface); }
+.gate-kind-option { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 4px 9px; border-radius: 6px; color: var(--color-text); font-size: .9rem; white-space: nowrap; cursor: pointer; }
+.gate-kind-option:has(input:checked) { background: var(--color-accent); color: white; }
+.gate-kind-option input { width: 15px; height: 15px; margin: 0; accent-color: currentColor; }
 .gate-access-layout { display: grid; grid-template-columns: minmax(0, 480px) minmax(300px, 1fr); gap: 20px; align-items: start; }
 .gate-access-grid { display: grid; gap: 0; min-width: 0; }
 .gate-floor { display: grid; grid-template-columns: 42px minmax(0, 1fr); align-items: stretch; min-width: 0; padding: 2px 5px; border: 1px solid var(--color-border); border-bottom: 0; background: var(--color-surface); }
