@@ -67,7 +67,7 @@ export async function gateAccessViewPage(container) {
   const grid = el('div',{class:'gate-access-grid',role:'list','aria-label':'Объекты по этажам'});
   const detail = el('section',{class:'gate-access-detail','aria-live':'polite'},el('p',{class:'muted'},'Выберите помещение на схеме'));
   const download = el('button',{class:'btn',type:'button',onclick:exportAll},'Скачать список доступов (CSV)');
-  const lookupPhone = el('input',{type:'tel',inputmode:'tel',autocomplete:'tel',placeholder:'+7 900 000-00-00','aria-label':'Телефон для поиска'});
+  const lookupPhone = el('input',{type:'tel',inputmode:'numeric',autocomplete:'tel',maxlength:16,placeholder:'+7 900 000 00 00','aria-label':'Телефон для поиска'});
   bindGatePhoneInput(lookupPhone);
   const lookupRecipient = el('input',{type:'search',autocomplete:'name',placeholder:'ФИО получателя','aria-label':'ФИО для поиска',maxlength:120});
   const lookupResults = el('div',{class:'gate-phone-lookup-results','aria-live':'polite'});

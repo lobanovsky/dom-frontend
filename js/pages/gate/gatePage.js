@@ -21,6 +21,7 @@ import {
   gateAccessNote,
   gateVehicles,
   gateVehicleLabel,
+  bindGatePhoneInput,
 } from '../../lib/gate.js';
 
 const badge = (r) =>
@@ -37,7 +38,8 @@ export async function gatePage(container) {
     pageItemCount = 0,
     pageSize = loadPageSize();
   const recipient = el('input', { type:'search', placeholder:'Кому', 'aria-label':'Кому', maxlength:120 });
-  const phone = el('input', { type:'search', placeholder:'Телефон', 'aria-label':'Телефон', maxlength:32 });
+  const phone = el('input', { type:'tel', inputmode:'numeric', autocomplete:'tel', placeholder:'+7 900 000 00 00', 'aria-label':'Телефон', maxlength:16 });
+  bindGatePhoneInput(phone);
   const vehicle = el('input', { type:'search', placeholder:'Авто', 'aria-label':'Авто', maxlength:80 });
   const premises = el('input', { type:'search', placeholder:'Номер помещения', 'aria-label':'Номер помещения', maxlength:80 });
   const allStatuses = el('input', { type: 'checkbox', checked: false });

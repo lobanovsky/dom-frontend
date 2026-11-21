@@ -16,7 +16,7 @@ export async function gateServiceAccessPage(container) {
   const form = el('form',{class:'card service-access-form'});
   const category=el('select',{},Object.entries(categoryNames).map(([value,label])=>el('option',{value},label)));
   const name=el('input',{required:true,maxlength:120,placeholder:'Например, электрик или трактор'});
-  const phone=el('input',{required:true,inputmode:'numeric',autocomplete:'tel',placeholder:'+7 900 000-00-00'});
+  const phone=el('input',{required:true,type:'tel',inputmode:'numeric',autocomplete:'tel',maxlength:16,placeholder:'+7 900 000 00 00'});
   bindGatePhoneInput(phone);
   const plate=el('input',{maxlength:24,placeholder:'Номер автомобиля'});
   const brand=el('input',{maxlength:80,placeholder:'Марка / модель'});
