@@ -6,13 +6,14 @@ import { config } from '../config.js';
 
 export class ApiError extends Error {
   // rows — построчные ошибки импорта [{row, error}], если бэкенд их вернул.
-  constructor({ status, message, rows = null, highUsageWarnings = null, lowerReadingEstimates = null }) {
+  constructor({ status, message, rows = null, highUsageWarnings = null, lowerReadingEstimates = null, issues = null }) {
     super(message || 'Ошибка запроса');
     this.name = 'ApiError';
     this.status = status;
     this.rows = rows;
     this.highUsageWarnings = highUsageWarnings;
     this.lowerReadingEstimates = lowerReadingEstimates;
+    this.issues = issues;
   }
 }
 
@@ -51,6 +52,7 @@ async function toApiError(response) {
     rows: data && Array.isArray(data.rows) ? data.rows : null,
     highUsageWarnings: data && Array.isArray(data.high_usage_warnings) ? data.high_usage_warnings : null,
     lowerReadingEstimates: data && Array.isArray(data.lower_reading_estimates) ? data.lower_reading_estimates : null,
+    issues: data && Array.isArray(data.issues) ? data.issues : null,
   });
 }
 

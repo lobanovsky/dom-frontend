@@ -12,11 +12,12 @@ const MAX_SHOWN_ERRORS = 50;
 
 const kwh = (value) => `${new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 2 }).format(value)} кВт·ч`;
 
-function highUsageConfirmation(warnings, lowerEstimates = []) {
+function highUsageConfirmation(warnings, lowerEstimates = [], issues = []) {
   return el('div', {}, [
     el('p', {}, 'Расход по этим счётчикам больше чем втрое превышает предыдущий месяц. Проверьте показания. Если значения верны, подтвердите импорт:'),
     el('ul', {}, warnings.map((w) => el('li', {}, `${w.premises ? `Квартира ${w.premises} · ` : ''}${w.meter_serial}: ${kwh(w.previous_usage)} → ${kwh(w.current_usage)}`))),
     lowerEstimates.length ? el('p', {}, `Ещё ${lowerEstimates.length} показаний ниже предыдущих фактических; вместо них будет записан расчёт по среднему.`) : null,
+    issues.length ? el('p', {}, `Также будут пропущены строки с замечаниями: ${issues.length}. Подробности сохранятся в истории загрузок.`) : null,
   ]);
 }
 
@@ -118,7 +119,7 @@ export function openMeterImportDialog({ buildings, onImported }) {
           if (err.status !== 409 || !err.highUsageWarnings?.length) throw err;
           const accepted = await confirmDialog({
             title: 'Проверка высокого расхода',
-            message: highUsageConfirmation(err.highUsageWarnings, err.lowerReadingEstimates),
+            message: highUsageConfirmation(err.highUsageWarnings, err.lowerReadingEstimates, err.issues),
             confirmLabel: 'Подтвердить импорт',
             cancelLabel: 'Отмена',
           });
@@ -139,13 +140,12 @@ export function openMeterImportDialog({ buildings, onImported }) {
         });
       }
       const details = um31
-        ? ` Рассчитано по среднему: ${r.estimated_readings}; ниже предыдущих фактических заменено расчётом: ${r.lower_reading_estimates?.length || 0}; подтверждён высокий расход: ${r.high_usage_warnings?.length || 0}; пропущено как уже заполненные: ${r.skipped_existing}; без расчёта (нет истории или счётчик не квартирный): ${r.skipped_no_history}${r.skipped_no_history_meters?.length ? ` (счётчики: ${r.skipped_no_history_meters.slice(0, 10).join(', ')}${r.skipped_no_history_meters.length > 10 ? ` и ещё ${r.skipped_no_history_meters.length - 10}` : ''})` : ''}.`
+        ? ` Рассчитано по среднему: ${r.estimated_readings}; пропущено уже заполненных: ${r.skipped_existing}; без расчёта: ${r.skipped_no_history}; замечаний в истории: ${r.issues?.length || 0}.`
         : ` Создано новых счётчиков: ${r.meters_created}.`;
       showMessage(`Загружено показаний: ${r.readings}.${details}`, 'success');
       if (um31) {
         const notices = [
-          ...(r.lower_reading_estimates || []).map((w) => `${w.premises ? `Квартира ${w.premises} · ` : ''}${w.meter_serial}: показание файла ${kwh(w.file_reading)} ниже предыдущего фактического ${kwh(w.previous_reading)}; записано расчётное ${kwh(w.applied_reading)}.`),
-          ...(r.high_usage_warnings || []).map((w) => `${w.premises ? `Квартира ${w.premises} · ` : ''}${w.meter_serial}: подтверждён расход ${kwh(w.current_usage)} после ${kwh(w.previous_usage)} за прошлый месяц.`),
+          ...(r.issues || []).map((issue) => `${issue.row ? `Строка ${issue.row} · ` : ''}${issue.serial ? `${issue.serial}: ` : ''}${issue.message}`),
         ];
         if (notices.length) {
           warningList.replaceChildren(...notices.slice(0, 10).map((text) => el('li', {}, text)));
