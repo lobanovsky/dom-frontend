@@ -13,8 +13,9 @@ export function confirmDialog({ title = 'Подтверждение', message, c
       resolve(result);
     };
 
+    const messageNode = message instanceof Node ? message : el('p', {}, message);
     const content = el('div', { class: 'confirm-dialog' }, [
-      el('p', {}, message),
+      messageNode,
       el('div', { class: 'form-actions' }, [
         el('button', { type: 'button', class: danger ? 'btn btn-danger' : 'btn btn-primary', onclick: () => finish(true) }, confirmLabel),
         el('button', { type: 'button', class: 'btn btn-ghost', onclick: () => finish(false) }, cancelLabel),

@@ -218,6 +218,9 @@ export function describeApiError(err, { action = 'save' } = {}) {
   if (raw.startsWith('header row must contain column')) return { field: null, message: 'В файле УМ-31RTU не найдены обязательные столбцы. Проверьте, что загружена исходная выгрузка устройства.' };
   if (raw === 'all readings must be from one month') return { field: null, message: 'В одной выгрузке должны быть показания только за один месяц' };
   if (raw === 'meter has an unsupported number of tariffs') return { field: null, message: 'У счётчика указано неподдерживаемое количество тарифов' };
+  if (raw === 'reading is below the previous actual value and there is not enough history to calculate an average') {
+    return { field: null, message: 'Показание ниже последнего фактического, а истории недостаточно для расчёта среднего. Импорт не выполнен.' };
+  }
   let um31 = raw.match(/^t(\d): must not be less than previous actual reading$/);
   if (um31) return { field: null, message: `Т${um31[1]} ниже предыдущего фактического показания` };
   um31 = raw.match(/^t(\d): must not be greater than next actual reading$/);

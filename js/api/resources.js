@@ -110,10 +110,11 @@ export const meterReadingsApi = {
     body.set('file', file);
     return client.post('/api/v1/meter-readings/import', body);
   },
-  importUM31File: ({ buildingId, averageMonths, file }) => {
+  importUM31File: ({ buildingId, averageMonths, file, confirmHighUsage = false }) => {
     const body = new FormData();
     body.set('building_id', String(buildingId));
     body.set('average_months', String(averageMonths));
+    body.set('confirm_high_usage', String(confirmHighUsage));
     body.set('file', file);
     return client.post('/api/v1/meter-readings/import-um31', body);
   },

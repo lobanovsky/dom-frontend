@@ -1078,6 +1078,18 @@ a.btn-primary {
   font-size: var(--font-size-sm);
 }
 
+.import-warnings {
+  max-height: 14rem;
+  overflow-y: auto;
+  margin: 0 0 var(--space-4);
+  padding: var(--space-2) var(--space-3) var(--space-2) var(--space-6);
+  border: 1px solid var(--color-warning);
+  border-radius: var(--radius-sm);
+  background: var(--color-warning-bg);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+}
+
 .import-file {
   margin-bottom: var(--space-3);
   padding: var(--space-3);

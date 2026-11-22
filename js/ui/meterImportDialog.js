@@ -6,8 +6,19 @@ import { describeApiError, describeImportRowError } from '../lib/apiErrors.js';
 import { buildingLabel } from '../lib/buildings.js';
 import { createMonthPicker } from './monthPicker.js';
 import { currentMonth } from '../lib/calculation.js';
+import { confirmDialog } from './confirmDialog.js';
 
 const MAX_SHOWN_ERRORS = 50;
+
+const kwh = (value) => `${new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 2 }).format(value)} кВт·ч`;
+
+function highUsageConfirmation(warnings, lowerEstimates = []) {
+  return el('div', {}, [
+    el('p', {}, 'Расход по этим счётчикам больше чем втрое превышает предыдущий месяц. Проверьте показания. Если значения верны, подтвердите импорт:'),
+    el('ul', {}, warnings.map((w) => el('li', {}, `${w.premises ? `Квартира ${w.premises} · ` : ''}${w.meter_serial}: ${kwh(w.previous_usage)} → ${kwh(w.current_usage)}`))),
+    lowerEstimates.length ? el('p', {}, `Ещё ${lowerEstimates.length} показаний ниже предыдущих фактических; вместо них будет записан расчёт по среднему.`) : null,
+  ]);
+}
 
 // Вода загружается в прежнем формате xlsx, электричество — из выгрузки УМ-31RTU (.xls).
 export function openMeterImportDialog({ buildings, onImported }) {
@@ -43,6 +54,8 @@ export function openMeterImportDialog({ buildings, onImported }) {
   message.hidden = true;
   const errorList = el('ul', { class: 'import-errors' });
   errorList.hidden = true;
+  const warningList = el('ul', { class: 'import-warnings' });
+  warningList.hidden = true;
   const submitButton = el('button', { type: 'submit', class: 'btn btn-primary' }, 'Загрузить');
   const cancelButton = el('button', { type: 'button', class: 'btn btn-ghost', onclick: () => modal.close() }, 'Отмена');
   const help = el('p', { class: 'field-help' });
@@ -94,10 +107,29 @@ export function openMeterImportDialog({ buildings, onImported }) {
     submitButton.disabled = true;
     message.hidden = true;
     errorList.hidden = true;
+    warningList.hidden = true;
     try {
-      const r = um31
-        ? await meterReadingsApi.importUM31File({ buildingId: buildingSelect.value, averageMonths: averageMonthsInput.value, file })
-        : await meterReadingsApi.importFile({
+      let r;
+      if (um31) {
+        const input = { buildingId: buildingSelect.value, averageMonths: averageMonthsInput.value, file };
+        try {
+          r = await meterReadingsApi.importUM31File(input);
+        } catch (err) {
+          if (err.status !== 409 || !err.highUsageWarnings?.length) throw err;
+          const accepted = await confirmDialog({
+            title: 'Проверка высокого расхода',
+            message: highUsageConfirmation(err.highUsageWarnings, err.lowerReadingEstimates),
+            confirmLabel: 'Подтвердить импорт',
+            cancelLabel: 'Отмена',
+          });
+          if (!accepted) {
+            showMessage('Импорт отменён. Данные не изменены.', 'error');
+            return;
+          }
+          r = await meterReadingsApi.importUM31File({ ...input, confirmHighUsage: true });
+        }
+      } else {
+        r = await meterReadingsApi.importFile({
           buildingId: buildingSelect.value,
           resource: resourceSelect.value,
           readingDate: dateInput.value,
@@ -105,10 +137,22 @@ export function openMeterImportDialog({ buildings, onImported }) {
           installedAt: createBox.checked ? installedInput.value : '',
           file,
         });
+      }
       const details = um31
-        ? ` Рассчитано по среднему: ${r.estimated_readings}; пропущено как уже заполненные: ${r.skipped_existing}; без расчёта (нет истории или счётчик не квартирный): ${r.skipped_no_history}${r.skipped_no_history_meters?.length ? ` (счётчики: ${r.skipped_no_history_meters.slice(0, 10).join(', ')}${r.skipped_no_history_meters.length > 10 ? ` и ещё ${r.skipped_no_history_meters.length - 10}` : ''})` : ''}.`
+        ? ` Рассчитано по среднему: ${r.estimated_readings}; ниже предыдущих фактических заменено расчётом: ${r.lower_reading_estimates?.length || 0}; подтверждён высокий расход: ${r.high_usage_warnings?.length || 0}; пропущено как уже заполненные: ${r.skipped_existing}; без расчёта (нет истории или счётчик не квартирный): ${r.skipped_no_history}${r.skipped_no_history_meters?.length ? ` (счётчики: ${r.skipped_no_history_meters.slice(0, 10).join(', ')}${r.skipped_no_history_meters.length > 10 ? ` и ещё ${r.skipped_no_history_meters.length - 10}` : ''})` : ''}.`
         : ` Создано новых счётчиков: ${r.meters_created}.`;
       showMessage(`Загружено показаний: ${r.readings}.${details}`, 'success');
+      if (um31) {
+        const notices = [
+          ...(r.lower_reading_estimates || []).map((w) => `${w.premises ? `Квартира ${w.premises} · ` : ''}${w.meter_serial}: показание файла ${kwh(w.file_reading)} ниже предыдущего фактического ${kwh(w.previous_reading)}; записано расчётное ${kwh(w.applied_reading)}.`),
+          ...(r.high_usage_warnings || []).map((w) => `${w.premises ? `Квартира ${w.premises} · ` : ''}${w.meter_serial}: подтверждён расход ${kwh(w.current_usage)} после ${kwh(w.previous_usage)} за прошлый месяц.`),
+        ];
+        if (notices.length) {
+          warningList.replaceChildren(...notices.slice(0, 10).map((text) => el('li', {}, text)));
+          if (notices.length > 10) warningList.append(el('li', {}, `…и ещё ${notices.length - 10}`));
+          warningList.hidden = false;
+        }
+      }
       submitButton.hidden = true;
       cancelButton.textContent = 'Закрыть';
       onImported?.(r);
@@ -126,6 +170,7 @@ export function openMeterImportDialog({ buildings, onImported }) {
     help,
     message,
     errorList,
+    warningList,
     el('div', { class: 'field' }, [el('label', { for: 'mi-building' }, 'Дом'), buildingSelect]),
     el('div', { class: 'field' }, [el('label', { for: 'mi-resource' }, 'Ресурс'), resourceSelect]),
     dateField,
