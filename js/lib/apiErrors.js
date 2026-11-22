@@ -215,6 +215,10 @@ export function describeApiError(err, { action = 'save' } = {}) {
   const raw = (err instanceof ApiError || err instanceof Error) ? err.message : String(err ?? '');
 
   if (raw.startsWith('not a valid xls file')) return { field: null, message: 'Не удалось прочитать файл УМ-31RTU: нужен файл Excel .xls' };
+  if (raw.startsWith('not a valid xlsx file')) return { field: null, message: 'Не удалось прочитать файл Пульсара: нужен файл Excel .xlsx' };
+  if (raw.startsWith('В заголовке отчёта не найдена дата')) return { field: null, message: raw };
+  if (raw.startsWith('В файле не найдена строка заголовков')) return { field: null, message: raw };
+  if (raw === 'file has no water meter readings') return { field: null, message: 'В файле нет распознанных показаний воды' };
   if (raw.startsWith('header row must contain column')) return { field: null, message: 'В файле УМ-31RTU не найдены обязательные столбцы. Проверьте, что загружена исходная выгрузка устройства.' };
   if (raw === 'all readings must be from one month') return { field: null, message: 'В одной выгрузке должны быть показания только за один месяц' };
   if (raw === 'meter has an unsupported number of tariffs') return { field: null, message: 'У счётчика указано неподдерживаемое количество тарифов' };

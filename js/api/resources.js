@@ -118,8 +118,15 @@ export const meterReadingsApi = {
     body.set('file', file);
     return client.post('/api/v1/meter-readings/import-um31', body);
   },
-  um31ImportHistory: (query = {}) => client.get('/api/v1/meter-readings/import-um31/history', { query }),
-  undoUM31Import: (id) => client.post(`/api/v1/meter-readings/import-um31/history/${id}/undo`, {}),
+  importPulsarFile: ({ buildingId, file, confirmHighUsage = false }) => {
+    const body = new FormData();
+    body.set('building_id', String(buildingId));
+    body.set('confirm_high_usage', String(confirmHighUsage));
+    body.set('file', file);
+    return client.post('/api/v1/meter-readings/import-pulsar', body);
+  },
+  importHistory: (query = {}) => client.get('/api/v1/meter-reading-imports', { query }),
+  undoImport: (id) => client.post(`/api/v1/meter-reading-imports/${id}/undo`, {}),
 };
 
 // Справочник видов помещений. Подписи и списки выбора по всему интерфейсу берутся из lib/labels.js#premisesKinds,

@@ -1,81 +1,63 @@
 import { el } from '../lib/dom.js';
 import { openModal } from './modal.js';
 import { meterReadingsApi } from '../api/resources.js';
-import { meterResources, options } from '../lib/labels.js';
 import { describeApiError, describeImportRowError } from '../lib/apiErrors.js';
 import { buildingLabel } from '../lib/buildings.js';
-import { createMonthPicker } from './monthPicker.js';
-import { currentMonth } from '../lib/calculation.js';
-import { confirmDialog } from './confirmDialog.js';
 
 const MAX_SHOWN_ERRORS = 50;
 
-const kwh = (value) => `${new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 2 }).format(value)} кВт·ч`;
+const usage = (value, unit) => `${new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 2 }).format(value)} ${unit}`;
 
 function highUsageConfirmation(warnings, lowerEstimates = [], issues = []) {
+  const unit = warnings[0]?.unit || 'кВт·ч';
   return el('div', {}, [
-    el('p', {}, 'Расход по этим счётчикам больше чем втрое превышает предыдущий месяц. Проверьте показания. Если значения верны, подтвердите импорт:'),
-    el('ul', {}, warnings.map((w) => el('li', {}, `${w.premises ? `Квартира ${w.premises} · ` : ''}${w.meter_serial}: ${kwh(w.previous_usage)} → ${kwh(w.current_usage)}`))),
+    el('p', {}, `Расход по этим счётчикам больше чем втрое превышает предыдущий месяц (${unit}). Проверьте показания. Если значения верны, подтвердите импорт:`),
+    el('ul', {}, warnings.map((w) => el('li', {}, `${w.premises ? `Квартира ${w.premises} · ` : ''}${w.meter_serial}: ${usage(w.previous_usage, w.unit || unit)} → ${usage(w.current_usage, w.unit || unit)}`))),
     lowerEstimates.length ? el('p', {}, `Ещё ${lowerEstimates.length} показаний ниже предыдущих фактических; вместо них будет записан расчёт по среднему.`) : null,
-    issues.length ? el('p', {}, `Также будут пропущены строки с замечаниями: ${issues.length}. Подробности сохранятся в истории загрузок.`) : null,
+    issues.length ? el('p', {}, `В истории загрузки также сохранится ${issues.length} замечаний и пропусков.`) : null,
   ]);
 }
 
-// Вода загружается в прежнем формате xlsx, электричество — из выгрузки УМ-31RTU (.xls).
+// Вода загружается из Пульсара (.xlsx), электричество — из УМ-31RTU (.xls).
 export function openMeterImportDialog({ buildings, onImported }) {
   let modal;
   let submitting = false;
+  let pendingConfirmation = null;
 
   const buildingSelect = el('select', { id: 'mi-building', required: true },
     buildings.map((b) => el('option', { value: String(b.id) }, buildingLabel(b))));
-  const resourceSelect = el('select', { id: 'mi-resource', required: true },
-    options(meterResources).map((o) => el('option', { value: o.value }, o.label)));
-  const dateInput = el('input', { id: 'mi-date', type: 'date', required: true });
-  let periodTouched = false;
-  const periodPicker = createMonthPicker({ value: currentMonth(), onChange: () => { periodTouched = true; } });
-  dateInput.addEventListener('change', () => {
-    if (!periodTouched && dateInput.value) periodPicker.value = dateInput.value.slice(0, 7);
-  });
-  const createBox = el('input', { id: 'mi-create', type: 'checkbox' });
-  const createLabel = el('label', { class: 'field-checkbox-label' }, [createBox, 'Создавать счётчики, которых ещё нет']);
-  const installedInput = el('input', { id: 'mi-installed', type: 'date' });
-  const installedField = el('div', { class: 'field' }, [el('label', { for: 'mi-installed' }, 'Дата ввода новых счётчиков в эксплуатацию'), installedInput]);
-  installedField.hidden = true;
-  createBox.addEventListener('change', () => { installedField.hidden = !createBox.checked; installedInput.required = createBox.checked; });
+  const resourceSelect = el('select', { id: 'mi-resource', required: true }, [
+    el('option', { value: 'water_pulsar' }, 'Вода · Пульсар (ХВС и ГВС)'),
+    el('option', { value: 'electricity' }, 'Электроэнергия · УМ-31RTU'),
+  ]);
   const averageMonthsInput = el('input', { id: 'mi-average-months', type: 'number', min: '1', max: '12', step: '1', value: '1', required: true });
   const averageMonthsField = el('div', { class: 'field' }, [el('label', { for: 'mi-average-months' }, 'Месяцев для расчёта среднего'), averageMonthsInput,
     el('div', { class: 'field-help' }, 'Средний расход рассчитывается отдельно для каждого тарифа.')]);
   const fileInput = el('input', { id: 'mi-file', type: 'file', accept: '.xlsx', required: true });
   const fileLabel = el('label', { for: 'mi-file' }, 'Файл xlsx');
   const fileField = el('div', { class: 'field' }, [fileLabel, fileInput]);
-  const dateField = el('div', { class: 'field' }, [el('label', { for: 'mi-date' }, 'Дата показаний'), dateInput]);
-  const periodField = el('div', { class: 'field' }, [el('label', {}, 'За какой месяц'), periodPicker.element,
-    el('div', { class: 'field-help' }, 'В расчёт за этот месяц войдут показания файла. По умолчанию — месяц даты показаний.')]);
   const message = el('div', { role: 'alert' });
   message.hidden = true;
   const errorList = el('ul', { class: 'import-errors' });
   errorList.hidden = true;
   const warningList = el('ul', { class: 'import-warnings' });
   warningList.hidden = true;
+  const confirmationBox = el('div', { class: 'import-undo-confirm', hidden: true });
   const submitButton = el('button', { type: 'submit', class: 'btn btn-primary' }, 'Загрузить');
   const cancelButton = el('button', { type: 'button', class: 'btn btn-ghost', onclick: () => modal.close() }, 'Отмена');
   const help = el('p', { class: 'field-help' });
 
   function updateResourceFields() {
     const um31 = resourceSelect.value === 'electricity';
-    dateField.hidden = um31;
-    periodField.hidden = um31;
-    installedField.hidden = um31 || !createBox.checked;
-    createLabel.hidden = um31;
+    const pulsar = resourceSelect.value === 'water_pulsar';
     averageMonthsField.hidden = !um31;
     averageMonthsInput.required = um31;
-    dateInput.required = !um31;
     fileInput.accept = um31 ? '.xls' : '.xlsx';
     fileInput.value = '';
-    fileLabel.textContent = um31 ? 'Файл УМ-31RTU (.xls)' : 'Файл xlsx';
+    fileLabel.textContent = um31 ? 'Файл УМ-31RTU (.xls)' : 'Файл Пульсара (.xlsx)';
     help.textContent = um31
       ? 'Используются серийный номер, дата и время, общее показание и тарифы Т1–Т3. Уже внесённые за этот месяц показания сохраняются. Для действующих квартирных счётчиков без строки в файле создаётся расчётное показание по среднему расходу.'
-      : 'Для воды используйте прежний формат .xlsx: квартира, номер счётчика и показание. Все показания файла записываются на одну дату и за один месяц.';
+      : (pulsar ? 'Дата берётся из заголовка отчёта. Показания ХВС и ГВС загружаются вместе; пустые значения и неподходящие счётчики будут пропущены и указаны в истории.' : '');
   }
   resourceSelect.addEventListener('change', updateResourceFields);
   updateResourceFields();
@@ -93,13 +75,33 @@ export function openMeterImportDialog({ buildings, onImported }) {
     errorList.hidden = false;
   }
 
+  function requestHighUsageConfirmation(warnings, lowerEstimates, issues) {
+    return new Promise((resolve) => {
+      const finish = (accepted) => {
+        if (!pendingConfirmation) return;
+        pendingConfirmation = null;
+        confirmationBox.hidden = true;
+        resolve(accepted);
+      };
+      pendingConfirmation = finish;
+      confirmationBox.replaceChildren(
+        highUsageConfirmation(warnings, lowerEstimates, issues),
+        el('div', { class: 'form-actions' }, [
+          el('button', { type: 'button', class: 'btn btn-primary', onclick: () => finish(true) }, 'Подтвердить импорт'),
+          el('button', { type: 'button', class: 'btn btn-ghost', onclick: () => finish(false) }, 'Отмена'),
+        ]),
+      );
+      confirmationBox.hidden = false;
+    });
+  }
+
   async function submit(event) {
     event.preventDefault();
     if (submitting) return;
     const file = fileInput.files[0];
     const um31 = resourceSelect.value === 'electricity';
-    if (!file || (!um31 && !dateInput.value) || (createBox.checked && !um31 && !installedInput.value)
-      || (um31 && (!averageMonthsInput.value || !Number.isInteger(Number(averageMonthsInput.value))
+    const pulsar = resourceSelect.value === 'water_pulsar';
+    if (!file || (um31 && (!averageMonthsInput.value || !Number.isInteger(Number(averageMonthsInput.value))
         || Number(averageMonthsInput.value) < 1 || Number(averageMonthsInput.value) > 12))) {
       showMessage('Заполните все поля и выберите файл', 'error');
       return;
@@ -111,39 +113,26 @@ export function openMeterImportDialog({ buildings, onImported }) {
     warningList.hidden = true;
     try {
       let r;
-      if (um31) {
-        const input = { buildingId: buildingSelect.value, averageMonths: averageMonthsInput.value, file };
-        try {
-          r = await meterReadingsApi.importUM31File(input);
-        } catch (err) {
-          if (err.status !== 409 || !err.highUsageWarnings?.length) throw err;
-          const accepted = await confirmDialog({
-            title: 'Проверка высокого расхода',
-            message: highUsageConfirmation(err.highUsageWarnings, err.lowerReadingEstimates, err.issues),
-            confirmLabel: 'Подтвердить импорт',
-            cancelLabel: 'Отмена',
-          });
-          if (!accepted) {
-            showMessage('Импорт отменён. Данные не изменены.', 'error');
-            return;
-          }
-          r = await meterReadingsApi.importUM31File({ ...input, confirmHighUsage: true });
+      const input = um31
+        ? { buildingId: buildingSelect.value, averageMonths: averageMonthsInput.value, file }
+        : { buildingId: buildingSelect.value, file };
+      try {
+        r = um31 ? await meterReadingsApi.importUM31File(input) : await meterReadingsApi.importPulsarFile(input);
+      } catch (err) {
+        if (err.status !== 409 || !err.highUsageWarnings?.length) throw err;
+        const accepted = await requestHighUsageConfirmation(err.highUsageWarnings, err.lowerReadingEstimates, err.issues);
+        if (!accepted) {
+          showMessage('Импорт отменён. Данные не изменены.', 'error');
+          return;
         }
-      } else {
-        r = await meterReadingsApi.importFile({
-          buildingId: buildingSelect.value,
-          resource: resourceSelect.value,
-          readingDate: dateInput.value,
-          period: periodPicker.value,
-          installedAt: createBox.checked ? installedInput.value : '',
-          file,
-        });
+        const confirmedInput = { ...input, confirmHighUsage: true };
+        r = um31 ? await meterReadingsApi.importUM31File(confirmedInput) : await meterReadingsApi.importPulsarFile(confirmedInput);
       }
       const details = um31
         ? ` Рассчитано по среднему: ${r.estimated_readings}; пропущено уже заполненных: ${r.skipped_existing}; без расчёта: ${r.skipped_no_history}; замечаний в истории: ${r.issues?.length || 0}.`
-        : ` Создано новых счётчиков: ${r.meters_created}.`;
+        : (pulsar ? ` Пропусков и предупреждений: ${r.issues?.length || 0}.` : ` Создано новых счётчиков: ${r.meters_created}.`);
       showMessage(`Загружено показаний: ${r.readings}.${details}`, 'success');
-      if (um31) {
+      if (um31 || pulsar) {
         const notices = [
           ...(r.issues || []).map((issue) => `${issue.row ? `Строка ${issue.row} · ` : ''}${issue.serial ? `${issue.serial}: ` : ''}${issue.message}`),
         ];
@@ -171,17 +160,19 @@ export function openMeterImportDialog({ buildings, onImported }) {
     message,
     errorList,
     warningList,
+    confirmationBox,
     el('div', { class: 'field' }, [el('label', { for: 'mi-building' }, 'Дом'), buildingSelect]),
     el('div', { class: 'field' }, [el('label', { for: 'mi-resource' }, 'Ресурс'), resourceSelect]),
-    dateField,
-    periodField,
     averageMonthsField,
-    createLabel,
-    installedField,
     fileField,
     el('div', { class: 'form-actions' }, [submitButton, cancelButton]),
   ]);
 
-  modal = openModal({ title: 'Загрузить показания из Excel', content: form, wide: true });
+  modal = openModal({
+    title: 'Загрузить показания из Excel',
+    content: form,
+    wide: true,
+    onClose: () => pendingConfirmation?.(false),
+  });
   return modal;
 }

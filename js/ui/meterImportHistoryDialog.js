@@ -15,7 +15,7 @@ export async function openMeterImportHistoryDialog(buildings = []) {
   async function refresh() {
     content.replaceChildren(el('p', { class: 'table-status' }, 'Загрузка истории…'));
     try {
-      const { items } = await meterReadingsApi.um31ImportHistory();
+      const { items } = await meterReadingsApi.importHistory();
       if (modal.dialog.isConnected === false) return;
       if (!items.length) {
         content.replaceChildren(el('p', { class: 'table-status' }, 'Загрузок пока нет.'));
@@ -24,7 +24,8 @@ export async function openMeterImportHistoryDialog(buildings = []) {
       content.replaceChildren(...items.map((item) => {
         const result = item.result || {};
         const issues = item.issues || [];
-        const heading = `${dateTime(item.created_at)} · ${buildingById.get(item.building_id) || 'Дом'} · ${item.period}`;
+        const group = item.resource === 'water' ? 'Вода · Пульсар' : 'Электроэнергия · УМ-31RTU';
+        const heading = `${dateTime(item.created_at)} · ${buildingById.get(item.building_id) || 'Дом'} · ${item.period} · ${group}`;
         const summary = `Загружено показаний: ${result.readings || 0}; расчётных: ${result.estimated_readings || 0}; замечаний: ${issues.length}`;
         const issueList = issues.length
           ? el('ul', { class: 'import-history-issues' }, issues.map((issue) => el('li', {}, [
@@ -41,7 +42,7 @@ export async function openMeterImportHistoryDialog(buildings = []) {
             button.disabled = true;
             button.textContent = 'Отменяем…';
             try {
-              const undone = await meterReadingsApi.undoUM31Import(item.id);
+              const undone = await meterReadingsApi.undoImport(item.id);
               toast.success(`Импорт отменён. Удалено показаний: ${undone.removed_readings}.`);
               await refresh();
             } catch (err) {
