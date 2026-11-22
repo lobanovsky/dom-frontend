@@ -221,6 +221,11 @@ export function describeApiError(err, { action = 'save' } = {}) {
   if (raw === 'reading is below the previous actual value and there is not enough history to calculate an average') {
     return { field: null, message: 'Показание ниже последнего фактического, а истории недостаточно для расчёта среднего. Импорт не выполнен.' };
   }
+  if (raw === 'import has already been undone') return { field: null, message: 'Этот импорт уже отменён.' };
+  if (raw === 'import has no readings that can be undone') return { field: null, message: 'В этом импорте нет показаний для отмены.' };
+  if (raw === 'import readings were changed after loading; automatic undo is unavailable') return { field: null, message: 'Некоторые показания изменились после загрузки. Автоматическая отмена невозможна.' };
+  if (raw === 'newer readings already depend on this import; automatic undo is unavailable') return { field: null, message: 'После этого импорта уже внесены более поздние показания. Сначала нужно разобраться с ними; автоматическая отмена остановлена.' };
+  if (raw === 'cannot restore a reading from an undone import') return { field: null, message: 'Показание относится к отменённому импорту и не может быть восстановлено отдельно.' };
   let um31 = raw.match(/^t(\d): must not be less than previous actual reading$/);
   if (um31) return { field: null, message: `Т${um31[1]} ниже предыдущего фактического показания` };
   um31 = raw.match(/^t(\d): must not be greater than next actual reading$/);

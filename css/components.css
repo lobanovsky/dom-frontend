@@ -1128,6 +1128,17 @@ a.btn-primary {
   color: var(--color-text);
 }
 
+.import-undo-confirm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--color-danger-bg);
+  color: var(--color-text);
+}
+
 .import-file {
   margin-bottom: var(--space-3);
   padding: var(--space-3);

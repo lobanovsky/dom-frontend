@@ -119,6 +119,7 @@ export const meterReadingsApi = {
     return client.post('/api/v1/meter-readings/import-um31', body);
   },
   um31ImportHistory: (query = {}) => client.get('/api/v1/meter-readings/import-um31/history', { query }),
+  undoUM31Import: (id) => client.post(`/api/v1/meter-readings/import-um31/history/${id}/undo`, {}),
 };
 
 // Справочник видов помещений. Подписи и списки выбора по всему интерфейсу берутся из lib/labels.js#premisesKinds,
