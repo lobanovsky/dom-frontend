@@ -96,7 +96,7 @@ function meterResult(meter) {
   const data = [
     el('strong', {}, `${meter.name !== meter.serial_number ? `${meter.name} · ` : ''}№ ${meter.serial_number} · коэф. ${shown(meter.coefficient)}`),
     meter.status === 'ok'
-      ? el('span', {}, Array.from({ length: meter.tariffs }, (_, i) => `Т${i + 1}: ${shown(meter[`delta_t${i + 1}`])} кВт·ч × ${rate(meter[`price_t${i + 1}`])} ₽`).join(' · '))
+      ? el('div', { class: 'electricity-result-tariffs' }, Array.from({ length: meter.tariffs }, (_, i) => el('span', {}, `Т${i + 1}: ${shown(meter[`delta_t${i + 1}`])} кВт·ч × ${rate(meter[`price_t${i + 1}`])} ₽`)))
       : el('span', {}, statusText(meter.status)),
     el('strong', {}, meter.status === 'ok' ? formatMoney(meter.amount) : '—'),
   ];

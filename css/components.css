@@ -1448,6 +1448,7 @@ a.account-link:hover { text-decoration: underline; }
 .electricity-contract-result .section-header { margin: 0 0 12px; }
 .electricity-contract-result .section-header h2 { margin: 0; }
 .electricity-result-row { display: grid; grid-template-columns: minmax(160px, 1fr) minmax(200px, 1.5fr) auto; gap: 12px; align-items: center; padding: 10px 0; border-top: 1px solid var(--color-border); font-size: .86rem; }
+.electricity-result-tariffs { display: grid; gap: 3px; }
 .electricity-result-row strong:last-child { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .electricity-settings-card { margin-bottom: 10px; }
 .electricity-settings-card > summary { font-weight: 600; }
@@ -1464,6 +1465,7 @@ a.account-link:hover { text-decoration: underline; }
 @media (max-width: 760px) {
   .electricity-result-row { grid-template-columns: 1fr auto; }
   .electricity-result-row > span { grid-column: 1 / -1; grid-row: 2; }
+  .electricity-result-row > .electricity-result-tariffs { grid-column: 1 / -1; grid-row: 2; }
   .electricity-price-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .electricity-price-row .text-button { grid-column: 1 / -1; justify-self: start; }
 }
