@@ -41,15 +41,15 @@ export function lastReadingText(meter) {
   return tariffColumns(meter.tariffs).map((c) => formatReading(meter[`last_${c.key}`])).join(' · ');
 }
 
-// Длинный числовой номер делим на «голову» и последние четыре цифры: люди сверяют счётчик по хвосту.
-// 023260210667 -> {head: '02326021', tail: '0667'}; короткие и нечисловые номера не делятся.
+// Длинный числовой номер делим на «голову» и последние три цифры: люди сверяют счётчик по хвосту.
+// 023260210667 -> {head: '023260210', tail: '667'}; короткие и нечисловые номера не делятся.
 export function serialParts(serial) {
   const s = String(serial ?? '');
   if (!/^\d{6,}$/.test(s)) return { head: '', tail: s };
-  return { head: s.slice(0, -4), tail: s.slice(-4) };
+  return { head: s.slice(0, -3), tail: s.slice(-3) };
 }
 
-// Номер для чтения человеком: «02326021-0667» (в списках тире рисует CSS, поэтому при копировании остаются цифры).
+// Номер для чтения человеком: «023260210-667» (в списках тире рисует CSS, поэтому при копировании остаются цифры).
 export function formatSerial(serial) {
   const { head, tail } = serialParts(serial);
   return head ? `${head}-${tail}` : tail;

@@ -80,11 +80,11 @@ test('meterGroup: ресурс, при необходимости с домом'
   assert.equal(meterGroup({ resource: 'electricity', building_name: null, building_address: 'адрес' }, true), 'адрес · Электроэнергия');
 });
 
-test('serialParts / formatSerial: длинный числовой номер делится на голову и последние 4 цифры', () => {
-  assert.deepEqual(serialParts('023260210667'), { head: '02326021', tail: '0667' });
-  assert.equal(formatSerial('146301425'), '14630-1425');
-  assert.equal(formatSerial('21649058'), '2164-9058');
-  assert.equal(formatSerial('864018'), '86-4018');
+test('serialParts / formatSerial: длинный числовой номер делится на голову и последние 3 цифры', () => {
+  assert.deepEqual(serialParts('023260210667'), { head: '023260210', tail: '667' });
+  assert.equal(formatSerial('146301425'), '146301-425');
+  assert.equal(formatSerial('21649058'), '21649-058');
+  assert.equal(formatSerial('864018'), '864-018');
 });
 
 test('serialParts: короткие и нечисловые номера не делятся', () => {
