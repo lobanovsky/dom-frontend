@@ -9,8 +9,7 @@ import { currentMonth } from '../lib/calculation.js';
 
 const MAX_SHOWN_ERRORS = 50;
 
-// Окно «Загрузить показания»: дом, ресурс, дата показаний и xlsx-файл -> POST /meter-readings/import.
-// Колонки файла: квартира, номер счётчика, показания (у электричества Т1, Т2, Т3). Квартира с несколькими счётчиками — несколько строк.
+// Вода загружается в прежнем формате xlsx, электричество — из выгрузки УМ-31RTU (.xls).
 export function openMeterImportDialog({ buildings, onImported }) {
   let modal;
   let submitting = false;
@@ -20,27 +19,52 @@ export function openMeterImportDialog({ buildings, onImported }) {
   const resourceSelect = el('select', { id: 'mi-resource', required: true },
     options(meterResources).map((o) => el('option', { value: o.value }, o.label)));
   const dateInput = el('input', { id: 'mi-date', type: 'date', required: true });
-  // Расчётный месяц показаний: по умолчанию месяц даты, пока его не выбрали вручную.
   let periodTouched = false;
   const periodPicker = createMonthPicker({ value: currentMonth(), onChange: () => { periodTouched = true; } });
   dateInput.addEventListener('change', () => {
     if (!periodTouched && dateInput.value) periodPicker.value = dateInput.value.slice(0, 7);
   });
   const createBox = el('input', { id: 'mi-create', type: 'checkbox' });
+  const createLabel = el('label', { class: 'field-checkbox-label' }, [createBox, 'Создавать счётчики, которых ещё нет']);
   const installedInput = el('input', { id: 'mi-installed', type: 'date' });
   const installedField = el('div', { class: 'field' }, [el('label', { for: 'mi-installed' }, 'Дата ввода новых счётчиков в эксплуатацию'), installedInput]);
   installedField.hidden = true;
-  createBox.addEventListener('change', () => {
-    installedField.hidden = !createBox.checked;
-    installedInput.required = createBox.checked;
-  });
+  createBox.addEventListener('change', () => { installedField.hidden = !createBox.checked; installedInput.required = createBox.checked; });
+  const averageMonthsInput = el('input', { id: 'mi-average-months', type: 'number', min: '1', max: '12', step: '1', value: '1', required: true });
+  const averageMonthsField = el('div', { class: 'field' }, [el('label', { for: 'mi-average-months' }, 'Месяцев для расчёта среднего'), averageMonthsInput,
+    el('div', { class: 'field-help' }, 'Средний расход рассчитывается отдельно для каждого тарифа.')]);
   const fileInput = el('input', { id: 'mi-file', type: 'file', accept: '.xlsx', required: true });
+  const fileLabel = el('label', { for: 'mi-file' }, 'Файл xlsx');
+  const fileField = el('div', { class: 'field' }, [fileLabel, fileInput]);
+  const dateField = el('div', { class: 'field' }, [el('label', { for: 'mi-date' }, 'Дата показаний'), dateInput]);
+  const periodField = el('div', { class: 'field' }, [el('label', {}, 'За какой месяц'), periodPicker.element,
+    el('div', { class: 'field-help' }, 'В расчёт за этот месяц войдут показания файла. По умолчанию — месяц даты показаний.')]);
   const message = el('div', { role: 'alert' });
   message.hidden = true;
   const errorList = el('ul', { class: 'import-errors' });
   errorList.hidden = true;
   const submitButton = el('button', { type: 'submit', class: 'btn btn-primary' }, 'Загрузить');
   const cancelButton = el('button', { type: 'button', class: 'btn btn-ghost', onclick: () => modal.close() }, 'Отмена');
+  const help = el('p', { class: 'field-help' });
+
+  function updateResourceFields() {
+    const um31 = resourceSelect.value === 'electricity';
+    dateField.hidden = um31;
+    periodField.hidden = um31;
+    installedField.hidden = um31 || !createBox.checked;
+    createLabel.hidden = um31;
+    averageMonthsField.hidden = !um31;
+    averageMonthsInput.required = um31;
+    dateInput.required = !um31;
+    fileInput.accept = um31 ? '.xls' : '.xlsx';
+    fileInput.value = '';
+    fileLabel.textContent = um31 ? 'Файл УМ-31RTU (.xls)' : 'Файл xlsx';
+    help.textContent = um31
+      ? 'Используются серийный номер, дата и время, общее показание и тарифы Т1–Т3. Уже внесённые за этот месяц показания сохраняются. Для действующих квартирных счётчиков без строки в файле создаётся расчётное показание по среднему расходу.'
+      : 'Для воды используйте прежний формат .xlsx: квартира, номер счётчика и показание. Все показания файла записываются на одну дату и за один месяц.';
+  }
+  resourceSelect.addEventListener('change', updateResourceFields);
+  updateResourceFields();
 
   function showMessage(text, variant) {
     message.className = variant === 'success' ? 'form-success' : 'form-error';
@@ -59,7 +83,10 @@ export function openMeterImportDialog({ buildings, onImported }) {
     event.preventDefault();
     if (submitting) return;
     const file = fileInput.files[0];
-    if (!file || !dateInput.value || (createBox.checked && !installedInput.value)) {
+    const um31 = resourceSelect.value === 'electricity';
+    if (!file || (!um31 && !dateInput.value) || (createBox.checked && !um31 && !installedInput.value)
+      || (um31 && (!averageMonthsInput.value || !Number.isInteger(Number(averageMonthsInput.value))
+        || Number(averageMonthsInput.value) < 1 || Number(averageMonthsInput.value) > 12))) {
       showMessage('Заполните все поля и выберите файл', 'error');
       return;
     }
@@ -68,20 +95,25 @@ export function openMeterImportDialog({ buildings, onImported }) {
     message.hidden = true;
     errorList.hidden = true;
     try {
-      const r = await meterReadingsApi.importFile({
-        buildingId: buildingSelect.value,
-        resource: resourceSelect.value,
-        readingDate: dateInput.value,
-        period: periodPicker.value,
-        installedAt: createBox.checked ? installedInput.value : '',
-        file,
-      });
-      showMessage(`Загружено показаний: ${r.readings}, создано новых счётчиков: ${r.meters_created}.`, 'success');
+      const r = um31
+        ? await meterReadingsApi.importUM31File({ buildingId: buildingSelect.value, averageMonths: averageMonthsInput.value, file })
+        : await meterReadingsApi.importFile({
+          buildingId: buildingSelect.value,
+          resource: resourceSelect.value,
+          readingDate: dateInput.value,
+          period: periodPicker.value,
+          installedAt: createBox.checked ? installedInput.value : '',
+          file,
+        });
+      const details = um31
+        ? ` Рассчитано по среднему: ${r.estimated_readings}; пропущено как уже заполненные: ${r.skipped_existing}; без расчёта (нет истории или счётчик не квартирный): ${r.skipped_no_history}${r.skipped_no_history_meters?.length ? ` (счётчики: ${r.skipped_no_history_meters.slice(0, 10).join(', ')}${r.skipped_no_history_meters.length > 10 ? ` и ещё ${r.skipped_no_history_meters.length - 10}` : ''})` : ''}.`
+        : ` Создано новых счётчиков: ${r.meters_created}.`;
+      showMessage(`Загружено показаний: ${r.readings}.${details}`, 'success');
       submitButton.hidden = true;
       cancelButton.textContent = 'Закрыть';
       onImported?.(r);
     } catch (err) {
-      if (err.status === 0 || err.status >= 500) return; // глобальный тост уже показан клиентом
+      if (err.status === 0 || err.status >= 500) return;
       showMessage(describeApiError(err).message, 'error');
       if (err.rows?.length) showRowErrors(err.rows);
     } finally {
@@ -91,22 +123,17 @@ export function openMeterImportDialog({ buildings, onImported }) {
   }
 
   const form = el('form', { class: 'entity-form', onsubmit: submit }, [
-    el('p', { class: 'field-help' }, [
-      'Первый лист файла .xlsx, первая строка — заголовок. Колонки: «Квартира», номер счётчика, показания ',
-      '(у электричества три колонки: Т1, Т2, Т3; у однотарифного счётчика заполняется только Т1). ',
-      'Если в квартире несколько счётчиков, квартира повторяется в нескольких строках. Все показания файла записываются на одну дату и за один месяц. ',
-      'Показания округляются до трёх знаков. Если в файле есть ошибка, не загружается ничего.',
-    ]),
+    help,
     message,
     errorList,
     el('div', { class: 'field' }, [el('label', { for: 'mi-building' }, 'Дом'), buildingSelect]),
     el('div', { class: 'field' }, [el('label', { for: 'mi-resource' }, 'Ресурс'), resourceSelect]),
-    el('div', { class: 'field' }, [el('label', { for: 'mi-date' }, 'Дата показаний'), dateInput]),
-    el('div', { class: 'field' }, [el('label', {}, 'За какой месяц'), periodPicker.element,
-      el('div', { class: 'field-help' }, 'В расчёт за этот месяц войдут показания файла. По умолчанию — месяц даты показаний.')]),
-    el('label', { class: 'field-checkbox-label' }, [createBox, 'Создавать счётчики, которых ещё нет']),
+    dateField,
+    periodField,
+    averageMonthsField,
+    createLabel,
     installedField,
-    el('div', { class: 'field' }, [el('label', { for: 'mi-file' }, 'Файл xlsx'), fileInput]),
+    fileField,
     el('div', { class: 'form-actions' }, [submitButton, cancelButton]),
   ]);
 

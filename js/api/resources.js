@@ -110,6 +110,13 @@ export const meterReadingsApi = {
     body.set('file', file);
     return client.post('/api/v1/meter-readings/import', body);
   },
+  importUM31File: ({ buildingId, averageMonths, file }) => {
+    const body = new FormData();
+    body.set('building_id', String(buildingId));
+    body.set('average_months', String(averageMonths));
+    body.set('file', file);
+    return client.post('/api/v1/meter-readings/import-um31', body);
+  },
 };
 
 // Справочник видов помещений. Подписи и списки выбора по всему интерфейсу берутся из lib/labels.js#premisesKinds,

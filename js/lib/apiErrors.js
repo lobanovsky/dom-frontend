@@ -214,6 +214,21 @@ function translateReason(reason) {
 export function describeApiError(err, { action = 'save' } = {}) {
   const raw = (err instanceof ApiError || err instanceof Error) ? err.message : String(err ?? '');
 
+  if (raw.startsWith('not a valid xls file')) return { field: null, message: 'Не удалось прочитать файл УМ-31RTU: нужен файл Excel .xls' };
+  if (raw.startsWith('header row must contain column')) return { field: null, message: 'В файле УМ-31RTU не найдены обязательные столбцы. Проверьте, что загружена исходная выгрузка устройства.' };
+  if (raw === 'all readings must be from one month') return { field: null, message: 'В одной выгрузке должны быть показания только за один месяц' };
+  if (raw === 'meter has an unsupported number of tariffs') return { field: null, message: 'У счётчика указано неподдерживаемое количество тарифов' };
+  let um31 = raw.match(/^t(\d): must not be less than previous actual reading$/);
+  if (um31) return { field: null, message: `Т${um31[1]} ниже предыдущего фактического показания` };
+  um31 = raw.match(/^t(\d): must not be greater than next actual reading$/);
+  if (um31) return { field: null, message: `Т${um31[1]} выше следующего фактического показания` };
+  um31 = raw.match(/^meter ".*" is not in service$/);
+  if (um31) return { field: null, message: 'Счётчик выведен из эксплуатации или ещё не введён' };
+  if (/^meter ".*" belongs to another building$/.test(raw)) return { field: null, message: 'Счётчик относится к другому дому' };
+  if (/^meter ".*" not found$/.test(raw)) return { field: null, message: 'Счётчик с таким серийным номером не найден' };
+  um31 = raw.match(/^A\+(\d) reading is required for this meter$/);
+  if (um31) return { field: null, message: `Для счётчика не найдено показание A+${um31[1]}` };
+
   if (raw.startsWith('already exists: ')) {
     const constraint = raw.slice('already exists: '.length);
     return { field: null, message: CONFLICTS[constraint] || 'Такая запись уже есть' };
@@ -384,6 +399,15 @@ const READING_ROW = [
   [/^t(\d): tariffs must be filled in order$/, (m) => `показание Т${m[1]} заполнено без предыдущего тарифа`],
   [/^t(\d): "(.*)" is not a number$/, (m) => `Т${m[1]}: «${m[2]}» — не число`],
   [/^t(\d): must not be negative$/, (m) => `Т${m[1]}: показание не может быть отрицательным`],
+  [/^A\+(\d): "(.*)" is not a number$/, (m) => `A+${m[1]}: «${m[2]}» — не число`],
+  [/^A\+0: "(.*)" is not a number$/, (m) => `A+0: «${m[1]}» — не число`],
+  [/^A\+0 or A\+1 reading is required$/, 'Не заполнено суммарное показание A+0 или тарифное A+1'],
+  [/^date\/time ".*" has an unsupported format$/, 'Дата и время имеют неизвестный формат'],
+  [/^meter serial number is required$/, 'не указан серийный номер счётчика'],
+  [/^duplicate meter serial number \(already in row (\d+)\)$/, (m) => `серийный номер счётчика повторяется (строка ${m[1]})`],
+  [/^meter ".*" is not in service$/, 'счётчик выведен из эксплуатации или ещё не введён'],
+  [/^meter ".*" belongs to another building$/, 'счётчик относится к другому дому'],
+  [/^meter ".*" not found$/, 'счётчик с таким серийным номером не найден'],
 ];
 
 // Перевод ошибки одной строки файла импорта (message из rows[].error бэкенда).
