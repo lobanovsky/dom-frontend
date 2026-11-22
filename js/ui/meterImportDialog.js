@@ -9,6 +9,8 @@ const MAX_SHOWN_ERRORS = 50;
 const usage = (value, unit) => `${new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 2 }).format(value)} ${unit}`;
 
 function highUsageConfirmation(warnings, lowerEstimates = [], issues = []) {
+  lowerEstimates = Array.isArray(lowerEstimates) ? lowerEstimates : [];
+  issues = Array.isArray(issues) ? issues : [];
   const unit = warnings[0]?.unit || 'кВт·ч';
   return el('div', {}, [
     el('p', {}, `Расход по этим счётчикам больше чем втрое превышает предыдущий месяц (${unit}). Проверьте показания. Если значения верны, подтвердите импорт:`),
