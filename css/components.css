@@ -1397,7 +1397,6 @@ a.account-link:hover { text-decoration: underline; }
 
 /* Номер счётчика: голова приглушена, последние четыре цифры выделены; тире — генерируемое, не копируется */
 .serial-head { color: var(--color-text-muted); font-weight: 400; }
-.serial-head::after { content: '-'; }
 .serial-tail { font-weight: 700; }
 
 /* Значок вида счётчика слева от названия */

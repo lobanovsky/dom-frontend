@@ -49,10 +49,10 @@ export function serialParts(serial) {
   return { head: s.slice(0, -3), tail: s.slice(-3) };
 }
 
-// Номер для чтения человеком: «023260210-667» (в списках тире рисует CSS, поэтому при копировании остаются цифры).
+// Номер для чтения человеком: «023260210667»; последние три цифры выделяются отдельно.
 export function formatSerial(serial) {
   const { head, tail } = serialParts(serial);
-  return head ? `${head}-${tail}` : tail;
+  return `${head}${tail}`;
 }
 
 // Коэффициент трансформации в названии: только у общедомового электросчётчика («коэф. 40»); у индивидуальных он всегда 1.

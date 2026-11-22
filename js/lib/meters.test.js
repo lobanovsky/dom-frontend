@@ -82,9 +82,9 @@ test('meterGroup: ресурс, при необходимости с домом'
 
 test('serialParts / formatSerial: длинный числовой номер делится на голову и последние 3 цифры', () => {
   assert.deepEqual(serialParts('023260210667'), { head: '023260210', tail: '667' });
-  assert.equal(formatSerial('146301425'), '146301-425');
-  assert.equal(formatSerial('21649058'), '21649-058');
-  assert.equal(formatSerial('864018'), '864-018');
+  assert.equal(formatSerial('146301425'), '146301425');
+  assert.equal(formatSerial('21649058'), '21649058');
+  assert.equal(formatSerial('864018'), '864018');
 });
 
 test('serialParts: короткие и нечисловые номера не делятся', () => {
