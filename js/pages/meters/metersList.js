@@ -5,7 +5,7 @@ import { metersApi, meterReadingsApi } from '../../api/resources.js';
 import { meterFields, meterReadingFields } from '../fields.js';
 import { meterResources, meterTariffs, premisesKinds, label, options } from '../../lib/labels.js';
 import { formatDate, monthLabel, todayIso } from '../../lib/format.js';
-import { coefficientNote, formatDelta, lastReadingText, meterGroup, meterStatus, meterTitle, premisesGroup, resourceUnit, serialParts, tariffColumns, verificationState } from '../../lib/meters.js';
+import { coefficientNote, formatDelta, formatReading, meterGroup, meterStatus, meterTitle, premisesGroup, resourceUnit, serialParts, tariffColumns, verificationState } from '../../lib/meters.js';
 import { buildingLabel, buildingLabelOf } from '../../lib/buildings.js';
 import { meterIcon } from '../../ui/meterIcon.js';
 
@@ -105,13 +105,16 @@ function locationCell(m) {
 }
 
 function lastCell(m, today) {
-  const text = lastReadingText(m);
-  if (!text) return el('span', { class: 'text-muted' }, 'Показаний нет');
+  if (!m.last_reading_date) return el('span', { class: 'text-muted' }, 'Показаний нет');
   const period = m.last_reading_period || m.last_reading_date;
   const monthBadge = String(period || '').slice(0, 7) === today.slice(0, 7) ? 'badge-success' : 'badge-neutral';
+  const values = tariffColumns(m.tariffs).map((column) => {
+    const value = formatReading(m[`last_${column.key}`]);
+    return `${m.tariffs > 1 ? `${column.label}: ` : ''}${value} ${resourceUnit(m.resource)}`;
+  });
   return el('div', {}, [
     el('div', { class: 'meter-last-reading-value' }, [
-      el('span', { class: 'nowrap' }, `${text} ${resourceUnit(m.resource)}`),
+      el('div', { class: 'meter-tariff-values' }, values.map((value) => el('div', {}, value))),
       monthLabel(period) ? el('span', { class: `badge ${monthBadge}` }, monthLabel(period)) : null,
     ]),
     el('div', { class: 'text-muted' }, formatDate(m.last_reading_date)),
@@ -124,10 +127,9 @@ function lastConsumptionCell(m) {
     .map((column) => ({ label: column.label, value: m[`last_${column.delta}`] }))
     .filter((column) => column.value !== null && column.value !== undefined);
   if (!values.length) return el('span', { class: 'text-muted' }, 'Нет данных');
-  const text = values.map((column) => `${values.length > 1 ? `${column.label}: ` : ''}${formatDelta(column.value)}`).join(' · ');
   const period = m.last_reading_period || m.last_reading_date;
   return el('div', {}, [
-    el('div', { class: 'meter-last-reading-value' }, `${text} ${resourceUnit(m.resource)}`),
+    el('div', { class: 'meter-tariff-values' }, values.map((column) => el('div', {}, `${m.tariffs > 1 ? `${column.label}: ` : ''}${formatDelta(column.value)} ${resourceUnit(m.resource)}`))),
     monthLabel(period) ? el('small', { class: 'text-muted' }, `за ${monthLabel(period)}`) : null,
   ]);
 }

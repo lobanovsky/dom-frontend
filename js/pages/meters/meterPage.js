@@ -148,7 +148,7 @@ export async function meterPage(container, { id }) {
   function consumptionCell(r) {
     const c = consumption(r, meter.tariffs);
     if (c.total === null) return '';
-    return el('div', {}, [el('span', { class: 'nowrap' }, formatDelta(c.total)), c.parts.length ? el('div', { class: 'text-muted' }, c.parts.join(' · ')) : null]);
+    return el('div', {}, [el('span', { class: 'nowrap' }, formatDelta(c.total)), c.parts.length ? el('div', { class: 'meter-tariff-values text-muted' }, c.parts.map((part) => el('div', {}, part))) : null]);
   }
 
   renderInfo();
