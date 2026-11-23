@@ -69,6 +69,7 @@ export const meterTitle = (meter) => `${meter.name ? `${meter.name} · ` : ''}${
 
 // Состояние счётчика по дням работы: {text, kind} для бейджа (kind — суффикс badge-*).
 export function meterStatus(meter) {
+  if (meter.broken) return { text: 'Сломан', kind: 'danger' };
   if (meter.active) return { text: 'Работает', kind: 'success' };
   if (meter.removed_at) return { text: `Выведен ${formatDate(meter.removed_at)}`, kind: 'neutral' };
   return { text: 'Не введён в эксплуатацию', kind: 'neutral' };
