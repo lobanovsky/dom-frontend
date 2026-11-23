@@ -9,6 +9,7 @@ import { metersApi } from '../../api/resources.js';
 import { saveFile } from '../../ui/saveFile.js';
 import { toast } from '../../ui/toast.js';
 import { openMeterImportHistoryDialog } from '../../ui/meterImportHistoryDialog.js';
+import { openElectricityPaperFormDialog } from '../../ui/electricityPaperFormDialog.js';
 
 const MODES = [
   { id: 'common', title: 'Общедомовые', target: 'building' },
@@ -61,6 +62,7 @@ export async function metersPage(container) {
       el('h1', {}, 'Счётчики'),
       el('div', { class: 'header-actions' }, [
         el('button', { type: 'button', class: 'btn', onclick: exportMeters }, 'Экспорт счётчиков'),
+        el('button', { type: 'button', class: 'btn', onclick: () => openElectricityPaperFormDialog(buildings) }, 'Бланк для техника'),
         el('button', { type: 'button', class: 'btn', onclick: openMeterExportDialog }, 'Экспорт показаний'),
         canWrite() ? el('button', { type: 'button', class: 'btn', onclick: () => openMeterImportDialog({ buildings, onImported: show }) }, 'Загрузить показания') : null,
         canWrite() ? el('button', { type: 'button', class: 'btn', onclick: () => openMeterImportHistoryDialog(buildings) }, 'История загрузок') : null,

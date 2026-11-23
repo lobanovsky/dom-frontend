@@ -66,6 +66,7 @@ export const accountHoldersApi = resource('account-holders');
 export const metersApi = {
   ...resource('meters'),
   exportExcel: (query) => client.download('/api/v1/meters/export', { query }),
+  exportElectricityPaperForm: (buildingId) => client.download('/api/v1/meters/electricity-paper-form', { query: { building_id: buildingId } }),
 };
 export const electricityApi = {
   createContract: (body) => client.post('/api/v1/electricity-contracts', body),
