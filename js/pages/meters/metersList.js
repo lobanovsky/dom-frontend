@@ -79,7 +79,7 @@ export function createMetersList({ fixedQuery = {}, fixed = {}, target = 'fixed'
 function statusCell(meter) {
   const status = meterStatus(meter);
   const children = [el('span', { class: `badge badge-${status.kind}` }, status.text)];
-  if (meter.broken) {
+  if (meter.broken || meter.manual_reading_required) {
     const values = [1, 2, 3].slice(0, meter.tariffs).map((tariff) => {
       const value = meter[`default_t${tariff}`];
       return `${meter.tariffs > 1 ? `Т${tariff}: ` : ''}${value == null ? '—' : formatReading(value)} ${resourceUnit(meter.resource)}`;
