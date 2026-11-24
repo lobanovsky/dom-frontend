@@ -147,7 +147,7 @@ function parkingOperationsView(parking) {
   ]);
 }
 
-function commercialOperationsView(individual, common) {
+function commercialOperationsView(individual, common, premises = []) {
   const row = (label, group, ready) => el('tr', {}, [
     el('th', { scope: 'row' }, label),
     el('td', {}, shown(ready && !group.missing[0] ? group.volume[0] : null)),
@@ -156,9 +156,13 @@ function commercialOperationsView(individual, common) {
     el('h2', {}, 'Коммерческие помещения'),
     el('p', { class: 'muted' }, 'Прочерк означает, что не хватает данных за месяц.'),
     el('div', { class: 'electricity-table-scroll' }, el('table', { class: 'electricity-overview' }, [
-      el('thead', {}, el('tr', {}, ['Счётчики', 'Расход, кВт·ч'].map((name) => el('th', { scope: 'col' }, name)))),
+      el('thead', {}, el('tr', {}, ['Помещение или счётчики', 'Расход, кВт·ч'].map((name) => el('th', { scope: 'col' }, name)))),
       el('tbody', {}, [
-        row('Индивидуальные счётчики', individual, individual.meters > 0),
+        ...(premises || []).map((item) => el('tr', {}, [
+          el('th', { scope: 'row' }, '№ ' + item.number + (item.building ? ' · ' + item.building : '')),
+          el('td', {}, shown(item.missing ? null : item.volume)),
+        ])),
+        row('Итого по индивидуальным счётчикам', individual, individual.meters > 0),
         row('Сумма счётчиков № 023260084425 и № 023260085002', common, common.meters === 2),
       ]),
     ])),
@@ -174,7 +178,7 @@ function resultView(result) {
     result.operations ? operationsView(result.operations) : null,
     result.operations?.parking ? parkingOperationsView(result.operations.parking) : null,
     result.operations?.commercial_individual && result.operations?.commercial_common
-      ? commercialOperationsView(result.operations.commercial_individual, result.operations.commercial_common) : null,
+      ? commercialOperationsView(result.operations.commercial_individual, result.operations.commercial_common, result.operations.commercial_premises) : null,
     ...result.contracts.map((contract) => el('section', { class: 'card electricity-contract-result' }, [
       el('div', { class: 'section-header' }, [el('h2', {}, contract.name), el('strong', {}, contract.complete ? formatMoney(contract.total) : `Частично · ${formatMoney(contract.total)}`)]),
       ...contract.meters.map(meterResult),
