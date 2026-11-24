@@ -101,6 +101,25 @@ function meterResult(meter) {
   return row;
 }
 
+function negativeWaterMeters(meters) {
+  const columns = ['Помещение', 'Ресурс', 'Счётчик', 'Предыдущее, м³', 'Текущее, м³', 'Расход, м³'];
+  const table = el('div', { class: 'electricity-table-scroll' }, el('table', { class: 'electricity-overview' }, [
+    el('thead', {}, el('tr', {}, columns.map((label) => el('th', { scope: 'col' }, label)))),
+    el('tbody', {}, meters.map((meter) => el('tr', {}, [
+      el('td', {}, meter.location),
+      el('td', {}, meter.resource === 'hot_water' ? 'ГВС' : 'ХВС'),
+      el('td', {}, el('a', { href: `/meters/${meter.id}` }, meter.serial)),
+      ...[meter.previous, meter.current, meter.volume].map((value) => el('td', {}, shown(value))),
+    ]))),
+  ]));
+  const results = el('div', { hidden: true }, meters.length ? table : el('p', { class: 'muted' }, 'За этот месяц отрицательного расхода нет.'));
+  const filter = el('input', { type: 'checkbox', onchange: (event) => { results.hidden = !event.target.checked; } });
+  return el('div', {}, [
+    el('label', { class: 'field-checkbox-label' }, [filter, ` Только счётчики с отрицательным расходом (${meters.length})`]),
+    results,
+  ]);
+}
+
 function waterBalanceView(balance) {
   const rows = [
     ['Квартиры · ГВС', balance.apartment_hot],
@@ -127,6 +146,7 @@ function waterBalanceView(balance) {
       ? el('p', { class: 'muted' }, `Тариф ХВС — ${rate(balance.common_needs_water_price)} ₽/м³`)
       : el('p', { class: 'muted' }, 'Для вводного счётчика нет тарифа ХВС за этот месяц.'),
     balance.common_needs == null ? el('p', { class: 'muted' }, 'Для расчёта не хватает данных или есть отрицательный расход по прибору.') : null,
+    Array.isArray(balance.negative_meters) ? negativeWaterMeters(balance.negative_meters) : null,
     balance.common_needs < 0 ? el('p', { class: 'muted' }, 'Баланс отрицательный. Проверьте показания за месяц.') : null,
   ]);
 }
