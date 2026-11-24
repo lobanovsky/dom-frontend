@@ -67,13 +67,26 @@ export function createMetersList({ fixedQuery = {}, fixed = {}, target = 'fixed'
       { key: 'last_consumption', label: 'Расход по последнему показанию', render: lastConsumptionCell },
       common ? { key: 'installed_at', label: 'Введён в эксплуатацию', render: (m) => formatDate(m.installed_at) } : null,
       { key: 'verification', label: 'Поверка', render: (m) => verificationCell(m, today) },
-      { key: 'status', label: 'Состояние', render: (m) => { const s = meterStatus(m); return el('span', { class: `badge badge-${s.kind}` }, s.text); } },
+      { key: 'status', label: 'Состояние', render: statusCell },
     ].filter(Boolean),
     extraActions: (m) => (m.active ? [el('button', { type: 'button', class: 'btn btn-sm', onclick: () => addReading(m) }, 'Показание')] : []),
     emptyMessage,
     deleteMessage: (m) => `Удалить счётчик ${meterTitle(m)}? Удалить можно только счётчик без показаний; обычно его выводят из работы датой окончания.`,
   });
   return list;
+}
+
+function statusCell(meter) {
+  const status = meterStatus(meter);
+  const children = [el('span', { class: `badge badge-${status.kind}` }, status.text)];
+  if (meter.broken) {
+    const values = [1, 2, 3].slice(0, meter.tariffs).map((tariff) => {
+      const value = meter[`default_t${tariff}`];
+      return `${meter.tariffs > 1 ? `Т${tariff}: ` : ''}${value == null ? '—' : formatReading(value)} ${resourceUnit(meter.resource)}`;
+    });
+    children.push(el('small', { class: 'text-muted' }, [`По умолчанию: ${values.join(' / ')}`]));
+  }
+  return el('div', { class: 'meter-status-cell' }, children);
 }
 
 function manualReadingIcon() {
