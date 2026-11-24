@@ -41,7 +41,7 @@ export function createMetersList({ fixedQuery = {}, fixed = {}, target = 'fixed'
     { name: 'reading_period', label: 'Месяц показаний', type: 'month', defaultValue: today.slice(0, 7) },
     { name: 'has_reading', label: 'Передача за месяц', type: 'select', allLabel: 'Все', options: [{ value: 'true', label: 'Передали' }, { value: 'false', label: 'Не передали' }] },
     { name: 'manual_reading_required', label: 'Ручная передача', type: 'select', allLabel: 'Все', options: [{ value: 'true', label: 'Требуется' }, { value: 'false', label: 'Не требуется' }] },
-    { name: 'active', label: 'Состояние', type: 'select', allLabel: 'Все', options: [{ value: 'true', label: 'Работают' }, { value: 'false', label: 'Не работают' }] },
+    { name: 'active', label: 'Состояние', type: 'select', defaultValue: 'true', allLabel: 'Все', options: [{ value: 'true', label: 'Работают' }, { value: 'false', label: 'Не работают' }] },
     { name: 'broken', label: 'Сломан', type: 'select', allLabel: 'Все', options: [{ value: 'true', label: 'Да' }, { value: 'false', label: 'Нет' }] },
     { name: 'q', label: 'Поиск', type: 'search', placeholder: 'Номер или название счётчика' },
   ] : [];
