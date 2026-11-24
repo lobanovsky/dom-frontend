@@ -151,18 +151,27 @@ function waterBalanceView(balance) {
 
 function residentChargesView(charges, result) {
   const money = (value) => value == null ? '—' : formatMoney(value);
-  const row = (name, values) => el('tr', {}, [
+  const balance = result.balance ?? {};
+  const sum = (a, b) => a == null || b == null ? null : a + b;
+  const row = (name, values, volumes = [], price) => el('tr', {}, [
     el('th', { scope: 'row' }, name),
-    ...values.map((value) => el('td', {}, money(value))),
+    ...values.map((value, i) => el('td', {}, [
+      money(value),
+      value != null && volumes[i] != null && price != null
+        ? el('div', {}, el('small', { class: 'muted' }, `${shown(volumes[i])} м³ × ${rate(price)} ₽/м³`)) : null,
+    ])),
   ]);
   return el('section', { class: 'card electricity-contract-result' }, [
     el('h2', {}, 'К начислению квартирам и офисам'),
     el('div', { class: 'electricity-table-scroll' }, el('table', { class: 'electricity-overview' }, [
       el('thead', {}, el('tr', {}, ['Услуга', 'Квартиры', 'Офисы'].map((name) => el('th', { scope: 'col' }, name)))),
       el('tbody', {}, [
-        row(`ХВС · ${rate(charges.cold_price)} ₽/м³`, [charges.apartments.cold, charges.offices.cold]),
-        row(`ГВС с подогревом · ${rate(charges.hot_price)} ₽/м³`, [charges.apartments.hot, charges.offices.hot]),
-        row(`Водоотведение · ${rate(charges.sewer_price)} ₽/м³`, [charges.apartments.sewer, charges.offices.sewer]),
+        row('ХВС', [charges.apartments.cold, charges.offices.cold],
+          [balance.apartment_cold, balance.office_cold], charges.cold_price),
+        row('ГВС без подогрева', [charges.apartments.hot, charges.offices.hot],
+          [balance.apartment_hot, balance.office_hot], charges.hot_price),
+        row('Водоотведение', [charges.apartments.sewer, charges.offices.sewer],
+          [sum(balance.apartment_cold, balance.apartment_hot), sum(balance.office_cold, balance.office_hot)], charges.sewer_price),
         row('Итого', [charges.apartments.total, charges.offices.total]),
       ]),
     ])),
