@@ -98,7 +98,7 @@ export async function meterPage(container, { id }) {
     openEntityForm({
       title: 'Счётчик: редактирование',
       fields: meterFields({ target: 'fixed' }),
-      watch: ['resource', 'tariffs', 'manual_reading_required'],
+      watch: ['resource', 'tariffs', 'manual_reading_required', 'broken'],
       entity: meter,
       fixed: { building_id: meter.building_id, premises_id: meter.premises_id },
       save: (body) => metersApi.update(meter.id, body),

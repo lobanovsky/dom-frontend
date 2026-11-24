@@ -151,12 +151,12 @@ export const meterFields = ({ target = 'fixed', buildings = [] } = {}) => (value
     { ...numberField('initial_t2', initial(2), { min: 0, step: 0.001, inputmode: 'decimal' }), row: tariffRow, visible: () => tariffs >= 2 },
     { ...numberField('initial_t3', initial(3), { min: 0, step: 0.001, inputmode: 'decimal' }), row: tariffRow, visible: () => tariffs >= 3 },
     { ...checkboxField('manual_reading_required', 'Показания передавать вручную', { help: 'Отметьте, если система не получает показания автоматически. Житель увидит напоминание в личном кабинете.' }), full: true },
-    { type: 'section', name: 'meter-default-section', label: 'Средний расход по умолчанию', help: 'Расход за месяц прибавляется к предыдущему показанию, а если показаний ещё нет — к начальному.', virtual: true, visible: (v) => !!v.manual_reading_required },
-    { ...numberField('default_t1', 'Т1', { min: 0, step: 0.001, inputmode: 'decimal' }), row: tariffRow, visible: (v) => !!v.manual_reading_required },
-    { ...numberField('default_t2', 'Т2', { min: 0, step: 0.001, inputmode: 'decimal' }), row: tariffRow, visible: (v) => !!v.manual_reading_required && tariffs >= 2 },
-    { ...numberField('default_t3', 'Т3', { min: 0, step: 0.001, inputmode: 'decimal' }), row: tariffRow, visible: (v) => !!v.manual_reading_required && tariffs >= 3 },
+    { type: 'section', name: 'meter-default-section', label: 'Средний расход по умолчанию', help: 'Расход за месяц прибавляется к предыдущему показанию (или к начальному). Для ручной передачи его можно подставить кнопкой, для сломанного счётчика показание автоматически создаётся с 20-го числа.', virtual: true, visible: (v) => !!v.manual_reading_required || !!v.broken },
+    { ...numberField('default_t1', 'Т1', { min: 0, step: 0.001, inputmode: 'decimal' }), row: tariffRow, visible: (v) => !!v.manual_reading_required || !!v.broken },
+    { ...numberField('default_t2', 'Т2', { min: 0, step: 0.001, inputmode: 'decimal' }), row: tariffRow, visible: (v) => (!!v.manual_reading_required || !!v.broken) && tariffs >= 2 },
+    { ...numberField('default_t3', 'Т3', { min: 0, step: 0.001, inputmode: 'decimal' }), row: tariffRow, visible: (v) => (!!v.manual_reading_required || !!v.broken) && tariffs >= 3 },
     textareaField('comment', 'Комментарий', { full: true }),
-    { ...checkboxField('broken', 'Счётчик сломан', { help: 'Информационный статус, не заменяет дату окончания работы.' }), full: true },
+    { ...checkboxField('broken', 'Счётчик сломан', { help: 'Житель не сможет передавать показания. С 20-го числа система будет автоматически записывать расход по умолчанию; обратитесь в ТСН для замены.' }), full: true },
   ].filter(Boolean);
 };
 
