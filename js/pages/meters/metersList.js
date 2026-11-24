@@ -51,7 +51,7 @@ export function createMetersList({ fixedQuery = {}, fixed = {}, target = 'fixed'
     addLabel: 'Добавить счётчик',
     api: metersApi,
     fields: meterFields({ target, buildings }),
-    watch: ['resource', 'tariffs'],
+    watch: ['resource', 'tariffs', 'manual_reading_required'],
     fixedQuery,
     fixed,
     newDefaults: { installed_at: today, tariffs: '3', coefficient: '1', ...(target === 'building' && buildings.length === 1 ? { building_id: String(buildings[0].id) } : {}) },

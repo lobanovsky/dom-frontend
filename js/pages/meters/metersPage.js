@@ -10,6 +10,7 @@ import { saveFile } from '../../ui/saveFile.js';
 import { toast } from '../../ui/toast.js';
 import { openMeterImportHistoryDialog } from '../../ui/meterImportHistoryDialog.js';
 import { openElectricityPaperFormDialog } from '../../ui/electricityPaperFormDialog.js';
+import { confirmDialog } from '../../ui/confirmDialog.js';
 
 const MODES = [
   { id: 'common', title: 'Общедомовые', target: 'building' },
@@ -56,6 +57,27 @@ export async function metersPage(container) {
     }
   }
 
+  async function applyDefaultReadings() {
+    const month = new Intl.DateTimeFormat('ru-RU', { month: 'long', year: 'numeric', timeZone: 'Europe/Moscow' }).format(new Date());
+    const confirmed = await confirmDialog({
+      title: 'Подставить показания по умолчанию',
+      message: `За ${month} будут добавлены показания только счётчикам с ручной передачей, у которых показаний за этот месяц ещё нет. Средний расход прибавится к предыдущему показанию (или к начальному). Продолжить?`,
+      confirmLabel: 'Подставить',
+    });
+    if (!confirmed) return;
+    try {
+      const result = await metersApi.applyDefaultReadings();
+      const details = [
+        result.unconfigured ? `без заданного среднего расхода: ${result.unconfigured}` : null,
+        result.skipped ? `не удалось применить (проверьте показания): ${result.skipped}` : null,
+      ].filter(Boolean);
+      toast.success(`Добавлено показаний: ${result.applied}.${details.length ? ` ${details.join('; ')}.` : ''}`);
+      await currentList?.reload();
+    } catch (err) {
+      toast.error(describeApiError(err).message);
+    }
+  }
+
   show();
   container.replaceChildren(el('div', { class: 'page' }, [
     el('div', { class: 'section-header' }, [
@@ -65,6 +87,7 @@ export async function metersPage(container) {
         el('button', { type: 'button', class: 'btn', onclick: () => openElectricityPaperFormDialog(buildings) }, 'Бланк для техника'),
         el('button', { type: 'button', class: 'btn', onclick: openMeterExportDialog }, 'Экспорт показаний'),
         canWrite() ? el('button', { type: 'button', class: 'btn', onclick: () => openMeterImportDialog({ buildings, onImported: show }) }, 'Загрузить показания') : null,
+        canWrite() ? el('button', { type: 'button', class: 'btn', onclick: applyDefaultReadings }, 'Подставить значения по умолчанию') : null,
         canWrite() ? el('button', { type: 'button', class: 'btn', onclick: () => openMeterImportHistoryDialog(buildings) }, 'История загрузок') : null,
       ]),
     ]),
