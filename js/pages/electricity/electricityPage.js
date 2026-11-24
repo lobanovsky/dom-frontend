@@ -150,13 +150,13 @@ function parkingOperationsView(parking) {
 function commercialOperationsView(individual, common) {
   const row = (label, group, ready) => el('tr', {}, [
     el('th', { scope: 'row' }, label),
-    ...group.volume.map((value, i) => el('td', {}, shown(ready && !group.missing[i] ? value : null))),
+    el('td', {}, shown(ready && !group.missing[0] ? group.volume[0] : null)),
   ]);
   return el('section', { class: 'card electricity-contract-result' }, [
     el('h2', {}, 'Коммерческие помещения'),
-    el('p', { class: 'muted' }, 'Расход за месяц, кВт·ч. Прочерк означает, что не хватает данных.'),
+    el('p', { class: 'muted' }, 'Прочерк означает, что не хватает данных за месяц.'),
     el('div', { class: 'electricity-table-scroll' }, el('table', { class: 'electricity-overview' }, [
-      el('thead', {}, el('tr', {}, ['Расход', 'Т1', 'Т2', 'Т3'].map((name) => el('th', { scope: 'col' }, name)))),
+      el('thead', {}, el('tr', {}, ['Счётчики', 'Расход, кВт·ч'].map((name) => el('th', { scope: 'col' }, name)))),
       el('tbody', {}, [
         row('Индивидуальные счётчики', individual, individual.meters > 0),
         row('Сумма счётчиков № 023260084425 и № 023260085002', common, common.meters === 2),
