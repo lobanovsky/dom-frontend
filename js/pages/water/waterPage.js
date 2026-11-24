@@ -119,12 +119,10 @@ function negativeWaterMeters(meters) {
 
 function waterBalanceView(balance) {
   const rows = [
-    ['Квартиры · ГВС', balance.apartment_hot],
     ['Квартиры · ХВС', balance.apartment_cold],
+    ['Квартиры · ГВС', balance.apartment_hot],
     ['Офисы · ХВС', balance.office_cold],
     ['Офисы · ГВС', balance.office_hot],
-    ['Вводной счётчик № 146301425', balance.inlet],
-    ['Сумма счётчиков № 864041 и № 145558', balance.common_meters],
     ['Общедомовые нужды', balance.common_needs],
   ];
   const formatVolume = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 3 });
@@ -137,7 +135,7 @@ function waterBalanceView(balance) {
         el('td', {}, value == null ? '—' : formatVolume.format(value)),
       ]))),
     ])),
-    el('p', { class: 'muted' }, 'Общедомовые нужды = вводной объём − ХВС и ГВС квартир и офисов − сумма двух общедомовых счётчиков.'),
+    el('p', { class: 'muted' }, 'Общедомовые нужды = вводной объём − ХВС и ГВС квартир и офисов.'),
     el('p', {}, el('strong', {}, `Стоимость воды на общедомовые нужды — ${balance.common_needs_water_amount == null ? '—' : formatMoney(balance.common_needs_water_amount)}`)),
     balance.common_needs_water_price != null
       ? el('p', { class: 'muted' }, `Тариф ХВС — ${rate(balance.common_needs_water_price)} ₽/м³`)
@@ -168,7 +166,7 @@ function residentChargesView(charges, result) {
       el('tbody', {}, [
         row('ХВС', [charges.apartments.cold, charges.offices.cold],
           [balance.apartment_cold, balance.office_cold], charges.cold_price),
-        row('ГВС без подогрева', [charges.apartments.hot, charges.offices.hot],
+        row('ГВС', [charges.apartments.hot, charges.offices.hot],
           [balance.apartment_hot, balance.office_hot], charges.hot_price),
         row('Водоотведение', [charges.apartments.sewer, charges.offices.sewer],
           [sum(balance.apartment_cold, balance.apartment_hot), sum(balance.office_cold, balance.office_hot)], charges.sewer_price),
@@ -177,7 +175,6 @@ function residentChargesView(charges, result) {
     ])),
     el('p', {}, el('strong', {}, `К начислению всего — ${money(charges.total)}`)),
     el('p', {}, `${result.complete ? 'К оплате Мосводоканалу' : 'К оплате Мосводоканалу (неполный расчёт)'} — ${money(result.total)}`),
-    el('p', { class: 'muted' }, 'Начисление рассчитано по суммарным объёмам. Фактические платежи жителей и оплата поставщику здесь не учитываются.'),
     charges.total == null ? el('p', { class: 'muted' }, 'Для полного расчёта не хватает объёмов или тарифов за месяц.') : null,
   ]);
 }
