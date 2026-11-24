@@ -130,6 +130,30 @@ function waterBalanceView(balance) {
   ]);
 }
 
+function residentChargesView(charges, result) {
+  const money = (value) => value == null ? '—' : formatMoney(value);
+  const row = (name, values) => el('tr', {}, [
+    el('th', { scope: 'row' }, name),
+    ...values.map((value) => el('td', {}, money(value))),
+  ]);
+  return el('section', { class: 'card electricity-contract-result' }, [
+    el('h2', {}, 'К начислению квартирам и офисам'),
+    el('div', { class: 'electricity-table-scroll' }, el('table', { class: 'electricity-overview' }, [
+      el('thead', {}, el('tr', {}, ['Услуга', 'Квартиры', 'Офисы'].map((name) => el('th', { scope: 'col' }, name)))),
+      el('tbody', {}, [
+        row(`ХВС · ${rate(charges.cold_price)} ₽/м³`, [charges.apartments.cold, charges.offices.cold]),
+        row(`ГВС с подогревом · ${rate(charges.hot_price)} ₽/м³`, [charges.apartments.hot, charges.offices.hot]),
+        row(`Водоотведение · ${rate(charges.sewer_price)} ₽/м³`, [charges.apartments.sewer, charges.offices.sewer]),
+        row('Итого', [charges.apartments.total, charges.offices.total]),
+      ]),
+    ])),
+    el('p', {}, el('strong', {}, `К начислению всего — ${money(charges.total)}`)),
+    el('p', {}, `${result.complete ? 'К оплате Мосводоканалу' : 'К оплате Мосводоканалу (неполный расчёт)'} — ${money(result.total)}`),
+    el('p', { class: 'muted' }, 'Начисление рассчитано по суммарным объёмам. Фактические платежи жителей и оплата поставщику здесь не учитываются.'),
+    charges.total == null ? el('p', { class: 'muted' }, 'Для полного расчёта не хватает объёмов или тарифов за месяц.') : null,
+  ]);
+}
+
 function resultView(result) {
   return el('div', {}, [
     el('div', { class: `electricity-total${result.complete ? '' : ' is-incomplete'}` }, [
@@ -138,6 +162,7 @@ function resultView(result) {
     ]),
     el('p', {}, `Вода: ${formatMoney(result.water_amount)} · Водоотведение: ${formatMoney(result.sewer_amount)}`),
     result.balance ? waterBalanceView(result.balance) : null,
+    result.resident_charges ? residentChargesView(result.resident_charges, result) : null,
     ...result.contracts.map((contract) => el('section', { class: 'card electricity-contract-result' }, [
       el('div', { class: 'section-header' }, [el('h2', {}, contract.name), el('strong', {}, contract.complete ? formatMoney(contract.total) : `Частично · ${formatMoney(contract.total)}`)]),
       el('p', { class: 'muted' }, `Объём: ${shown(contract.volume)} м³ · Вода: ${formatMoney(contract.water_amount)} · Водоотведение: ${formatMoney(contract.sewer_amount)}`),
