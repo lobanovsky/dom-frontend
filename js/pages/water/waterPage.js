@@ -121,6 +121,10 @@ function waterBalanceView(balance) {
       ]))),
     ])),
     el('p', { class: 'muted' }, 'Общедомовые нужды = вводной объём − ХВС и ГВС квартир и офисов − сумма двух общедомовых счётчиков.'),
+    el('p', {}, el('strong', {}, `Стоимость воды на общедомовые нужды — ${balance.common_needs_water_amount == null ? '—' : formatMoney(balance.common_needs_water_amount)}`)),
+    balance.common_needs_water_price != null
+      ? el('p', { class: 'muted' }, `Тариф ХВС — ${rate(balance.common_needs_water_price)} ₽/м³`)
+      : el('p', { class: 'muted' }, 'Для вводного счётчика нет тарифа ХВС за этот месяц.'),
     balance.common_needs == null ? el('p', { class: 'muted' }, 'Для расчёта не хватает данных или есть отрицательный расход по прибору.') : null,
     balance.common_needs < 0 ? el('p', { class: 'muted' }, 'Баланс отрицательный. Проверьте показания за месяц.') : null,
   ]);
