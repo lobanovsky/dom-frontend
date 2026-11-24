@@ -1,3 +1,4 @@
+import { saveFile } from '../../ui/saveFile.js';
 import { waterApi, metersApi, tariffsApi } from '../../api/resources.js';
 import { el } from '../../lib/dom.js';
 import { formatMoney, formatDate } from '../../lib/format.js';
@@ -172,6 +173,21 @@ function resultView(result) {
   ]);
 }
 
+function hotWaterReportButton(period) {
+  const button = el('button', { type: 'button', class: 'btn btn-sm', onclick: async () => {
+    button.disabled = true;
+    try {
+      const file = await waterApi.hotWaterReport(period);
+      saveFile({ ...file, fileName: `${period}-Справка об объемах горячей воды.pdf` });
+    } catch (error) {
+      openModal({ title: 'Справка об объёмах горячей воды', content: el('p', {}, describeApiError(error).message) });
+    } finally {
+      button.disabled = false;
+    }
+  } }, 'Сформировать справку');
+  return button;
+}
+
 export async function waterPage(container) {
   let contracts = []; let meters = []; let tariffs = []; let request = 0;
   let selectedYear = Number(currentMonth().slice(0, 4));
@@ -218,7 +234,7 @@ export async function waterPage(container) {
       ]);
       const amount = (item) => item ? (item.complete ? formatMoney(item.total) : 'Неполный расчёт') : '—';
       const table = el('table', { class: 'electricity-overview' }, [
-        el('thead', {}, el('tr', {}, [el('th', {}, 'Месяц'), ...(visible.length > 1 ? visible.map((c) => el('th', {}, c.name)) : []), el('th', {}, 'Вода'), el('th', {}, 'Водоотведение'), el('th', {}, 'Всего')])),
+        el('thead', {}, el('tr', {}, [el('th', {}, 'Месяц'), ...(visible.length > 1 ? visible.map((c) => el('th', {}, c.name)) : []), el('th', {}, 'Вода'), el('th', {}, 'Водоотведение'), el('th', {}, 'Всего'), el('th', {}, 'Справка ГВС')])),
         el('tbody', {}, rows.map(({ period, result, error }) => el('tr', {}, [
           el('th', { scope: 'row' }, el('button', { type: 'button', class: 'btn btn-ghost', disabled: !result,
             onclick: () => openModal({ title: monthLabel(period), content: resultView(result), wide: true }),
@@ -226,6 +242,7 @@ export async function waterPage(container) {
           ...(visible.length > 1 ? visible.map((c) => el('td', {}, error ? 'Ошибка загрузки' : amount(result.contracts.find((item) => item.id === c.id)))) : []),
           ...['water_amount', 'sewer_amount'].map((key) => el('td', {}, error ? 'Ошибка загрузки' : result.complete ? formatMoney(result[key]) : '—')),
           el('td', {}, el('strong', {}, error ? 'Ошибка загрузки' : amount(result))),
+          el('td', {}, hotWaterReportButton(period)),
         ]))),
       ]);
       output.replaceChildren(...[total, el('div', { class: 'card electricity-table-scroll' }, table),

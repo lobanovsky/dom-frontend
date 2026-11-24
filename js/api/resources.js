@@ -77,6 +77,7 @@ export const electricityApi = {
   calculation: (period) => client.get('/api/v1/electricity-contracts/calculation', { query: { period } }),
 };
 export const waterApi = {
+  hotWaterReport: (period) => client.download('/api/v1/water-contracts/hot-water-report', { query: { period } }),
   createContract: (body) => client.post('/api/v1/water-contracts', body),
   archiveContract: (id) => client.delete(`/api/v1/water-contracts/${id}`),
   listContracts: () => client.get('/api/v1/water-contracts'),
