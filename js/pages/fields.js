@@ -140,6 +140,12 @@ export const meterFields = ({ target = 'fixed', buildings = [] } = {}) => (value
     textField('serial_number', 'Номер счётчика', { required: true }),
     textField('name', 'Название', { help: 'Необязательно. Чтобы различать счётчики, например общедомовые: «ИТП», «Машиноместа». Названия могут повторяться' }),
     textField('model', 'Модель'),
+    { ...numberField('coefficient', 'Коэффициент трансформации', { min: 0.001, step: 0.001, inputmode: 'decimal', help: 'Расход = разность показаний × коэффициент. Обычно 1' }), visible: () => electric },
+    { type: 'section', name: 'meter-operation-section', label: 'Эксплуатация и поверка', virtual: true },
+    dateField('installed_at', 'Введён в эксплуатацию', { required: true }),
+    dateField('removed_at', 'Окончание работы', { help: 'Пусто — работает. После этой даты счётчик считается неактивным (замена, снятие). Сам счётчик остаётся в системе' }),
+    dateField('verified_at', 'Дата последней поверки'),
+    dateField('next_verification_at', 'Дата следующей поверки'),
     { type: 'section', name: 'meter-reading-section', label: 'Показания', virtual: true },
     { ...numberField('initial_t1', initial(1), { min: 0, step: 0.001, inputmode: 'decimal', help: `Показания при установке (${resourceUnit(values.resource) || 'ед.'}); пусто — 0` }), row: tariffRow },
     { ...numberField('initial_t2', initial(2), { min: 0, step: 0.001, inputmode: 'decimal' }), row: tariffRow, visible: () => tariffs >= 2 },
@@ -149,14 +155,8 @@ export const meterFields = ({ target = 'fixed', buildings = [] } = {}) => (value
     { ...numberField('default_t1', 'Т1', { min: 0, step: 0.001, inputmode: 'decimal' }), row: tariffRow, visible: (v) => !!v.manual_reading_required },
     { ...numberField('default_t2', 'Т2', { min: 0, step: 0.001, inputmode: 'decimal' }), row: tariffRow, visible: (v) => !!v.manual_reading_required && tariffs >= 2 },
     { ...numberField('default_t3', 'Т3', { min: 0, step: 0.001, inputmode: 'decimal' }), row: tariffRow, visible: (v) => !!v.manual_reading_required && tariffs >= 3 },
-    { ...numberField('coefficient', 'Коэффициент трансформации', { min: 0.001, step: 0.001, inputmode: 'decimal', help: 'Расход = разность показаний × коэффициент. Обычно 1' }), visible: () => electric },
-    { type: 'section', name: 'meter-operation-section', label: 'Эксплуатация и поверка', virtual: true },
-    dateField('installed_at', 'Введён в эксплуатацию', { required: true }),
-    dateField('removed_at', 'Окончание работы', { help: 'Пусто — работает. После этой даты счётчик считается неактивным (замена, снятие). Сам счётчик остаётся в системе' }),
-    dateField('verified_at', 'Дата последней поверки'),
-    dateField('next_verification_at', 'Дата следующей поверки'),
-    { ...checkboxField('broken', 'Счётчик сломан', { help: 'Информационный статус, не заменяет дату окончания работы.' }), full: true },
     textareaField('comment', 'Комментарий', { full: true }),
+    { ...checkboxField('broken', 'Счётчик сломан', { help: 'Информационный статус, не заменяет дату окончания работы.' }), full: true },
   ].filter(Boolean);
 };
 
