@@ -145,7 +145,8 @@ function waterBalanceView(balance) {
     balance.common_needs_water_price != null
       ? el('p', { class: 'muted' }, `Тариф ХВС — ${rate(balance.common_needs_water_price)} ₽/м³`)
       : el('p', { class: 'muted' }, 'Для вводного счётчика нет тарифа ХВС за этот месяц.'),
-    balance.common_needs == null ? el('p', { class: 'muted' }, 'Для расчёта не хватает данных или есть отрицательный расход по прибору.') : null,
+    balance.common_needs == null ? el('p', { class: 'muted' }, 'Для расчёта не хватает данных или есть отрицательный расход по счётчику вне квартир.') : null,
+    el('p', { class: 'muted' }, 'Отрицательный расход квартирных счётчиков считается нулём в балансе и справке ГВС.'),
     Array.isArray(balance.negative_meters) ? negativeWaterMeters(balance.negative_meters) : null,
     balance.common_needs < 0 ? el('p', { class: 'muted' }, 'Баланс отрицательный. Проверьте показания за месяц.') : null,
   ]);
