@@ -9,7 +9,7 @@ import { saveFile } from './saveFile.js';
 export function openMeterExportDialog() {
   const picker = createMonthPicker({ value: currentMonth() });
   const error = el('p', { role: 'alert', class: 'field-error' });
-  const submit = el('button', { type: 'submit', class: 'btn btn-primary' }, 'Скачать Excel');
+  const submit = el('button', { type: 'submit', class: 'btn btn-primary' }, 'Скачать 5 файлов (ZIP)');
   let busy = false;
   const form = el('form', { class: 'form', onsubmit: async (event) => {
     event.preventDefault();
@@ -22,7 +22,7 @@ export function openMeterExportDialog() {
     finally { busy = false; submit.disabled = false; }
   } }, [
     el('p', {}, 'Выберите расчётный месяц.'), picker.element,
-    el('p', { class: 'field-help' }, 'В файл попадут переданные показания счётчиков помещений за выбранный месяц, включая ввод сотрудников и импорт. В Excel будут отдельные листы: ХВС, ГВС, Т1, Т2, Т3. Общедомовые приборы не включаются.'),
+    el('p', { class: 'field-help' }, 'В выгрузку попадут переданные показания счётчиков помещений за выбранный месяц, включая ввод сотрудников и импорт. В архиве пять отдельных файлов Excel: ХВС, ГВС, Т1, Т2, Т3. Общедомовые приборы не включаются.'),
     error, submit,
   ]);
   const modal = openModal({ title: 'Экспорт показаний', content: form });
