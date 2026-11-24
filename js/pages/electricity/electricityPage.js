@@ -104,12 +104,40 @@ function meterResult(meter) {
   return row;
 }
 
+function operationsView(data) {
+  const { house, heating, apartments, billable } = data;
+  const indexes = [0, 1, 2];
+  const groupVolume = (group, i) => group.missing[i] || !group.meters ? null : group.volume[i];
+  const row = (label, values) => el('tr', {}, [
+    el('th', { scope: 'row' }, label),
+    ...values.map((value) => el('td', {}, shown(value))),
+  ]);
+  return el('section', { class: 'card electricity-contract-result' }, [
+    el('h2', {}, 'Эксплуатационные услуги «Дом»'),
+    el('p', { class: 'muted' }, 'Расход за месяц, кВт·ч. Дом и ИТП минус расход квартир.'),
+    el('div', { class: 'electricity-table-scroll' }, el('table', { class: 'electricity-overview' }, [
+      el('thead', {}, el('tr', {}, ['Расход', 'Т1', 'Т2', 'Т3'].map((name) => el('th', { scope: 'col' }, name)))),
+      el('tbody', {}, [
+        row('Дом', indexes.map((i) => house.meters === 2 ? groupVolume(house, i) : null)),
+        row('ИТП', indexes.map((i) => heating.meters === 2 ? groupVolume(heating, i) : null)),
+        row('Дом + ИТП', indexes.map((i) => house.meters === 2 && heating.meters === 2 && !house.missing[i] && !heating.missing[i]
+          ? house.volume[i] + heating.volume[i] : null)),
+        row('Квартиры', indexes.map((i) => groupVolume(apartments, i))),
+        row('К распределению жителям', billable),
+      ]),
+    ])),
+    billable.some((value) => value == null) ? el('p', { class: 'muted' }, 'Прочерк означает, что для расчёта не хватает счётчиков или показаний за месяц.') : null,
+    billable.some((value) => value < 0) ? el('p', { class: 'muted' }, 'Если разница отрицательная, проверьте показания перед начислением.') : null,
+  ]);
+}
+
 function resultView(result) {
   return el('div', {}, [
     el('div', { class: `electricity-total${result.complete ? '' : ' is-incomplete'}` }, [
       el('span', {}, result.complete ? 'Ориентировочно к оплате' : 'Промежуточная сумма · расчёт неполный'),
       el('strong', {}, formatMoney(result.total)),
     ]),
+    result.operations ? operationsView(result.operations) : null,
     ...result.contracts.map((contract) => el('section', { class: 'card electricity-contract-result' }, [
       el('div', { class: 'section-header' }, [el('h2', {}, contract.name), el('strong', {}, contract.complete ? formatMoney(contract.total) : `Частично · ${formatMoney(contract.total)}`)]),
       ...contract.meters.map(meterResult),
