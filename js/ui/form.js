@@ -42,10 +42,29 @@ export function createForm({ fields, initialValues = {}, submitLabel = 'Сохр
   }
 
   function renderFields() {
-    fieldsContainer.replaceChildren(...visibleFields().map(renderField));
+    const defs = visibleFields();
+    const nodes = [];
+    for (let i = 0; i < defs.length;) {
+      const row = defs[i].row;
+      if (!row) {
+        nodes.push(renderField(defs[i]));
+        i++;
+        continue;
+      }
+      const group = [];
+      while (i < defs.length && defs[i].row === row) group.push(defs[i++]);
+      nodes.push(el('div', { class: `form-fields-row form-fields-row--${row}` }, group.map(renderField)));
+    }
+    fieldsContainer.replaceChildren(...nodes);
   }
 
   function renderField(def) {
+    if (def.type === 'section') {
+      return el('div', { class: 'form-section field--full' }, [
+        el('h3', {}, def.label),
+        def.help ? el('p', {}, def.help) : null,
+      ]);
+    }
     const inputId = `field-${def.name}`;
     const errorEl = el('div', { class: 'field-error' });
     errorEl.hidden = true;

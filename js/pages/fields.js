@@ -125,32 +125,37 @@ export const accountHolderFields = (values) => [
 // --- Счётчики ---
 
 // target — как выбирается привязка счётчика: 'premises' — помещение (поиск), 'building' — дом из списка buildings,
-// 'fixed' — привязка задана снаружи (fixed формы: карточка помещения или дома). Нужен watch: ['resource', 'tariffs'].
+// 'fixed' — привязка задана снаружи (fixed формы: карточка помещения или дома). Нужен watch: resource, tariffs, manual_reading_required.
 export const meterFields = ({ target = 'fixed', buildings = [] } = {}) => (values) => {
   const electric = values.resource === 'electricity';
   const tariffs = electric ? Number(values.tariffs) || 1 : 1;
+  const tariffRow = `meter-tariffs-${tariffs}`;
   const initial = (n) => (tariffs > 1 ? `Начальное показание Т${n}` : 'Начальное показание');
   return [
+    { type: 'section', name: 'meter-identification', label: 'Счётчик', virtual: true },
     target === 'premises' ? { type: 'picker', name: 'premises_id', label: 'Помещение', required: true, full: true, component: entityPicker('premises') } : null,
     target === 'building' ? selectField('building_id', 'Дом', buildings.map((b) => ({ value: String(b.id), label: buildingLabel(b) })), { required: true, numeric: true, full: true, placeholder: 'Выберите' }) : null,
-    selectField('resource', 'Что измеряет', options(meterResources), { required: true, placeholder: 'Выберите' }),
+    selectField('resource', 'Ресурс', options(meterResources), { required: true, placeholder: 'Выберите' }),
     { ...selectField('tariffs', 'Тарифность', options(meterTariffs), { required: true, numeric: true }), visible: (v) => v.resource === 'electricity' },
     textField('serial_number', 'Номер счётчика', { required: true }),
     textField('name', 'Название', { help: 'Необязательно. Чтобы различать счётчики, например общедомовые: «ИТП», «Машиноместа». Названия могут повторяться' }),
-    checkboxField('manual_reading_required', 'Показания передавать вручную', { help: 'Отметьте, если система не получает показания этого счётчика автоматически. Житель увидит напоминание в личном кабинете.' }),
-    { ...numberField('default_t1', 'Средний расход по умолчанию, Т1', { min: 0, step: 0.001, inputmode: 'decimal', help: 'Расход за месяц; при подстановке прибавляется к предыдущему показанию. Если показаний ещё нет — к начальному.' }), visible: (v) => v.manual_reading_required === true || v.manual_reading_required === 'true' },
-    { ...numberField('default_t2', 'Средний расход по умолчанию, Т2', { min: 0, step: 0.001, inputmode: 'decimal' }), visible: (v) => (v.manual_reading_required === true || v.manual_reading_required === 'true') && tariffs >= 2 },
-    { ...numberField('default_t3', 'Средний расход по умолчанию, Т3', { min: 0, step: 0.001, inputmode: 'decimal' }), visible: (v) => (v.manual_reading_required === true || v.manual_reading_required === 'true') && tariffs >= 3 },
-    checkboxField('broken', 'Счётчик сломан', { help: 'Отметьте, если прибор неисправен. Это информационный статус и он не заменяет дату окончания работы.' }),
     textField('model', 'Модель'),
+    { type: 'section', name: 'meter-reading-section', label: 'Показания', virtual: true },
+    { ...numberField('initial_t1', initial(1), { min: 0, step: 0.001, inputmode: 'decimal', help: `Показания при установке (${resourceUnit(values.resource) || 'ед.'}); пусто — 0` }), row: tariffRow },
+    { ...numberField('initial_t2', initial(2), { min: 0, step: 0.001, inputmode: 'decimal' }), row: tariffRow, visible: () => tariffs >= 2 },
+    { ...numberField('initial_t3', initial(3), { min: 0, step: 0.001, inputmode: 'decimal' }), row: tariffRow, visible: () => tariffs >= 3 },
+    { ...checkboxField('manual_reading_required', 'Показания передавать вручную', { help: 'Отметьте, если система не получает показания автоматически. Житель увидит напоминание в личном кабинете.' }), full: true },
+    { type: 'section', name: 'meter-default-section', label: 'Средний расход по умолчанию', help: 'Расход за месяц прибавляется к предыдущему показанию, а если показаний ещё нет — к начальному.', virtual: true, visible: (v) => !!v.manual_reading_required },
+    { ...numberField('default_t1', 'Т1', { min: 0, step: 0.001, inputmode: 'decimal' }), row: tariffRow, visible: (v) => !!v.manual_reading_required },
+    { ...numberField('default_t2', 'Т2', { min: 0, step: 0.001, inputmode: 'decimal' }), row: tariffRow, visible: (v) => !!v.manual_reading_required && tariffs >= 2 },
+    { ...numberField('default_t3', 'Т3', { min: 0, step: 0.001, inputmode: 'decimal' }), row: tariffRow, visible: (v) => !!v.manual_reading_required && tariffs >= 3 },
+    { ...numberField('coefficient', 'Коэффициент трансформации', { min: 0.001, step: 0.001, inputmode: 'decimal', help: 'Расход = разность показаний × коэффициент. Обычно 1' }), visible: () => electric },
+    { type: 'section', name: 'meter-operation-section', label: 'Эксплуатация и поверка', virtual: true },
     dateField('installed_at', 'Введён в эксплуатацию', { required: true }),
     dateField('removed_at', 'Окончание работы', { help: 'Пусто — работает. После этой даты счётчик считается неактивным (замена, снятие). Сам счётчик остаётся в системе' }),
     dateField('verified_at', 'Дата последней поверки'),
     dateField('next_verification_at', 'Дата следующей поверки'),
-    numberField('initial_t1', initial(1), { min: 0, step: 0.001, inputmode: 'decimal', help: `Показания при установке (${resourceUnit(values.resource) || 'ед.'}); пусто — 0` }),
-    { ...numberField('initial_t2', initial(2), { min: 0, step: 0.001, inputmode: 'decimal' }), visible: () => tariffs >= 2 },
-    { ...numberField('initial_t3', initial(3), { min: 0, step: 0.001, inputmode: 'decimal' }), visible: () => tariffs >= 3 },
-    { ...numberField('coefficient', 'Коэффициент трансформации', { min: 0.001, step: 0.001, inputmode: 'decimal', help: 'Расход = разность показаний × коэффициент. Обычно 1' }), visible: () => electric },
+    { ...checkboxField('broken', 'Счётчик сломан', { help: 'Информационный статус, не заменяет дату окончания работы.' }), full: true },
     textareaField('comment', 'Комментарий', { full: true }),
   ].filter(Boolean);
 };

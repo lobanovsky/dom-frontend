@@ -607,6 +607,44 @@ a.btn-primary {
   grid-column: 1 / -1;
 }
 
+.form-section {
+  margin: var(--space-2) 0 var(--space-3);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.form-section h3 {
+  margin: 0;
+  color: var(--color-text);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+}
+
+.form-section p {
+  margin: var(--space-1) 0 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.form-fields-row {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0 var(--space-4);
+}
+
+.form-fields-row > .field {
+  min-width: 0;
+}
+
+.form-fields-row--meter-tariffs-1 {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.form-fields-row--meter-tariffs-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .modal-dialog--wide {
   width: 640px;
 }
@@ -822,6 +860,10 @@ a.btn-primary {
 
   .form-fields,
   .picker-create-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .form-fields-row {
     grid-template-columns: 1fr;
   }
 
