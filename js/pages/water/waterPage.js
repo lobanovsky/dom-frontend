@@ -1,7 +1,7 @@
 import { saveFile } from '../../ui/saveFile.js';
 import { waterApi, metersApi, tariffsApi } from '../../api/resources.js';
 import { el } from '../../lib/dom.js';
-import { formatMoney, formatDate } from '../../lib/format.js';
+import { formatMoney } from '../../lib/format.js';
 import { canWrite } from '../../lib/permissions.js';
 import { describeApiError } from '../../lib/apiErrors.js';
 import { openModal } from '../../ui/modal.js';
@@ -12,7 +12,6 @@ const currentMonth = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/
 const input = (type, value = '', attrs = {}) => el('input', { type, value: value ?? '', ...attrs });
 const shown = (v) => v == null ? '—' : new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 3 }).format(v);
 const rate = (v) => v == null ? '—' : new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 4 }).format(v);
-const statusText = (s) => ({ no_reading: 'Нет показания за месяц', no_previous: 'Нет предыдущего показания или начального показания для первого расчёта', no_tariff: 'Нет цены на воду или водоотведение за этот месяц', negative: 'Показание меньше предыдущего' })[s] || s;
 
 async function listWaterMeters() {
   const all = [];
@@ -84,21 +83,19 @@ function contractSettings(original, meters, contracts, tariffs, reload) {
   return modal;
 }
 
-function meterResult(meter) {
-  const row = el('div', { class: `electricity-result-row${meter.status === 'ok' ? '' : ' is-incomplete'}` });
-  row.append(
-    el('a', { href: `/meters/${meter.meter_id}` }, `${meter.name !== meter.serial_number ? `${meter.name} · ` : ''}№ ${meter.serial_number}`),
-    el('div', { class: 'water-meter-detail' }, [
-      meter.previous_date && meter.current_date ? el('p', { class: 'muted' }, `Замеры: ${formatDate(meter.previous_date)} — ${formatDate(meter.current_date)}`) : null,
-      meter.reading_gap ? el('p', { class: 'water-reading-warning', role: 'note' }, 'Между замерами пропущены месяцы. Весь расход за этот интервал включён в выбранный месяц по его тарифам.') : null,
-      el('p', {}, `Показания: ${shown(meter.previous)} → ${shown(meter.current)} м³. Расход: ${shown(meter.volume)} м³.`),
-      el('p', {}, `Вода: ${shown(meter.volume)} м³ × ${rate(meter.water_price)} ₽ = ${meter.volume != null && meter.water_price != null ? formatMoney(meter.water_amount) : '—'}`),
-      el('p', {}, `Водоотведение: ${shown(meter.volume)} м³ × ${rate(meter.sewer_price)} ₽ = ${meter.volume != null && meter.sewer_price != null ? formatMoney(meter.sewer_amount) : '—'}`),
-      meter.status !== 'ok' ? el('p', {}, statusText(meter.status)) : null,
-    ]),
-    el('strong', {}, meter.status === 'ok' ? formatMoney(meter.amount) : 'Неполный расчёт'),
-  );
-  return row;
+function contractCharge(contract, label, priceKey, amount) {
+  const validMeters = contract.meters.filter((meter) => meter.volume != null && meter.volume >= 0);
+  const pricedMeters = validMeters.filter((meter) => meter[priceKey] != null);
+  const prices = new Set(pricedMeters.map((meter) => meter[priceKey]));
+  if (!prices.size) return el('p', {}, `${label}: —`);
+  if (pricedMeters.length !== contract.meters.length) {
+    return el('p', {}, `${label}: ${formatMoney(amount)} (частично)`);
+  }
+  if (prices.size > 1) {
+    return el('p', {}, `${label}: ${formatMoney(amount)} (по нескольким тарифам)`);
+  }
+  const [price] = prices;
+  return el('p', {}, `${label}: ${shown(contract.volume)} м³ × ${rate(price)} ₽ = ${formatMoney(amount)}`);
 }
 
 function negativeWaterMeters(meters) {
@@ -187,9 +184,9 @@ function resultView(result) {
     result.resident_charges ? residentChargesView(result.resident_charges, result) : null,
     ...result.contracts.map((contract) => el('section', { class: 'card electricity-contract-result' }, [
       el('div', { class: 'section-header' }, [el('h2', {}, contract.name), el('strong', {}, contract.complete ? formatMoney(contract.total) : `Частично · ${formatMoney(contract.total)}`)]),
-      el('p', { class: 'muted' }, `Объём: ${shown(contract.volume)} м³ · Вода: ${formatMoney(contract.water_amount)} · Водоотведение: ${formatMoney(contract.sewer_amount)}`),
-      ...contract.meters.map(meterResult),
-      contract.meters.length ? null : el('p', { class: 'muted' }, 'В этом месяце нет работающих счётчиков договора.'),
+      el('p', {}, `Объём: ${contract.meters.some((meter) => meter.volume != null && meter.volume >= 0) ? shown(contract.volume) + ' м³' : '—'}`),
+      contractCharge(contract, 'Вода', 'water_price', contract.water_amount),
+      contractCharge(contract, 'Водоотведение', 'sewer_price', contract.sewer_amount),
     ])),
   ]);
 }
