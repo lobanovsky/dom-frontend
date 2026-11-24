@@ -681,6 +681,21 @@ a.btn-primary {
   margin-left: var(--space-2);
 }
 
+.meter-status-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.data-table td .meter-status-cell > .badge {
+  margin-left: 0;
+}
+
+.meter-status-cell small {
+  line-height: 1.4;
+}
+
 /* Поле выбора физлица/юрлица */
 
 .picker-results {
