@@ -100,6 +100,32 @@ function meterResult(meter) {
   return row;
 }
 
+function waterBalanceView(balance) {
+  const rows = [
+    ['Квартиры · ГВС', balance.apartment_hot],
+    ['Квартиры · ХВС', balance.apartment_cold],
+    ['Офисы · ХВС', balance.office_cold],
+    ['Офисы · ГВС', balance.office_hot],
+    ['Вводной счётчик № 146301425', balance.inlet],
+    ['Сумма счётчиков № 864041 и № 145558', balance.common_meters],
+    ['Общедомовые нужды', balance.common_needs],
+  ];
+  const formatVolume = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 3 });
+  return el('section', { class: 'card electricity-contract-result' }, [
+    el('h2', {}, 'Баланс воды за месяц'),
+    el('div', { class: 'electricity-table-scroll' }, el('table', { class: 'electricity-overview' }, [
+      el('thead', {}, el('tr', {}, ['Потребление', 'Объём, м³'].map((label) => el('th', { scope: 'col' }, label)))),
+      el('tbody', {}, rows.map(([label, value]) => el('tr', {}, [
+        el('th', { scope: 'row' }, label),
+        el('td', {}, value == null ? '—' : formatVolume.format(value)),
+      ]))),
+    ])),
+    el('p', { class: 'muted' }, 'Общедомовые нужды = вводной объём − ХВС и ГВС квартир и офисов − сумма двух общедомовых счётчиков.'),
+    balance.common_needs == null ? el('p', { class: 'muted' }, 'Для расчёта не хватает данных или есть отрицательный расход по прибору.') : null,
+    balance.common_needs < 0 ? el('p', { class: 'muted' }, 'Баланс отрицательный. Проверьте показания за месяц.') : null,
+  ]);
+}
+
 function resultView(result) {
   return el('div', {}, [
     el('div', { class: `electricity-total${result.complete ? '' : ' is-incomplete'}` }, [
@@ -107,6 +133,7 @@ function resultView(result) {
       el('strong', {}, formatMoney(result.total)),
     ]),
     el('p', {}, `Вода: ${formatMoney(result.water_amount)} · Водоотведение: ${formatMoney(result.sewer_amount)}`),
+    result.balance ? waterBalanceView(result.balance) : null,
     ...result.contracts.map((contract) => el('section', { class: 'card electricity-contract-result' }, [
       el('div', { class: 'section-header' }, [el('h2', {}, contract.name), el('strong', {}, contract.complete ? formatMoney(contract.total) : `Частично · ${formatMoney(contract.total)}`)]),
       el('p', { class: 'muted' }, `Объём: ${shown(contract.volume)} м³ · Вода: ${formatMoney(contract.water_amount)} · Водоотведение: ${formatMoney(contract.sewer_amount)}`),
