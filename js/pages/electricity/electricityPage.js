@@ -134,7 +134,7 @@ function operationsView(data) {
 function parkingOperationsView(parking) {
   const volumes = parking.volume.map((value, i) => parking.meters === 2 && !parking.missing[i] ? value : null);
   return el('section', { class: 'card electricity-contract-result' }, [
-    el('h2', {}, 'К распределению собственникам парковки'),
+    el('h2', {}, 'Эксплуатационные услуги «Паркинг»'),
     el('p', { class: 'muted' }, 'Сумма расхода двух счётчиков парковки за месяц, кВт·ч.'),
     el('div', { class: 'electricity-table-scroll' }, el('table', { class: 'electricity-overview' }, [
       el('thead', {}, el('tr', {}, ['Расход', 'Т1', 'Т2', 'Т3'].map((name) => el('th', { scope: 'col' }, name)))),
