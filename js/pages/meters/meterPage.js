@@ -36,7 +36,34 @@ export async function meterPage(container, { id }) {
       el('a', { href: `/premises/${meter.premises_id}` }, `${label(premisesKinds, meter.premises_kind)} № ${meter.premises_number}`), ' /']
     : [el('a', { href: '/meters' }, 'Счётчики'), ' / ', el('a', { href: `/buildings/${meter.location_building_id}` }, buildingLabelOf(meter)), ' /']);
 
+  const defaultsButton = el('button', {
+    type: 'button', class: 'btn', onclick: async () => {
+      defaultsButton.disabled = true;
+      try {
+        const result = await metersApi.applyMeterDefaultReading(meter.id);
+        if (result.applied) {
+          toast.success('Показание за текущий месяц внесено');
+          await Promise.all([refreshMeter(), readings.reload()]);
+        } else if (result.unconfigured) {
+          toast.error('Задайте средний расход по умолчанию для всех тарифов');
+        } else if (result.skipped) {
+          toast.error('Не удалось подставить показание. Проверьте историю показаний.');
+        } else {
+          toast.error('Показание уже внесено или счётчик недоступен для подстановки');
+          await refreshMeter();
+        }
+      } catch (err) {
+        toast.error(describeApiError(err).message);
+      } finally {
+        defaultsButton.disabled = false;
+      }
+    },
+  }, 'Установить значения по умолчанию');
+
   function renderInfo() {
+    const currentMonth = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Moscow', year: 'numeric', month: '2-digit' }).format(new Date());
+    defaultsButton.hidden = !meter.active || !(meter.broken || meter.manual_reading_required)
+      || meter.last_reading_period?.slice(0, 7) === currentMonth;
     title.replaceChildren(...[meterIcon(meter.resource), meterTitle(meter)].filter(Boolean));
     const status = meterStatus(meter);
     const verification = verificationState(meter, today);
@@ -157,6 +184,7 @@ export async function meterPage(container, { id }) {
     el('div', { class: 'section-header' }, [
       title,
       canWrite() ? el('div', { class: 'header-actions' }, [
+        defaultsButton,
         el('button', { type: 'button', class: 'btn', onclick: edit }, 'Изменить'),
         el('button', { type: 'button', class: 'btn btn-ghost btn-danger-text', onclick: remove }, 'Удалить'),
       ]) : null,
