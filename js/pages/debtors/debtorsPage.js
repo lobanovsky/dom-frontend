@@ -2,10 +2,11 @@ import { debtorsApi } from '../../api/resources.js';
 import { el } from '../../lib/dom.js';
 import { describeApiError } from '../../lib/apiErrors.js';
 import { confirmDialog } from '../../ui/confirmDialog.js';
-import { formatMoney } from '../../lib/format.js';
+import { formatMoney, formatPhone } from '../../lib/format.js';
 import { currentMonth } from '../../lib/calculation.js';
 import { monthLabel } from '../../lib/format.js';
 import { openModal } from '../../ui/modal.js';
+import { saveFile } from '../../ui/saveFile.js';
 
 const categories = [
   ['all', 'Все'],
@@ -14,11 +15,9 @@ const categories = [
   ['capital_repair:apartment', 'Квартиры · капремонт'],
   ['capital_repair:parking_space', 'Машиноместа · капремонт'],
   ['other', 'Другие помещения'],
-  ['unmatched', 'Не сопоставлены'],
 ];
 
 function categoryOf(row) {
-  if (!row.account_id) return 'unmatched';
   if (row.premises_kind === 'apartment' || row.premises_kind === 'parking_space') return `${row.purpose}:${row.premises_kind}`;
   return 'other';
 }
@@ -29,7 +28,6 @@ function formatPeriod(value) {
 }
 
 function categoryLabel(row) {
-  if (!row.account_id) return 'Не сопоставлен';
   const kind = row.premises_kind === 'apartment' ? 'Квартира'
     : row.premises_kind === 'parking_space' ? 'Машиноместо'
       : row.premises_kind || 'Помещение';
@@ -79,6 +77,14 @@ export async function debtorsPage(container) {
   const searchInput = el('input', { type: 'search', class: 'form-control', placeholder: 'Лицевой счёт, помещение, ФИО, телефон или email', oninput: () => { search = searchInput.value.trim().toLocaleLowerCase('ru'); render(); } });
   const categorySelect = el('select', { class: 'form-control', 'aria-label': 'Категория должников', onchange: () => { category = categorySelect.value; render(); } },
     categories.map(([value, label]) => el('option', { value }, label)));
+  const exportButton = el('button', { type: 'button', class: 'btn', disabled: true, onclick: async () => {
+    exportButton.disabled = true;
+    try {
+      saveFile(await debtorsApi.exportExcel({ period: selectedPeriod, category, q: searchInput.value.trim() }));
+    } catch (error) {
+      openModal({ title: 'Не удалось выгрузить Excel', content: el('p', {}, describeApiError(error).message) });
+    } finally { exportButton.disabled = !selectedPeriod; }
+  } }, 'Выгрузить в Excel');
 
   async function loadReports(preferred = '') {
     try {
@@ -91,11 +97,13 @@ export async function debtorsPage(container) {
       if (!reports.length) {
         selectedPeriod = '';
         rows = [];
+        exportButton.disabled = true;
         render();
         return;
       }
       selectedPeriod = periodSelect.value || String(reports[0].period).slice(0, 7);
       periodSelect.value = selectedPeriod;
+      exportButton.disabled = false;
       await loadRows();
     } catch (error) {
       output.replaceChildren(el('div', { class: 'card empty-state' }, describeApiError(error).message));
@@ -133,7 +141,7 @@ export async function debtorsPage(container) {
         el('td', {}, row.premises_number || 'Не найдено'),
         el('td', {}, categoryLabel(row)),
         el('td', {}, (row.holder_names || []).join(', ') || 'Не указан'),
-        el('td', {}, (row.phones || []).join(', ') || '—'),
+        el('td', {}, (row.phones || []).map(formatPhone).join(', ') || '—'),
         el('td', {}, (row.emails || []).join(', ') || '—'),
         el('td', { class: 'numeric' }, el('strong', {}, formatMoney(Number(row.debt)))),
       ]))),
@@ -142,10 +150,10 @@ export async function debtorsPage(container) {
   }
 
   page.append(
-    el('div', { class: 'section-header' }, [el('h1', {}, 'Должники'), el('div', { class: 'header-actions' }, [periodSelect])]),
-    el('div', { class: 'card form-grid' }, [
+    el('div', { class: 'section-header' }, [el('h1', {}, 'Должники'), el('div', { class: 'header-actions' }, [periodSelect, exportButton])]),
+    el('div', { class: 'card debtors-import-card' }, [
       el('p', { class: 'muted' }, 'Загрузите Excel-отчёт из «Домовладельца». Берётся столбец «Долг на конец»; в список попадают только положительные долги. Повторная загрузка месяца заменит его снимок.'),
-      periodInput, fileInput, uploadButton,
+      el('div', { class: 'debtors-upload-controls' }, [periodInput, fileInput, uploadButton]),
     ]),
     el('div', { class: 'list-toolbar' }, [categorySelect, searchInput]),
     output,
