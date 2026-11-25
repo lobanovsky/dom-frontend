@@ -7,6 +7,7 @@ import { currentMonth } from '../../lib/calculation.js';
 import { monthLabel } from '../../lib/format.js';
 import { openModal } from '../../ui/modal.js';
 import { saveFile } from '../../ui/saveFile.js';
+import { canWrite } from '../../lib/permissions.js';
 
 const categories = [
   ['utilities:apartment', 'Квартиры · ЖКУ'],
@@ -35,6 +36,7 @@ function categoryLabel(row) {
 }
 
 export async function debtorsPage(container) {
+  const editable = canWrite();
   let reports = [];
   let rows = [];
   let selectedPeriod = '';
@@ -155,6 +157,10 @@ export async function debtorsPage(container) {
   }
 
   function render() {
+    if (!selectedPeriod) {
+      output.replaceChildren(el('div', { class: 'card empty-state' }, 'Отчёты о задолженности ещё не загружены.'));
+      return;
+    }
     const filtered = rows.filter((row) => {
       if (!selectedCategories.has(categoryOf(row))) return false;
       if (!search) return true;
@@ -182,11 +188,11 @@ export async function debtorsPage(container) {
   }
 
   page.append(
-    el('div', { class: 'section-header' }, [el('h1', {}, 'Должники'), el('div', { class: 'header-actions debtors-header-actions' }, [periodSelect, undoButton, exportButton])]),
-    el('div', { class: 'card debtors-import-card' }, [
+    el('div', { class: 'section-header' }, [el('h1', {}, 'Должники'), el('div', { class: 'header-actions debtors-header-actions' }, [periodSelect, editable ? undoButton : null, exportButton])]),
+    editable ? el('div', { class: 'card debtors-import-card' }, [
       el('p', { class: 'muted' }, 'Загрузите Excel-отчёт из «Домовладельца». Берётся столбец «Долг на конец»; в список попадают только положительные долги. Повторная загрузка месяца заменит его снимок.'),
       el('div', { class: 'debtors-upload-controls' }, [periodInput, fileInput, uploadButton]),
-    ]),
+    ]) : null,
     el('div', { class: 'debtors-list-toolbar' }, [
       el('div', {}, [categoryFilters, categoryHint]),
       searchInput,

@@ -48,7 +48,10 @@ test('viewer menu hides admin-only pages, admin sees all', () => {
   assert.ok(labels('admin').includes('Правила') && labels('admin').includes('Пользователи'));
   assert.ok(!labels('viewer').includes('Правила') && !labels('viewer').includes('Пользователи'));
   assert.ok(labels('viewer').includes('Входящие') && labels('viewer').includes('Организации'));
-  assert.deepEqual(ADMIN_ONLY_PATHS.sort(), ['/debtors', '/electricity', '/gate-access/service', '/gate-access/view', '/payment-rules', '/users', '/water']);
+  for (const label of ['Должники', 'Вода и водоотведение', 'Электроэнергия']) {
+    assert.ok(labels('viewer').includes(label), label);
+  }
+  assert.deepEqual(ADMIN_ONLY_PATHS.sort(), ['/gate-access/service', '/gate-access/view', '/payment-rules', '/users']);
 });
 
 
