@@ -1669,6 +1669,8 @@ a.account-link:hover { text-decoration: underline; }
 .gate-access-filters > :is(.gate-kind-selector, select) { min-width: 0; flex: 1 1 260px; }
 .debtors-import-card { display: grid; gap: 12px; }
 .debtors-import-card > .muted { margin: 0; }
+.debtors-header-actions { align-items: center; }
+.debtors-header-actions > :is(select, .btn) { height: 35px; min-height: 35px; box-sizing: border-box; }
 .debtors-upload-controls { display: grid; grid-template-columns: minmax(150px, 210px) minmax(220px, 1fr) auto; gap: 10px; align-items: center; }
 .debtors-upload-controls .btn { width: max-content; min-width: 150px; white-space: nowrap; }
 .debtors-export-button { flex: 0 0 auto !important; width: max-content !important; min-width: 0; }

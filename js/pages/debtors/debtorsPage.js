@@ -183,7 +183,7 @@ export async function debtorsPage(container) {
   }
 
   page.append(
-    el('div', { class: 'section-header' }, [el('h1', {}, 'Должники'), el('div', { class: 'header-actions' }, [periodSelect, undoButton, exportButton])]),
+    el('div', { class: 'section-header' }, [el('h1', {}, 'Должники'), el('div', { class: 'header-actions debtors-header-actions' }, [periodSelect, undoButton, exportButton])]),
     el('div', { class: 'card debtors-import-card' }, [
       el('p', { class: 'muted' }, 'Загрузите Excel-отчёт из «Домовладельца». Берётся столбец «Долг на конец»; в список попадают только положительные долги. Повторная загрузка месяца заменит его снимок.'),
       el('div', { class: 'debtors-upload-controls' }, [periodInput, fileInput, uploadButton]),
