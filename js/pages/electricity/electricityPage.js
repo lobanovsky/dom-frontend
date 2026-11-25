@@ -147,24 +147,19 @@ function parkingOperationsView(parking) {
   ]);
 }
 
-function commercialOperationsView(individual, common, premises = []) {
-  const row = (label, group, ready) => el('tr', {}, [
-    el('th', { scope: 'row' }, label),
-    el('td', {}, shown(ready && !group.missing[0] ? group.volume[0] : null)),
-  ]);
+function officesOperationsView([office5, office8]) {
+  const rows = [
+    ['Офис-5 · Электроэнергия № 023260085002', office5],
+    ['Офис-8 · Электроэнергия № 023260084425', office8],
+    ['Итого', office5 == null || office8 == null ? null : office5 + office8],
+  ];
   return el('section', { class: 'card electricity-contract-result' }, [
-    el('h2', {}, 'Коммерческие помещения'),
-    el('p', { class: 'muted' }, 'Прочерк означает, что не хватает данных за месяц.'),
+    el('h2', {}, 'Офисы'),
     el('div', { class: 'electricity-table-scroll' }, el('table', { class: 'electricity-overview' }, [
-      el('thead', {}, el('tr', {}, ['Помещение или счётчики', 'Расход, кВт·ч'].map((name) => el('th', { scope: 'col' }, name)))),
-      el('tbody', {}, [
-        ...(premises || []).map((item) => el('tr', {}, [
-          el('th', { scope: 'row' }, '№ ' + item.number + (item.building ? ' · ' + item.building : '')),
-          el('td', {}, shown(item.missing ? null : item.volume)),
-        ])),
-        row('Итого по индивидуальным счётчикам', individual, individual.meters > 0),
-        row('Сумма счётчиков № 023260084425 и № 023260085002', common, common.meters === 2),
-      ]),
+      el('thead', {}, el('tr', {}, ['Счётчики', 'Расход, кВт·ч'].map((label) => el('th', { scope: 'col' }, label)))),
+      el('tbody', {}, rows.map(([label, value]) => el('tr', {}, [
+        el('th', { scope: 'row' }, label), el('td', {}, shown(value)),
+      ]))),
     ])),
   ]);
 }
@@ -177,8 +172,7 @@ function resultView(result) {
     ]),
     result.operations ? operationsView(result.operations) : null,
     result.operations?.parking ? parkingOperationsView(result.operations.parking) : null,
-    result.operations?.commercial_individual && result.operations?.commercial_common
-      ? commercialOperationsView(result.operations.commercial_individual, result.operations.commercial_common, result.operations.commercial_premises) : null,
+    result.operations?.offices ? officesOperationsView(result.operations.offices) : null,
     ...result.contracts.map((contract) => el('section', { class: 'card electricity-contract-result' }, [
       el('div', { class: 'section-header' }, [el('h2', {}, contract.name), el('strong', {}, contract.complete ? formatMoney(contract.total) : `Частично · ${formatMoney(contract.total)}`)]),
       ...contract.meters.map(meterResult),
