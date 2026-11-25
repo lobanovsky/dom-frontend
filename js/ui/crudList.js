@@ -7,7 +7,7 @@ import { describeApiError } from '../lib/apiErrors.js';
 import { PAGE_SIZES, loadPageSize, savePageSize } from '../lib/pageSize.js';
 import { canWrite } from '../lib/permissions.js';
 
-let nextRadioGroup = 0;
+import { radioFilter } from './radioFilter.js';
 
 // Список записей одной сущности: фильтры, таблица, пагинация, добавление,
 // редактирование и удаление через модальную форму. Удаление мягкое: переключатель
@@ -67,24 +67,17 @@ export function createCrudList({
   function renderFilter(f) {
     const id = `filter-${f.name}`;
     if (f.type === 'radio') {
-      const name = `filter-radio-${++nextRadioGroup}`;
       const options = [{ value: '', label: f.allLabel || 'Все' }, ...f.options];
       filterValues[f.name] = f.defaultValue ?? '';
-      return el('div', { class: 'field' }, [
-        el('div', {}, f.label),
-        el('div', { class: 'gate-kind-selector table-radio-filter', role: 'radiogroup', 'aria-label': f.label }, options.map((option) =>
-          el('label', { class: 'gate-kind-option' }, [
-            el('input', { type: 'radio', name, value: option.value, checked: option.value === filterValues[f.name], onchange: (event) => {
-              if (!event.target.checked) return;
-              filterValues[f.name] = option.value;
-              offset = 0;
-              filtersChanged();
-              load();
-            } }),
-            el('span', {}, option.label),
-          ]),
-        )),
-      ]);
+      return radioFilter({
+        label: f.label, options, value: filterValues[f.name],
+        onChange: (value) => {
+          filterValues[f.name] = value;
+          offset = 0;
+          filtersChanged();
+          load();
+        },
+      }).element;
     }
     let input;
     if (f.type === 'select') {

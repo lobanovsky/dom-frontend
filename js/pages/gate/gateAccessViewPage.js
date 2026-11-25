@@ -9,6 +9,7 @@ import { bindGatePhoneInput, formatGatePhoneInput, gateVehicles, gateVehicleLabe
 import { openModal } from '../../ui/modal.js';
 import { confirmDialog } from '../../ui/confirmDialog.js';
 import { toast } from '../../ui/toast.js';
+import { radioFilter } from '../../ui/radioFilter.js';
 
 const kinds = [['apartment','Квартира'],['commercial','Коммерческое помещение'],['parking_space','Машиноместо']];
 const selectorKinds = [['','Все'], ...kinds];
@@ -56,14 +57,16 @@ export async function gateAccessViewPage(container) {
   const today = todayIso();
   let selected = null;
   let showRejected = false;
-  const type = el('input',{type:'hidden',value:'apartment'});
-  const kindRadios=new Map();
-  const typeSelector=el('div',{class:'gate-kind-selector table-radio-filter',role:'radiogroup','aria-label':'Тип объекта'},selectorKinds.map(([value,label])=>{
-    const radio=el('input',{type:'radio',name:'gate-premises-kind',value,checked:value===type.value,'aria-label':label,onchange:()=>{if(radio.checked){type.value=value;loadPremises();}}});
-    kindRadios.set(value,radio);
-    return el('label',{class:'gate-kind-option',title:label},[radio,el('span',{},label)]);
-  }));
-  function setType(value){type.value=value;for(const [kind,radio] of kindRadios)radio.checked=kind===value;}
+  let premisesKind = 'apartment';
+  const typeSelector = radioFilter({
+    label: 'Вид помещения',
+    options: selectorKinds.map(([value, label]) => ({ value, label })),
+    value: premisesKind,
+    onChange: (value) => {
+      premisesKind = value;
+      loadPremises();
+    },
+  });
   const building = el('select', { 'aria-label':'Дом' }, [el('option',{value:''},'Загрузка домов…')]);
   const grid = el('div',{class:'gate-access-grid',role:'list','aria-label':'Объекты по этажам'});
   const detail = el('section',{class:'gate-access-detail','aria-live':'polite'},el('p',{class:'muted'},'Выберите помещение на схеме'));
@@ -93,7 +96,11 @@ export async function gateAccessViewPage(container) {
   container.replaceChildren(el('div',{class:'page'},[
     el('h1',{},'Доступы'), note,
     lookupForm,
-    el('div',{class:'gate-filters gate-access-filters'},[typeSelector,building,download]),
+    el('div', { class: 'table-toolbar' }, [
+      typeSelector.element,
+      el('label', { class: 'field gate-building-filter' }, ['Дом', building]),
+      download,
+    ]),
     el('div',{class:'gate-access-layout'},[grid,detail]),
   ]),syncProgress);
   building.addEventListener('change',loadPremises);
@@ -143,7 +150,8 @@ export async function gateAccessViewPage(container) {
       toast.error('Дом для этого помещения не найден в списке');
       return;
     }
-    setType(item.premises_kind);
+    premisesKind = item.premises_kind;
+    typeSelector.setValue(premisesKind);
     building.value=String(item.building_id);
     await loadPremises();
     const premise=premises.find((p)=>p.id===item.premises_id);
@@ -172,7 +180,7 @@ export async function gateAccessViewPage(container) {
     detail.replaceChildren(el('p',{class:'muted'},'Выберите помещение на схеме'));
     grid.replaceChildren(el('p',{role:'status'},'Загрузка объектов…'));
     try {
-      const {items=[]}=await premisesApi.list({kind:type.value,building_id:building.value,limit:200,offset:0});
+      const {items=[]}=await premisesApi.list({kind:premisesKind,building_id:building.value,limit:200,offset:0});
       premises=items.filter((p)=>!p.deleted_at).sort(numberCompare);
       if (!premises.length) { grid.replaceChildren(el('p',{class:'muted'},'В этом доме нет объектов выбранного типа')); return; }
       await loadActiveAccesses();
@@ -214,10 +222,10 @@ export async function gateAccessViewPage(container) {
       if(!floors.has(key)) floors.set(key,[]);
       floors.get(key).push(p);
     }
-    const floorOrder=(a,b)=>a==='unknown'?1:b==='unknown'?-1:type.value==='parking_space'?parkingLevel(b)-parkingLevel(a):Number(b)-Number(a);
+    const floorOrder=(a,b)=>a==='unknown'?1:b==='unknown'?-1:premisesKind==='parking_space'?parkingLevel(b)-parkingLevel(a):Number(b)-Number(a);
     const groups=[...floors].sort(([a],[b])=>floorOrder(a,b));
     grid.replaceChildren(...groups.map(([floor,items])=>el('section',{class:'gate-floor'},[
-          el('h2',{},floor==='unknown'?'—':type.value==='parking_space'?parkingLevel(floor):floor),
+          el('h2',{},floor==='unknown'?'—':premisesKind==='parking_space'?parkingLevel(floor):floor),
       el('div',{class:'gate-floor-cells'},items.map((p)=>{
         const accesses=activeByPremises.get(p.id)||[];
         const count=accesses.length;
