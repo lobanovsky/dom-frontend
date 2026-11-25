@@ -44,6 +44,7 @@ import { gatePage } from './pages/gate/gatePage.js';
 import { gateAccessViewPage } from './pages/gate/gateAccessViewPage.js';
 import { gateServiceAccessPage } from './pages/gate/gateServiceAccessPage.js';
 import { electricityPage } from './pages/electricity/electricityPage.js';
+import { debtorsPage } from './pages/debtors/debtorsPage.js';
 
 const appRoot = document.getElementById('app');
 
@@ -70,6 +71,7 @@ const routes = [
   { pattern: '/meters', mount: metersPage },
   { pattern: '/meters/:id', mount: meterPage },
   { pattern: '/water', mount: adminOnly(waterPage) },
+  { pattern: '/debtors', mount: adminOnly(debtorsPage) },
   { pattern: '/electricity', mount: adminOnly(electricityPage) },
   { pattern: '/services', mount: servicesPage },
   { pattern: '/services/:id', mount: servicePage },

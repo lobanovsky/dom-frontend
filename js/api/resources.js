@@ -85,6 +85,16 @@ export const waterApi = {
   updateContract: (id, body) => client.put(`/api/v1/water-contracts/${id}`, body),
   calculation: (period) => client.get('/api/v1/water-contracts/calculation', { query: { period } }),
 };
+export const debtorsApi = {
+  reports: () => client.get('/api/v1/debtors/reports'),
+  list: (period) => client.get('/api/v1/debtors', { query: { period } }),
+  import: (period, file) => {
+    const body = new FormData();
+    body.set('period', period);
+    body.set('file', file);
+    return client.post('/api/v1/debtors/import', body);
+  },
+};
 export const servicesApi = resource('services');
 // Справочник тарифов («Электроэнергия Т1») с ценами по периодам: цены услуг ведутся только здесь, услуга ссылается на тариф.
 export const tariffsApi = resource('tariffs');
