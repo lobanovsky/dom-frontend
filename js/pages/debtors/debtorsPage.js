@@ -1,6 +1,6 @@
 import { debtorsApi } from '../../api/resources.js';
 import { el } from '../../lib/dom.js';
-import { describeApiError } from '../../api/client.js';
+import { describeApiError } from '../../lib/apiErrors.js';
 import { confirmDialog } from '../../ui/confirmDialog.js';
 import { formatMoney } from '../../lib/format.js';
 import { currentMonth } from '../../lib/calculation.js';
