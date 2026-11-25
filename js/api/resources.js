@@ -88,6 +88,7 @@ export const waterApi = {
 export const debtorsApi = {
   reports: () => client.get('/api/v1/debtors/reports'),
   list: (period) => client.get('/api/v1/debtors', { query: { period } }),
+  undoReport: (period) => client.delete(`/api/v1/debtors/reports/${encodeURIComponent(period)}`),
   exportExcel: (query) => client.download('/api/v1/debtors/export', { query }),
   import: (period, file) => {
     const body = new FormData();

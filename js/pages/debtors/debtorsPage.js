@@ -85,6 +85,25 @@ export async function debtorsPage(container) {
       openModal({ title: 'Не удалось выгрузить Excel', content: el('p', {}, describeApiError(error).message) });
     } finally { exportButton.disabled = !selectedPeriod; }
   } }, 'Выгрузить в Excel');
+  exportButton.classList.add('debtors-export-button');
+  const undoButton = el('button', { type: 'button', class: 'btn btn-ghost', disabled: true, onclick: async () => {
+    if (!selectedPeriod) return;
+    const period = selectedPeriod;
+    if (!await confirmDialog({
+      title: 'Откатить загрузку должников',
+      message: `Удалить весь загруженный снимок за ${monthLabel(period)}? После этого можно будет загрузить исправленный файл за этот месяц.`,
+      confirmLabel: 'Удалить снимок',
+      danger: true,
+    })) return;
+    undoButton.disabled = true;
+    try {
+      await debtorsApi.undoReport(period);
+      selectedPeriod = '';
+      await loadReports();
+    } catch (error) {
+      openModal({ title: 'Не удалось отменить загрузку', content: el('p', {}, describeApiError(error).message) });
+    } finally { undoButton.disabled = !selectedPeriod; }
+  } }, 'Откатить загрузку');
 
   async function loadReports(preferred = '') {
     try {
@@ -98,12 +117,14 @@ export async function debtorsPage(container) {
         selectedPeriod = '';
         rows = [];
         exportButton.disabled = true;
+        undoButton.disabled = true;
         render();
         return;
       }
       selectedPeriod = periodSelect.value || String(reports[0].period).slice(0, 7);
       periodSelect.value = selectedPeriod;
       exportButton.disabled = false;
+      undoButton.disabled = false;
       await loadRows();
     } catch (error) {
       output.replaceChildren(el('div', { class: 'card empty-state' }, describeApiError(error).message));
@@ -150,7 +171,7 @@ export async function debtorsPage(container) {
   }
 
   page.append(
-    el('div', { class: 'section-header' }, [el('h1', {}, 'Должники'), el('div', { class: 'header-actions' }, [periodSelect, exportButton])]),
+    el('div', { class: 'section-header' }, [el('h1', {}, 'Должники'), el('div', { class: 'header-actions' }, [periodSelect, undoButton, exportButton])]),
     el('div', { class: 'card debtors-import-card' }, [
       el('p', { class: 'muted' }, 'Загрузите Excel-отчёт из «Домовладельца». Берётся столбец «Долг на конец»; в список попадают только положительные долги. Повторная загрузка месяца заменит его снимок.'),
       el('div', { class: 'debtors-upload-controls' }, [periodInput, fileInput, uploadButton]),
