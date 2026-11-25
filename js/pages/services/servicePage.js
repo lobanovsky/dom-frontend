@@ -1,3 +1,5 @@
+import { toPayload, toFormValues } from '../../lib/payload.js';
+import { openModal } from '../../ui/modal.js';
 import { el } from '../../lib/dom.js';
 import { createCrudList } from '../../ui/crudList.js';
 import { openEntityForm } from '../../ui/entityForm.js';
@@ -194,7 +196,54 @@ export async function servicePage(container, { id }) {
   });
 
   function bulkAssign() {
-    openBulkAssignDialog({ service, buildings, onDone: () => assignments.reload() });
+    openBulkAssignDialog({
+      service, buildings, onDone: () => assignments.reload(),
+      onSaveKinds: async (kinds) => {
+        const fields = serviceFields({ organizations, services, tariffs: catalog, commonMeters, selfId: service.id });
+        const values = { ...toFormValues(fields(service), service), premises_kinds: kinds };
+        const saved = await servicesApi.update(service.id, toPayload(fields(values), values));
+        service = saved;
+        byId.set(saved.id, saved);
+        renderInfo();
+        toast.success('Виды помещений сохранены');
+      },
+    });
+  }
+
+  function bulkRemove() {
+    const kinds = el('select', {}, [
+      el('option', { value: '' }, 'Выберите вид помещений'),
+      ...Object.entries(premisesKinds).map(([kind, title]) => el('option', { value: kind }, title)),
+    ]);
+    const error = el('p', { class: 'field-error', role: 'alert' });
+    const button = el('button', { type: 'button', class: 'btn btn-danger-text', disabled: true, onclick: async () => {
+      const kind = kinds.value;
+      if (!kind) return;
+      button.disabled = true;
+      kinds.disabled = true;
+      try {
+        const confirmed = await confirmDialog({
+          title: 'Убрать услугу у счетов',
+          message: `Убрать все назначения услуги «${service.name}» для вида «${label(premisesKinds, kind)}» во всех домах? Это может изменить расчёты за прошлые периоды.`,
+          confirmLabel: 'Убрать назначения', danger: true,
+        });
+        if (!confirmed) return;
+        const result = await accountServicesApi.bulkRemove({ service_id: service.id, premises_kind: kind });
+        modal.close();
+        toast.success(`Удалено назначений: ${result.removed}`);
+        assignments.reload();
+      } catch (err) {
+        error.textContent = describeApiError(err).message;
+      } finally {
+        button.disabled = false;
+        kinds.disabled = false;
+      }
+    } }, 'Убрать назначения');
+    kinds.addEventListener('change', () => { button.disabled = !kinds.value; });
+    const modal = openModal({ title: 'Убрать услугу у счетов', content: el('div', { class: 'entity-form' }, [
+      el('label', { class: 'field' }, ['Вид помещений', kinds]), error,
+      el('div', { class: 'form-actions' }, button),
+    ]) });
   }
 
   function bulkPeriod() {
@@ -208,6 +257,7 @@ export async function servicePage(container, { id }) {
       title,
       canWrite() ? el('div', { class: 'header-actions' }, [
         service.active ? el('button', { type: 'button', class: 'btn', onclick: bulkAssign }, 'Назначить счетам') : null,
+        el('button', { type: 'button', class: 'btn', onclick: bulkRemove }, 'Убрать у счетов'),
         el('button', { type: 'button', class: 'btn', onclick: bulkPeriod }, 'Изменить период'),
         el('button', { type: 'button', class: 'btn', onclick: edit }, 'Изменить'),
         el('button', { type: 'button', class: 'btn btn-ghost btn-danger-text', onclick: remove }, 'Удалить'),

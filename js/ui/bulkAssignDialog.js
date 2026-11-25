@@ -10,7 +10,7 @@ import { buildingLabel } from '../lib/buildings.js';
 // Окно «Назначить счетам»: массовое назначение услуги подходящим лицевым счетам.
 // Сначала «Показать» (предпросмотр: сколько счетов получит услугу, сколько уже имеют), затем «Назначить».
 // При любом изменении полей назначение блокируется до нового предпросмотра. onDone(result) вызывается после назначения.
-export function openBulkAssignDialog({ service, buildings, onDone }) {
+export function openBulkAssignDialog({ service, buildings, onDone, onSaveKinds }) {
   let modal;
   let busy = false;
   let previewed = false;
@@ -35,6 +35,25 @@ export function openBulkAssignDialog({ service, buildings, onDone }) {
   const previewButton = el('button', { type: 'submit', class: 'btn' }, 'Показать');
   const applyButton = el('button', { type: 'button', class: 'btn btn-primary', onclick: () => run(true) }, 'Назначить');
   applyButton.disabled = true;
+  const saveKinds = el('button', { type: 'button', class: 'btn', onclick: async () => {
+    if (busy) return;
+    const selected = kindBoxes.filter((box) => box.checked).map((box) => box.value);
+    if (!selected.length) {
+      showMessage('Выберите хотя бы один вид помещений', 'error');
+      return;
+    }
+    busy = true;
+    saveKinds.disabled = true;
+    try {
+      await onSaveKinds(selected);
+      modal.close();
+    } catch (error) {
+      showMessage(describeApiError(error).message, 'error');
+    } finally {
+      busy = false;
+      saveKinds.disabled = false;
+    }
+  } }, 'Сохранить виды помещений');
   const cancelButton = el('button', { type: 'button', class: 'btn btn-ghost', onclick: () => modal.close() }, 'Закрыть');
 
   const invalidate = () => { previewed = false; applyButton.disabled = true; };
@@ -117,13 +136,14 @@ export function openBulkAssignDialog({ service, buildings, onDone }) {
     el('div', { class: 'field' }, [el('label', { for: 'ba-building' }, 'Дом'), buildingSelect]),
     el('fieldset', { class: 'field' }, [
       el('legend', {}, 'Виды помещений'),
+      el('p', { class: 'field-help' }, 'Сохранение меняет настройку услуги для всех домов. Чтобы исключить вид, сначала уберите его существующие назначения.'),
       el('div', { class: 'checkbox-group' }, kinds.map((k, i) => el('label', { class: 'field-checkbox-label' }, [kindBoxes[i], label(premisesKinds, k)]))),
     ]),
     el('div', { class: 'field' }, [el('label', { for: 'ba-from' }, 'Действует с'), fromInput]),
     el('div', { class: 'field' }, [el('label', { for: 'ba-to' }, 'Действует по'), toInput, el('span', { class: 'field-help' }, 'Включительно. Пусто — продолжается. Разовая услуга — период в один месяц')]),
     manual ? el('div', { class: 'field' }, [el('label', { for: 'ba-qty' }, `Количество, ${unitShort(service.unit)}`), quantityInput]) : null,
     result,
-    el('div', { class: 'form-actions' }, [previewButton, applyButton, cancelButton]),
+    el('div', { class: 'form-actions' }, [previewButton, applyButton, onSaveKinds ? saveKinds : null, cancelButton]),
   ]);
 
   modal = openModal({ title: 'Назначить услугу счетам', content: form, wide: true });
