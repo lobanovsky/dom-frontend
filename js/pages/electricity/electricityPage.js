@@ -16,8 +16,8 @@ const statusText = (s) => ({ no_reading: 'Нет показания за мес�
 async function listElectricityMeters() {
   const all = [];
   for (let offset = 0; ; offset += 200) {
-    const { items } = await metersApi.list({ scope: 'common', resource: 'electricity', limit: 200, offset });
-    all.push(...items);
+    const { items } = await metersApi.list({ resource: 'electricity', limit: 200, offset });
+    all.push(...items.filter((meter) => meter.building_id || meter.premises_kind === 'commercial'));
     if (items.length < 200) return all;
   }
 }
@@ -40,9 +40,9 @@ function contractSettings(original, meters, contracts, tariffs, reload) {
   const selected = new Set(contract.meter_ids || []);
   const checks = meters.filter((meter) => selected.has(meter.id) || !contracts.some((c) => c.id !== contract.id && c.meter_ids.includes(meter.id))).map((meter) => {
     const check = el('input', { type: 'checkbox', value: meter.id, ...(selected.has(meter.id) ? { checked: true } : {}) });
-    return el('label', { class: 'electricity-meter-choice' }, [check, el('span', {}, `${meter.name || 'Счётчик'} № ${meter.serial_number} · коэф. ${meter.coefficient} · ${meter.tariffs} тарифа`)]);
+    return el('label', { class: 'electricity-meter-choice' }, [check, el('span', {}, `${meter.name || (meter.premises_number ? 'Помещение № ' + meter.premises_number : 'Счётчик')} № ${meter.serial_number} · коэф. ${meter.coefficient} · ${meter.tariffs} тарифа`)]);
   });
-  const checkHost = el('div', { class: 'electricity-meter-choices' }, checks.length ? checks : el('p', { class: 'muted' }, 'Нет общедомовых электросчётчиков.'));
+  const checkHost = el('div', { class: 'electricity-meter-choices' }, checks.length ? checks : el('p', { class: 'muted' }, 'Нет доступных электросчётчиков.'));
   const tariffFields = [1, 2, 3].map((zone) => {
     const selectedID = contract[`tariff_t${zone}_id`];
     const select = el('select', { 'aria-label': `Тариф Т${zone}` }, [
@@ -147,23 +147,6 @@ function parkingOperationsView(parking) {
   ]);
 }
 
-function officesOperationsView([office5, office8]) {
-  const rows = [
-    ['Офис-5 · Электроэнергия № 023260085002', office5],
-    ['Офис-8 · Электроэнергия № 023260084425', office8],
-    ['Итого', office5 == null || office8 == null ? null : office5 + office8],
-  ];
-  return el('section', { class: 'card electricity-contract-result' }, [
-    el('h2', {}, 'Офисы'),
-    el('div', { class: 'electricity-table-scroll' }, el('table', { class: 'electricity-overview' }, [
-      el('thead', {}, el('tr', {}, ['Счётчики', 'Расход, кВт·ч'].map((label) => el('th', { scope: 'col' }, label)))),
-      el('tbody', {}, rows.map(([label, value]) => el('tr', {}, [
-        el('th', { scope: 'row' }, label), el('td', {}, shown(value)),
-      ]))),
-    ])),
-  ]);
-}
-
 function resultView(result) {
   return el('div', {}, [
     el('div', { class: `electricity-total${result.complete ? '' : ' is-incomplete'}` }, [
@@ -172,7 +155,6 @@ function resultView(result) {
     ]),
     result.operations ? operationsView(result.operations) : null,
     result.operations?.parking ? parkingOperationsView(result.operations.parking) : null,
-    result.operations?.offices ? officesOperationsView(result.operations.offices) : null,
     ...result.contracts.map((contract) => el('section', { class: 'card electricity-contract-result' }, [
       el('div', { class: 'section-header' }, [el('h2', {}, contract.name), el('strong', {}, contract.complete ? formatMoney(contract.total) : `Частично · ${formatMoney(contract.total)}`)]),
       ...contract.meters.map(meterResult),
