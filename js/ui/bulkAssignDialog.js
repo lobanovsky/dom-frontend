@@ -1,3 +1,4 @@
+import { confirmDialog } from './confirmDialog.js';
 import { el } from '../lib/dom.js';
 import { openModal } from './modal.js';
 import { accountServicesApi } from '../api/resources.js';
@@ -79,7 +80,7 @@ export function openBulkAssignDialog({ service, buildings, onDone, onSaveKinds }
   }
 
   async function run(apply) {
-    if (busy) return;
+    if (busy || !service.active) return;
     if (!fromInput.value || (manual && !quantityInput.value)) {
       showMessage(manual && fromInput.value ? 'Укажите количество' : 'Укажите дату начала', 'error');
       return;
@@ -127,6 +128,47 @@ export function openBulkAssignDialog({ service, buildings, onDone, onSaveKinds }
     result.hidden = false;
   }
 
+  const removeKind = el('select', { id: 'ba-remove-kind' }, [
+    el('option', { value: '' }, 'Выберите вид помещений'),
+    ...Object.entries(premisesKinds).map(([kind, title]) => el('option', { value: kind }, title)),
+  ]);
+  const removeButton = el('button', { type: 'button', class: 'btn btn-danger-text', disabled: true, onclick: async () => {
+    if (busy || !removeKind.value) return;
+    const kind = removeKind.value;
+    busy = true;
+    removeButton.disabled = true;
+    removeKind.disabled = true;
+    try {
+      const confirmed = await confirmDialog({
+        title: 'Убрать назначения',
+        message: `Убрать все назначения услуги «${service.name}» для вида «${label(premisesKinds, kind)}» во всех домах? Это может изменить расчёты за прошлые периоды.`,
+        confirmLabel: 'Убрать назначения', danger: true,
+      });
+      if (!confirmed) return;
+      const response = await accountServicesApi.bulkRemove({ service_id: service.id, premises_kind: kind });
+      invalidate();
+      result.hidden = true;
+      showMessage(`Удалено назначений: ${response.removed}.`, 'success');
+      onDone?.(response);
+    } catch (error) {
+      showMessage(describeApiError(error).message, 'error');
+    } finally {
+      busy = false;
+      removeKind.disabled = false;
+      removeButton.disabled = !removeKind.value;
+    }
+  } }, 'Убрать назначения');
+  removeKind.addEventListener('change', () => { removeButton.disabled = !removeKind.value; });
+  const removal = el('details', { class: 'field' }, [
+    el('summary', {}, 'Убрать услугу у счетов'),
+    el('label', { for: 'ba-remove-kind' }, 'Вид помещений для удаления назначений'),
+    removeKind,
+    el('p', { class: 'field-help' }, 'Удаление охватывает все дома и периоды.'),
+    removeButton,
+  ]);
+  previewButton.hidden = !service.active;
+  applyButton.hidden = !service.active;
+
   const form = el('form', { class: 'entity-form', onsubmit: (e) => { e.preventDefault(); run(false); } }, [
     el('p', { class: 'field-help' }, [
       `Услуга «${service.name}» назначается действующим лицевым счетам типа «${label(accountPurposes, service.account_purpose)}» `,
@@ -143,6 +185,7 @@ export function openBulkAssignDialog({ service, buildings, onDone, onSaveKinds }
     el('div', { class: 'field' }, [el('label', { for: 'ba-to' }, 'Действует по'), toInput, el('span', { class: 'field-help' }, 'Включительно. Пусто — продолжается. Разовая услуга — период в один месяц')]),
     manual ? el('div', { class: 'field' }, [el('label', { for: 'ba-qty' }, `Количество, ${unitShort(service.unit)}`), quantityInput]) : null,
     result,
+    removal,
     el('div', { class: 'form-actions' }, [previewButton, applyButton, onSaveKinds ? saveKinds : null, cancelButton]),
   ]);
 
