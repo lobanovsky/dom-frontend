@@ -1672,6 +1672,13 @@ a.account-link:hover { text-decoration: underline; }
 .debtors-upload-controls { display: grid; grid-template-columns: minmax(150px, 210px) minmax(220px, 1fr) auto; gap: 10px; align-items: center; }
 .debtors-upload-controls .btn { width: max-content; min-width: 150px; white-space: nowrap; }
 .debtors-export-button { flex: 0 0 auto !important; width: max-content !important; min-width: 0; }
+.debtors-list-toolbar { display: grid; grid-template-columns: minmax(0, 2fr) minmax(240px, 1fr); gap: 12px; align-items: start; margin: 16px 0; }
+.debtors-category-filters { display: flex; flex-wrap: wrap; gap: 8px; }
+.debtors-category-option { display: inline-flex; align-items: center; gap: 7px; padding: 7px 10px; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-surface); cursor: pointer; }
+.debtors-category-option input { margin: 0; accent-color: var(--color-accent); }
+.debtors-category-option:has(input:checked) { border-color: var(--color-accent); }
+.debtors-category-option:has(input:disabled) { cursor: not-allowed; }
+.debtors-list-toolbar > input { width: 100%; }
 .gate-kind-selector { display: flex; align-items: center; gap: 4px; margin: 0; padding: 3px; border: 1px solid var(--color-border); border-radius: 9px; background: var(--color-surface); }
 /* На странице дома поиск и фильтр видов делят свободное место поровну. */
 .table-toolbar:has(.table-radio-filter) > :is(.field:has(.table-radio-filter), .field--search) {
@@ -1687,6 +1694,7 @@ a.account-link:hover { text-decoration: underline; }
 @media (max-width: 768px) {
   .debtors-upload-controls { grid-template-columns: 1fr; }
   .debtors-upload-controls .btn { width: 100%; }
+  .debtors-list-toolbar { grid-template-columns: 1fr; }
   .table-toolbar:has(.table-radio-filter) > :is(.field:has(.table-radio-filter), .field--search) {
     flex-basis: auto;
     width: 100%;

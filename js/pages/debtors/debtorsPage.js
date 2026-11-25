@@ -9,12 +9,11 @@ import { openModal } from '../../ui/modal.js';
 import { saveFile } from '../../ui/saveFile.js';
 
 const categories = [
-  ['all', 'Все'],
   ['utilities:apartment', 'Квартиры · ЖКУ'],
   ['utilities:parking_space', 'Машиноместа · ЖКУ'],
   ['capital_repair:apartment', 'Квартиры · капремонт'],
   ['capital_repair:parking_space', 'Машиноместа · капремонт'],
-  ['other', 'Другие помещения'],
+  ['other', 'Коммерческие помещения'],
 ];
 
 function categoryOf(row) {
@@ -30,7 +29,7 @@ function formatPeriod(value) {
 function categoryLabel(row) {
   const kind = row.premises_kind === 'apartment' ? 'Квартира'
     : row.premises_kind === 'parking_space' ? 'Машиноместо'
-      : row.premises_kind || 'Помещение';
+      : 'Коммерческое помещение';
   const purpose = row.purpose === 'capital_repair' ? 'капремонт' : 'ЖКУ';
   return `${kind} · ${purpose}`;
 }
@@ -39,7 +38,7 @@ export async function debtorsPage(container) {
   let reports = [];
   let rows = [];
   let selectedPeriod = '';
-  let category = 'all';
+  const selectedCategories = new Set(categories.map(([value]) => value));
   let search = '';
   const page = el('div', { class: 'page' });
   const output = el('div', {});
@@ -75,12 +74,25 @@ export async function debtorsPage(container) {
   const periodInput = el('input', { type: 'month', class: 'form-control', value: currentMonth(), 'aria-label': 'Месяц отчёта' });
   const uploadButton = el('button', { type: 'button', class: 'btn btn-primary', onclick: () => upload(fileInput.files?.[0], periodInput.value, uploadButton) }, 'Загрузить Excel');
   const searchInput = el('input', { type: 'search', class: 'form-control', placeholder: 'Лицевой счёт, помещение, ФИО, телефон или email', oninput: () => { search = searchInput.value.trim().toLocaleLowerCase('ru'); render(); } });
-  const categorySelect = el('select', { class: 'form-control', 'aria-label': 'Категория должников', onchange: () => { category = categorySelect.value; render(); } },
-    categories.map(([value, label]) => el('option', { value }, label)));
+  const categoryHint = el('span', { class: 'field-help', role: 'status', 'aria-live': 'polite' }, 'Выберите одну или несколько категорий. Оставьте выбранной минимум одну.');
+  const categoryFilters = el('div', { class: 'debtors-category-filters', role: 'group', 'aria-label': 'Категории должников' }, categories.map(([value, label]) => {
+    const checkbox = el('input', { type: 'checkbox', checked: true, onchange: () => {
+      if (!checkbox.checked && selectedCategories.size === 1) {
+        checkbox.checked = true;
+        categoryHint.textContent = 'Должна оставаться выбранной хотя бы одна категория.';
+        return;
+      }
+      if (checkbox.checked) selectedCategories.add(value);
+      else selectedCategories.delete(value);
+      categoryHint.textContent = 'Выберите одну или несколько категорий. Оставьте выбранной минимум одну.';
+      render();
+    } });
+    return el('label', { class: 'debtors-category-option' }, [checkbox, el('span', {}, label)]);
+  }));
   const exportButton = el('button', { type: 'button', class: 'btn', disabled: true, onclick: async () => {
     exportButton.disabled = true;
     try {
-      saveFile(await debtorsApi.exportExcel({ period: selectedPeriod, category, q: searchInput.value.trim() }));
+      saveFile(await debtorsApi.exportExcel({ period: selectedPeriod, categories: [...selectedCategories].join(','), q: searchInput.value.trim() }));
     } catch (error) {
       openModal({ title: 'Не удалось выгрузить Excel', content: el('p', {}, describeApiError(error).message) });
     } finally { exportButton.disabled = !selectedPeriod; }
@@ -145,7 +157,7 @@ export async function debtorsPage(container) {
 
   function render() {
     const filtered = rows.filter((row) => {
-      if (category !== 'all' && categoryOf(row) !== category) return false;
+      if (!selectedCategories.has(categoryOf(row))) return false;
       if (!search) return true;
       const text = [row.account_number, row.premises_number, ...(row.holder_names || []), ...(row.phones || []), ...(row.emails || [])].join(' ').toLocaleLowerCase('ru');
       return text.includes(search);
@@ -176,7 +188,10 @@ export async function debtorsPage(container) {
       el('p', { class: 'muted' }, 'Загрузите Excel-отчёт из «Домовладельца». Берётся столбец «Долг на конец»; в список попадают только положительные долги. Повторная загрузка месяца заменит его снимок.'),
       el('div', { class: 'debtors-upload-controls' }, [periodInput, fileInput, uploadButton]),
     ]),
-    el('div', { class: 'list-toolbar' }, [categorySelect, searchInput]),
+    el('div', { class: 'debtors-list-toolbar' }, [
+      el('div', {}, [categoryFilters, categoryHint]),
+      searchInput,
+    ]),
     output,
   );
   container.replaceChildren(page);
