@@ -2,7 +2,7 @@ import { confirmDialog } from './confirmDialog.js';
 import { el } from '../lib/dom.js';
 import { openModal } from './modal.js';
 import { accountServicesApi } from '../api/resources.js';
-import { accountPurposes, premisesKinds, label } from '../lib/labels.js';
+import { accountPurposes, premisesKinds, premisesKindOptions, label } from '../lib/labels.js';
 import { todayIso } from '../lib/format.js';
 import { describeApiError } from '../lib/apiErrors.js';
 import { unitShort } from '../lib/services.js';
@@ -16,13 +16,14 @@ export function openBulkAssignDialog({ service, buildings, onDone, onKindsSaved 
   let busy = false;
   let previewed = false;
 
-  const kinds = service.premises_kinds && service.premises_kinds.length ? service.premises_kinds : Object.keys(premisesKinds);
+  const kinds = premisesKindOptions().map(({ value }) => value);
+  const savedKinds = new Set(service.premises_kinds?.length ? service.premises_kinds : kinds);
   const manual = service.calc_method === 'manual';
 
   const buildingSelect = el('select', { id: 'ba-building' }, [el('option', { value: '' }, 'Все дома'), ...buildings.map((b) => el('option', { value: String(b.id) }, buildingLabel(b)))]);
   const kindBoxes = kinds.map((k) => {
     const box = el('input', { type: 'checkbox', value: k });
-    box.checked = true;
+    box.checked = savedKinds.has(k);
     return box;
   });
   const fromInput = el('input', { id: 'ba-from', type: 'date', required: true });
@@ -95,6 +96,10 @@ export function openBulkAssignDialog({ service, buildings, onDone, onKindsSaved 
     }
     if (kindBoxes.every((b) => !b.checked)) {
       showMessage('Выберите хотя бы один вид помещений', 'error');
+      return;
+    }
+    if (kindBoxes.some((box) => box.checked && !savedKinds.has(box.value))) {
+      showMessage('Сначала сохраните добавленные виды помещений', 'error');
       return;
     }
     busy = true;
