@@ -97,7 +97,6 @@ export async function debtorsPage(container) {
       openModal({ title: 'Не удалось выгрузить Excel', content: el('p', {}, describeApiError(error).message) });
     } finally { exportButton.disabled = !selectedPeriod; }
   } }, 'Выгрузить в Excel');
-  exportButton.classList.add('debtors-export-button');
   const undoButton = el('button', { type: 'button', class: 'btn btn-ghost', disabled: true, onclick: async () => {
     if (!selectedPeriod) return;
     const period = selectedPeriod;

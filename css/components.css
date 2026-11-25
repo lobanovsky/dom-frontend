@@ -1666,11 +1666,12 @@ a.account-link:hover { text-decoration: underline; }
 
 .debtors-import-card { display: grid; gap: 12px; }
 .debtors-import-card > .muted { margin: 0; }
-.debtors-header-actions { align-items: center; }
+.debtors-header-actions { align-items: center; flex-wrap: wrap; min-width: 0; }
 .debtors-header-actions > :is(select, .btn) { height: 35px; min-height: 35px; box-sizing: border-box; }
+.debtors-header-actions > select { width: auto; max-width: 100%; }
+.debtors-header-actions > .btn { flex: none; white-space: nowrap; }
 .debtors-upload-controls { display: grid; grid-template-columns: minmax(150px, 210px) minmax(220px, 1fr) auto; gap: 10px; align-items: center; }
 .debtors-upload-controls .btn { width: max-content; min-width: 150px; white-space: nowrap; }
-.debtors-export-button { flex: 0 0 auto !important; width: max-content !important; min-width: 0; }
 .debtors-list-toolbar { display: grid; grid-template-columns: minmax(0, 2fr) minmax(240px, 1fr); gap: 12px; align-items: start; margin: 16px 0; }
 .debtors-category-filters { display: flex; flex-wrap: wrap; gap: 8px; }
 .debtors-category-option { display: inline-flex; align-items: center; gap: 7px; padding: 7px 10px; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-surface); cursor: pointer; }
