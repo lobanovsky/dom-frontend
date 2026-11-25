@@ -7,11 +7,13 @@ import { describeApiError } from '../lib/apiErrors.js';
 import { PAGE_SIZES, loadPageSize, savePageSize } from '../lib/pageSize.js';
 import { canWrite } from '../lib/permissions.js';
 
+let nextRadioGroup = 0;
+
 // Список записей одной сущности: фильтры, таблица, пагинация, добавление,
 // редактирование и удаление через модальную форму. Удаление мягкое: переключатель
 // «Удалённые» показывает корзину, где записи можно восстановить.
 //
-// filters: [{name, label, type: 'search'|'select'|'date'|'month', options?, allLabel?, defaultValue?}] — значения уходят в query;
+// filters: [{name, label, type: 'search'|'select'|'radio'|'date'|'month', options?, allLabel?, defaultValue?}] — значения уходят в query;
 // у select allLabel — подпись пустого значения (по умолчанию «Все»), defaultValue — выбранное значение при открытии.
 // fixedQuery — всегда добавляется к запросу списка (например building_id).
 // fixed — всегда добавляется к телу при создании/сохранении.
@@ -64,6 +66,26 @@ export function createCrudList({
 
   function renderFilter(f) {
     const id = `filter-${f.name}`;
+    if (f.type === 'radio') {
+      const name = `filter-radio-${++nextRadioGroup}`;
+      const options = [{ value: '', label: f.allLabel || 'Все' }, ...f.options];
+      filterValues[f.name] = f.defaultValue ?? '';
+      return el('div', { class: 'field' }, [
+        el('div', {}, f.label),
+        el('div', { class: 'gate-kind-selector table-radio-filter', role: 'radiogroup', 'aria-label': f.label }, options.map((option) =>
+          el('label', { class: 'gate-kind-option' }, [
+            el('input', { type: 'radio', name, value: option.value, checked: option.value === filterValues[f.name], onchange: (event) => {
+              if (!event.target.checked) return;
+              filterValues[f.name] = option.value;
+              offset = 0;
+              filtersChanged();
+              load();
+            } }),
+            el('span', {}, option.label),
+          ]),
+        )),
+      ]);
+    }
     let input;
     if (f.type === 'select') {
       input = el('select', { id }, [el('option', { value: '' }, f.allLabel || 'Все'), ...f.options.map((o) => el('option', { value: o.value }, o.label))]);

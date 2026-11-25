@@ -112,7 +112,7 @@ export async function buildingPage(container, { id }) {
     fixedQuery: { building_id: building.id },
     fixed: { building_id: building.id },
     filters: [
-      { name: 'kind', label: 'Вид', type: 'select', options: premisesKindOptions() },
+      { name: 'kind', label: 'Вид помещения', type: 'radio', options: premisesKindOptions() },
       { name: 'q', label: 'Поиск', type: 'search', placeholder: 'Номер или ФИО собственника' },
     ],
     columns: [
