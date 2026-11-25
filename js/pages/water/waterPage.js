@@ -110,7 +110,7 @@ function residentChargesView(charges) {
     line('ХВС', charges.cold_volume, charges.cold_price, charges.amounts.cold),
     line('ГВС', charges.hot_volume, charges.hot_price, charges.amounts.hot),
     line('Водоотведение', charges.sewer_volume, charges.sewer_price, charges.amounts.sewer),
-    el('p', { class: 'muted' }, `ХВС паркинга · № 145558: ${charges.parking_cold == null ? '—' : shown(charges.parking_cold) + ' м³'}`),
+    el('p', { class: 'muted' }, `ХВС паркинга · № 145558: ${charges.parking_cold == null ? '—' : shown(charges.parking_cold) + ' м³'}` + (charges.parking_cold == null ? '' : ' · объём входит в ХВС и водоотведение.') + (charges.total == null ? '' : ' Стоимость учтена в итоге.')),
   ]);
 }
 
