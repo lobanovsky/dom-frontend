@@ -1667,6 +1667,7 @@ a.account-link:hover { text-decoration: underline; }
 /* План-схема действующих доступов по дому. */
 .gate-access-filters select { min-width: 220px; flex: 1 1 220px; }
 .gate-access-filters > :is(.gate-kind-selector, select) { min-width: 0; flex: 1 1 260px; }
+.gate-access-filters > .gate-kind-selector { flex: 0 1 auto; width: max-content; max-width: 100%; }
 .debtors-import-card { display: grid; gap: 12px; }
 .debtors-import-card > .muted { margin: 0; }
 .debtors-header-actions { align-items: center; }

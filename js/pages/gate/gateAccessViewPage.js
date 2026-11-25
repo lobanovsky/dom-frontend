@@ -10,7 +10,8 @@ import { openModal } from '../../ui/modal.js';
 import { confirmDialog } from '../../ui/confirmDialog.js';
 import { toast } from '../../ui/toast.js';
 
-const kinds = [['apartment','Квартиры','🏠'],['parking_space','Машиноместа','🅿️'],['commercial','Коммерческие помещения','🏢']];
+const kinds = [['apartment','Квартира'],['commercial','Коммерческое помещение'],['parking_space','Машиноместо']];
+const selectorKinds = [['','Все'], ...kinds];
 const csvCell = (v) => `"${String(v ?? '').replaceAll('"','""')}"`;
 const objectType = (kind) => kind === 'parking_space' ? 'Машиноместо' : kind === 'commercial' ? 'Коммерческое помещение' : 'Квартира';
 const numberCompare = (a,b) => String(a.number).localeCompare(String(b.number), 'ru', {numeric:true,sensitivity:'base'});
@@ -57,10 +58,10 @@ export async function gateAccessViewPage(container) {
   let showRejected = false;
   const type = el('input',{type:'hidden',value:'apartment'});
   const kindRadios=new Map();
-  const typeSelector=el('div',{class:'gate-kind-selector table-radio-filter',role:'radiogroup','aria-label':'Тип объекта'},kinds.map(([value,label,icon])=>{
+  const typeSelector=el('div',{class:'gate-kind-selector table-radio-filter',role:'radiogroup','aria-label':'Тип объекта'},selectorKinds.map(([value,label])=>{
     const radio=el('input',{type:'radio',name:'gate-premises-kind',value,checked:value===type.value,'aria-label':label,onchange:()=>{if(radio.checked){type.value=value;loadPremises();}}});
     kindRadios.set(value,radio);
-    return el('label',{class:'gate-kind-option',title:label},[radio,el('span',{'aria-hidden':'true'},icon),el('span',{},label)]);
+    return el('label',{class:'gate-kind-option',title:label},[radio,el('span',{},label)]);
   }));
   function setType(value){type.value=value;for(const [kind,radio] of kindRadios)radio.checked=kind===value;}
   const building = el('select', { 'aria-label':'Дом' }, [el('option',{value:''},'Загрузка домов…')]);
