@@ -131,7 +131,7 @@ function resultView(result) {
   ]);
 }
 
-function hotWaterReportButton(period) {
+function hotWaterReportButton(period, sentAt) {
   const button = el('button', { type: 'button', class: 'btn btn-sm', onclick: async () => {
     button.disabled = true;
     try {
@@ -151,7 +151,25 @@ function hotWaterReportButton(period) {
       el('p', {}, 'Отрицательная разница по счётчику считается нулём. Если не хватает показаний для расчёта, справка не формируется.'),
     ]) }),
   }, '?');
-  return el('div', {}, [button, ' ', help]);
+  const status = el('span', { class: 'badge badge-success', role: 'status', hidden: !sentAt }, 'Отправлено');
+  const send = canWrite() ? el('button', { type: 'button', class: 'btn btn-sm', hidden: !!sentAt, onclick: async () => {
+    send.disabled = true;
+    try {
+      if (!await confirmDialog({
+        title: 'Отправить справку ГВС',
+        message: `Отправить справку за ${monthLabel(period)} на OS-3@mail.ru с копиями указанным получателям?`,
+        confirmLabel: 'Отправить',
+      })) return;
+      await waterApi.sendHotWaterReport(period);
+      status.hidden = false;
+      send.hidden = true;
+    } catch (error) {
+      openModal({ title: 'Отправка справки ГВС', content: el('p', {}, describeApiError(error).message) });
+    } finally {
+      send.disabled = false;
+    }
+  } }, 'Отправить') : null;
+  return el('div', {}, [button, ' ', help, ' ', send, ' ', status]);
 }
 
 export async function waterPage(container) {
@@ -208,7 +226,7 @@ export async function waterPage(container) {
           ...(visible.length > 1 ? visible.map((c) => el('td', {}, error ? 'Ошибка загрузки' : amount(result.contracts.find((item) => item.id === c.id)))) : []),
           ...['water_amount', 'sewer_amount'].map((key) => el('td', {}, error ? 'Ошибка загрузки' : result.complete ? formatMoney(result[key]) : '—')),
           el('td', {}, el('strong', {}, error ? 'Ошибка загрузки' : amount(result))),
-          el('td', {}, hotWaterReportButton(period)),
+          el('td', {}, hotWaterReportButton(period, result?.hot_water_report_sent_at)),
         ]))),
       ]);
       output.replaceChildren(...[total, el('div', { class: 'card electricity-table-scroll' }, table),
