@@ -98,84 +98,19 @@ function contractCharge(contract, label, priceKey, amount) {
   return el('p', {}, `${label}: ${shown(contract.volume)} м³ × ${rate(price)} ₽ = ${formatMoney(amount)}`);
 }
 
-function negativeWaterMeters(meters) {
-  const columns = ['Помещение', 'Ресурс', 'Счётчик', 'Предыдущее, м³', 'Текущее, м³', 'Расход, м³'];
-  const table = el('div', { class: 'electricity-table-scroll' }, el('table', { class: 'electricity-overview' }, [
-    el('thead', {}, el('tr', {}, columns.map((label) => el('th', { scope: 'col' }, label)))),
-    el('tbody', {}, meters.map((meter) => el('tr', {}, [
-      el('td', {}, meter.location),
-      el('td', {}, meter.resource === 'hot_water' ? 'ГВС' : 'ХВС'),
-      el('td', {}, el('a', { href: `/meters/${meter.id}` }, meter.serial)),
-      ...[meter.previous, meter.current, meter.volume].map((value) => el('td', {}, shown(value))),
-    ]))),
-  ]));
-  const results = el('div', { hidden: true }, meters.length ? table : el('p', { class: 'muted' }, 'За этот месяц отрицательного расхода нет.'));
-  const filter = el('input', { type: 'checkbox', onchange: (event) => { results.hidden = !event.target.checked; } });
-  return el('div', {}, [
-    el('label', { class: 'field-checkbox-label' }, [filter, ` Только счётчики с отрицательным расходом (${meters.length})`]),
-    results,
-  ]);
-}
-
-function waterBalanceView(balance) {
-  const rows = [
-    ['Квартиры · ХВС', balance.apartment_cold],
-    ['Квартиры · ГВС', balance.apartment_hot],
-    ['Офисы · ХВС', balance.office_cold],
-    ['Офисы · ГВС', balance.office_hot],
-    ['Общедомовые нужды', balance.common_needs],
-  ];
-  const formatVolume = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 3 });
+function residentChargesView(charges) {
+  const line = (label, volume, price, amount) => el('p', {}, amount == null
+    ? `${label}: —`
+    : `${label}: ${shown(volume)} м³ × ${rate(price)} ₽ = ${formatMoney(amount)}`);
   return el('section', { class: 'card electricity-contract-result' }, [
-    el('h2', {}, 'Баланс воды за месяц'),
-    el('div', { class: 'electricity-table-scroll' }, el('table', { class: 'electricity-overview' }, [
-      el('thead', {}, el('tr', {}, ['Потребление', 'Объём, м³'].map((label) => el('th', { scope: 'col' }, label)))),
-      el('tbody', {}, rows.map(([label, value]) => el('tr', {}, [
-        el('th', { scope: 'row' }, label),
-        el('td', {}, value == null ? '—' : formatVolume.format(value)),
-      ]))),
-    ])),
-    el('p', { class: 'muted' }, 'Общедомовые нужды = вводной объём − ХВС и ГВС квартир и офисов.'),
-    el('p', {}, el('strong', {}, `Стоимость воды на общедомовые нужды — ${balance.common_needs_water_amount == null ? '—' : formatMoney(balance.common_needs_water_amount)}`)),
-    balance.common_needs_water_price != null
-      ? el('p', { class: 'muted' }, `Тариф ХВС — ${rate(balance.common_needs_water_price)} ₽/м³`)
-      : el('p', { class: 'muted' }, 'Для вводного счётчика нет тарифа ХВС за этот месяц.'),
-    balance.common_needs == null ? el('p', { class: 'muted' }, 'Для расчёта не хватает данных или есть отрицательный расход по счётчику вне квартир.') : null,
-    el('p', { class: 'muted' }, 'Отрицательный расход квартирных счётчиков считается нулём в балансе и справке ГВС.'),
-    Array.isArray(balance.negative_meters) ? negativeWaterMeters(balance.negative_meters) : null,
-    balance.common_needs < 0 ? el('p', { class: 'muted' }, 'Баланс отрицательный. Проверьте показания за месяц.') : null,
-  ]);
-}
-
-function residentChargesView(charges, result) {
-  const money = (value) => value == null ? '—' : formatMoney(value);
-  const balance = result.balance ?? {};
-  const sum = (a, b) => a == null || b == null ? null : a + b;
-  const row = (name, values, volumes = [], price) => el('tr', {}, [
-    el('th', { scope: 'row' }, name),
-    ...values.map((value, i) => el('td', {}, [
-      money(value),
-      value != null && volumes[i] != null && price != null
-        ? el('div', {}, el('small', { class: 'muted' }, `${shown(volumes[i])} м³ × ${rate(price)} ₽/м³`)) : null,
-    ])),
-  ]);
-  return el('section', { class: 'card electricity-contract-result' }, [
-    el('h2', {}, 'К начислению квартирам и офисам'),
-    el('div', { class: 'electricity-table-scroll' }, el('table', { class: 'electricity-overview' }, [
-      el('thead', {}, el('tr', {}, ['Услуга', 'Квартиры', 'Офисы'].map((name) => el('th', { scope: 'col' }, name)))),
-      el('tbody', {}, [
-        row('ХВС', [charges.apartments.cold, charges.offices.cold],
-          [balance.apartment_cold, balance.office_cold], charges.cold_price),
-        row('ГВС', [charges.apartments.hot, charges.offices.hot],
-          [balance.apartment_hot, balance.office_hot], charges.hot_price),
-        row('Водоотведение', [charges.apartments.sewer, charges.offices.sewer],
-          [sum(balance.apartment_cold, balance.apartment_hot), sum(balance.office_cold, balance.office_hot)], charges.sewer_price),
-        row('Итого', [charges.apartments.total, charges.offices.total]),
-      ]),
-    ])),
-    el('p', {}, el('strong', {}, `К начислению всего — ${money(charges.total)}`)),
-    el('p', {}, `${result.complete ? 'К оплате Мосводоканалу' : 'К оплате Мосводоканалу (неполный расчёт)'} — ${money(result.total)}`),
-    charges.total == null ? el('p', { class: 'muted' }, 'Для полного расчёта не хватает объёмов или тарифов за месяц.') : null,
+    el('div', { class: 'section-header' }, [
+      el('h2', {}, 'К начислению квартирам, офисам и паркингу'),
+      el('strong', {}, charges.total == null ? 'Неполный расчёт' : formatMoney(charges.total)),
+    ]),
+    line('ХВС', charges.cold_volume, charges.cold_price, charges.amounts.cold),
+    line('ГВС', charges.hot_volume, charges.hot_price, charges.amounts.hot),
+    line('Водоотведение', charges.sewer_volume, charges.sewer_price, charges.amounts.sewer),
+    el('p', { class: 'muted' }, `ХВС паркинга · № 145558: ${charges.parking_cold == null ? '—' : shown(charges.parking_cold) + ' м³'}`),
   ]);
 }
 
@@ -186,8 +121,7 @@ function resultView(result) {
       el('strong', {}, formatMoney(result.total)),
     ]),
     el('p', {}, `Вода: ${formatMoney(result.water_amount)} · Водоотведение: ${formatMoney(result.sewer_amount)}`),
-    result.balance ? waterBalanceView(result.balance) : null,
-    result.resident_charges ? residentChargesView(result.resident_charges, result) : null,
+    result.resident_charges?.amounts ? residentChargesView(result.resident_charges) : null,
     ...result.contracts.map((contract) => el('section', { class: 'card electricity-contract-result' }, [
       el('div', { class: 'section-header' }, [el('h2', {}, contract.name), el('strong', {}, contract.complete ? formatMoney(contract.total) : `Частично · ${formatMoney(contract.total)}`)]),
       el('p', {}, `Объём: ${contract.meters.some((meter) => meter.volume != null && meter.volume >= 0) ? shown(contract.volume) + ' м³' : '—'}`),
