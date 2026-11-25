@@ -57,7 +57,7 @@ export async function gateAccessViewPage(container) {
   let showRejected = false;
   const type = el('input',{type:'hidden',value:'apartment'});
   const kindRadios=new Map();
-  const typeSelector=el('div',{class:'gate-kind-selector',role:'radiogroup','aria-label':'Тип объекта'},kinds.map(([value,label,icon])=>{
+  const typeSelector=el('div',{class:'gate-kind-selector table-radio-filter',role:'radiogroup','aria-label':'Тип объекта'},kinds.map(([value,label,icon])=>{
     const radio=el('input',{type:'radio',name:'gate-premises-kind',value,checked:value===type.value,'aria-label':label,onchange:()=>{if(radio.checked){type.value=value;loadPremises();}}});
     kindRadios.set(value,radio);
     return el('label',{class:'gate-kind-option',title:label},[radio,el('span',{'aria-hidden':'true'},icon),el('span',{},label)]);
