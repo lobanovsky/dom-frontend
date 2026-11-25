@@ -95,6 +95,7 @@ export const accountServicesApi = {
   ...resource('account-services'),
   bulkPreview: (body) => client.post('/api/v1/account-services/bulk/preview', body),
   bulkApply: (body) => client.post('/api/v1/account-services/bulk', body),
+  saveServiceKinds: (body) => client.post('/api/v1/account-services/service-kinds', body),
   bulkRemove: (body) => client.post('/api/v1/account-services/bulk-remove', body),
   bulkClose: (body) => client.post('/api/v1/account-services/bulk-close', body),
   bulkPeriodPreview: (body) => client.post('/api/v1/account-services/bulk-period/preview', body),

@@ -1,4 +1,3 @@
-import { toPayload, toFormValues } from '../../lib/payload.js';
 import { el } from '../../lib/dom.js';
 import { createCrudList } from '../../ui/crudList.js';
 import { openEntityForm } from '../../ui/entityForm.js';
@@ -197,14 +196,12 @@ export async function servicePage(container, { id }) {
   function bulkAssign() {
     openBulkAssignDialog({
       service, buildings, onDone: () => assignments.reload(),
-      onSaveKinds: async (kinds) => {
-        const fields = serviceFields({ organizations, services, tariffs: catalog, commonMeters, selfId: service.id });
-        const values = { ...toFormValues(fields(service), service), premises_kinds: kinds };
-        const saved = await servicesApi.update(service.id, toPayload(fields(values), values));
-        service = saved;
-        byId.set(saved.id, saved);
+      onKindsSaved: (kinds, removed) => {
+        service = { ...service, premises_kinds: kinds };
+        byId.set(service.id, service);
         renderInfo();
-        toast.success('Виды помещений сохранены');
+        assignments.reload();
+        toast.success(removed ? `Виды помещений сохранены. Удалено назначений: ${removed}` : 'Виды помещений сохранены');
       },
     });
   }
