@@ -3,12 +3,17 @@ import assert from 'node:assert/strict';
 import { NAV, navFor, ADMIN_ONLY_PATHS, isActive, groupIsActive, loadOpenGroups, saveOpenGroups } from './nav.js';
 
 const finance = NAV.find((n) => n.group === 'Финансы');
+const rso = NAV.find((n) => n.group === 'РСО');
 
 test('finance group holds the requested items', () => {
   assert.deepEqual(
     finance.items.map((i) => i.label),
-    ['Входящие', 'Исходящие', 'Реестры', 'Выгрузки', 'Вода и водоотведение', 'Должники', 'Электроэнергия', 'Корректировки', 'Выписки', 'Банк (Сбер)', 'Почта', 'Контрагенты', 'Правила'],
+    ['Входящие', 'Исходящие', 'Реестры', 'Выгрузки', 'Должники', 'Корректировки', 'Выписки', 'Банк (Сбер)', 'Почта', 'Контрагенты', 'Правила'],
   );
+});
+
+test('resource supplier reports are grouped under РСО', () => {
+  assert.deepEqual(rso.items.map((item) => item.label), ['Вода и водоотведение', 'Электроэнергия']);
 });
 
 test('every route appears in the menu exactly once', () => {

@@ -20,15 +20,21 @@ export const NAV = [
       { href: '/payments/outgoing', label: 'Исходящие', icon: '<path d="M12 21V9M7 14l5-5 5 5M4 3h16"/>' },
       { href: '/payment-registries', label: 'Реестры', icon: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8zM14 3v5h5M9 13h6M9 17h6"/>' },
       { href: '/payment-exports', label: 'Выгрузки', icon: '<path d="M12 15V3M7 8l5-5 5 5M4 21h16"/>' },
-      { href: '/water', label: 'Вода и водоотведение', icon: '<path d="M12 3S5 10 5 15a7 7 0 0 0 14 0c0-5-7-12-7-12z"/>' },
       { href: '/debtors', label: 'Должники', icon: '<path d="M4 19V5m0 14h16M8 15l3-4 3 2 5-7"/><circle cx="19" cy="6" r="1"/>' },
-      { href: '/electricity', label: 'Электроэнергия', icon: '<path d="M13 2L4 13h7l-1 9 10-12h-7z"/>' },
       { href: '/adjustment-registries', label: 'Корректировки', icon: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8zM14 3v5h5M12 11v6M9 14h6"/>' },
       { href: '/bank-statements', label: 'Выписки', icon: '<path d="M6 2h9l5 5v15H6zM14 2v6h6M9 13h8M9 17h8M9 9h3"/>' },
       { href: '/sber-api', label: 'Банк (Сбер)', icon: '<path d="M3 10l9-6 9 6M5 10v8M19 10v8M9 10v8M15 10v8M3 21h18"/>' },
       { href: '/mail', label: 'Почта', icon: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>' },
       { href: '/counterparties', label: 'Контрагенты', icon: '<circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20v-1a5 5 0 0 1 5-5h2a5 5 0 0 1 5 5v1M16 14h1a4 4 0 0 1 4 4v1"/>' },
       { href: '/payment-rules', adminOnly: true, label: 'Правила', icon: '<path d="M4 6h16M7 12h10M10 18h4"/>' },
+    ],
+  },
+  {
+    group: 'РСО',
+    icon: '<path d="M4 20h16M6 20V8l6-4 6 4v12M9 11h6M9 15h6"/>',
+    items: [
+      { href: '/water', label: 'Вода и водоотведение', icon: '<path d="M12 3S5 10 5 15a7 7 0 0 0 14 0c0-5-7-12-7-12z"/>' },
+      { href: '/electricity', label: 'Электроэнергия', icon: '<path d="M13 2L4 13h7l-1 9 10-12h-7z"/>' },
     ],
   },
   {
