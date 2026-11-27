@@ -25,6 +25,7 @@ import { openModal } from '../../ui/modal.js';
 import { groupPeople } from '../../lib/people.js';
 import { notFoundView, definitionList, deletedBanner } from '../common.js';
 import { buildingLabel } from '../../lib/buildings.js';
+import { saveFile } from '../../ui/saveFile.js';
 
 // Карточка помещения: сведения, люди (собственники с долями и жители в одной таблице), лицевые счета
 // с плательщиками. Каждый блок перезагружается сам после изменений.
@@ -305,6 +306,19 @@ export async function premisesPage(container, { id }) {
         if (!paymentsBody.hidden) loadPayments(account, paymentsBody);
       },
     }, 'Оплаты');
+    const paymentsExport = el('button', {
+      type: 'button', class: 'btn btn-ghost btn-sm', title: 'Скачать все оплаты по этому лицевому счёту в Excel',
+      onclick: async () => {
+        paymentsExport.disabled = true;
+        try {
+          saveFile(await incomingPaymentsApi.exportExcel({ personal_account_id: account.id }));
+        } catch (error) {
+          toast.error(describeApiError(error).message);
+        } finally {
+          paymentsExport.disabled = false;
+        }
+      },
+    }, 'Excel оплат');
 
     // Услуги, по которым выставляется квитанция этого счёта.
     const servicesBody = el('div', { class: 'account-payments' });
@@ -340,6 +354,7 @@ export async function premisesPage(container, { id }) {
           servicesToggle,
           calculationButton,
           paymentsToggle,
+          paymentsExport,
           toggle,
           canWrite() ? editButton(() => accountForm(account)) : null,
           canWrite() ? deleteButton(() => removeRow(`Удалить лицевой счёт № ${account.number}? Удалить можно только счёт без плательщиков.`, () => accountsApi.remove(account.id), loadAccounts)) : null,
