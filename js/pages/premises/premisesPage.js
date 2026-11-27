@@ -306,20 +306,6 @@ export async function premisesPage(container, { id }) {
         if (!paymentsBody.hidden) loadPayments(account, paymentsBody);
       },
     }, 'Оплаты');
-    const paymentsExport = el('button', {
-      type: 'button', class: 'btn btn-ghost btn-sm', title: 'Скачать все оплаты по этому лицевому счёту в Excel',
-      onclick: async () => {
-        paymentsExport.disabled = true;
-        try {
-          saveFile(await incomingPaymentsApi.exportExcel({ personal_account_id: account.id }));
-        } catch (error) {
-          toast.error(describeApiError(error).message);
-        } finally {
-          paymentsExport.disabled = false;
-        }
-      },
-    }, 'Excel оплат');
-
     // Услуги, по которым выставляется квитанция этого счёта.
     const servicesBody = el('div', { class: 'account-payments' });
     servicesBody.hidden = true;
@@ -354,7 +340,6 @@ export async function premisesPage(container, { id }) {
           servicesToggle,
           calculationButton,
           paymentsToggle,
-          paymentsExport,
           toggle,
           canWrite() ? editButton(() => accountForm(account)) : null,
           canWrite() ? deleteButton(() => removeRow(`Удалить лицевой счёт № ${account.number}? Удалить можно только счёт без плательщиков.`, () => accountsApi.remove(account.id), loadAccounts)) : null,
@@ -373,8 +358,22 @@ export async function premisesPage(container, { id }) {
     try {
       const { items } = await incomingPaymentsApi.list({ personal_account_id: account.id, limit: PAYMENTS_LIMIT });
       const total = Math.round(items.reduce((sum, p) => sum + p.amount, 0) * 100) / 100;
+      const exportButton = items.length ? el('button', {
+        type: 'button', class: 'btn btn-ghost btn-sm', title: 'Скачать все оплаты по этому лицевому счёту в Excel',
+        onclick: async () => {
+          exportButton.disabled = true;
+          try {
+            saveFile(await incomingPaymentsApi.exportExcel({ personal_account_id: account.id }));
+          } catch (error) {
+            toast.error(describeApiError(error).message);
+          } finally {
+            exportButton.disabled = false;
+          }
+        },
+      }, 'Скачать оплаты в Excel') : null;
       // el() пропускает null-детей; прямой replaceChildren(null) нарисовал бы текст «null».
       host.replaceChildren(el('div', {}, [
+        exportButton ? el('div', { class: 'row-actions' }, exportButton) : null,
         el('p', { class: 'field-help' }, items.length === 0
           ? 'Оплат по этому лицевому счёту нет'
           : `Оплат: ${items.length}${items.length === PAYMENTS_LIMIT ? '+ (показаны последние)' : ''}, на сумму ${formatMoney(total)}`),
